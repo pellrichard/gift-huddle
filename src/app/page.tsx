@@ -122,7 +122,7 @@ export default function Page() {
         <div className="rounded-3xl bg-indigo-600 text-white p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
           <div>
             <h3 className="text-2xl font-bold">Be first to try Gift Huddle</h3>
-            <p className="text-indigo-100 mt-1">Enter your email and we\'ll invite you to the early beta.</p>
+            <p className="text-indigo-100 mt-1">Enter your email and we&apos;ll invite you to the early beta.</p>
           </div>
           <form className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
             <input
