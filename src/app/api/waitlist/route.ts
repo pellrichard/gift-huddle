@@ -12,7 +12,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = (await req.json().catch(() => ({}))) as unknown;
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ ok: false, error: 'Invalid input' }, { status: 400 });
@@ -24,20 +24,21 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY! // server-only
     );
 
-    // upsert on email to avoid duplicates
     const { error } = await supabase
       .from('waitlist_signups')
       .upsert({ email, name, source: 'coming-soon' }, { onConflict: 'email' });
 
     if (error) {
-      // handle harmless unique-constraint race
-      const isDup = /duplicate key value/i.test(error.message);
-      if (!isDup) {
+      // allow harmless duplicate upserts
+      const dup = /duplicate key value/i.test(error.message);
+      if (!dup) {
         return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
       }
     }
+
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch {
+    // don’t leak internals; just return a generic error
     return NextResponse.json({ ok: false, error: 'Server error' }, { status: 500 });
   }
 }
