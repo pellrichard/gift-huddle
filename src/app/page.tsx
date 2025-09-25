@@ -1,16 +1,14 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+
 export default function Page() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100 text-gray-900">
       {/* Nav */}
       <header className="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Inline SVG logo so you don't need a file yet */}
-          <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
-            <rect x="6" y="6" width="52" height="52" rx="14" fill="#4F46E5"/>
-            <path d="M44 22c-3.866 0-7 3.134-7 7 0-3.866-3.134-7-7-7s-7 3.134-7 7c0 8.284 14 15 14 15s14-6.716 14-15c0-3.866-3.134-7-7-7z" fill="white"/>
-          </svg>
+          {/* Use your real logo */}
+          <img src="/logo.svg" alt="Gift Huddle logo" className="h-9 w-9" />
           <span className="font-bold text-xl tracking-tight">Gift Huddle</span>
         </div>
         <span className="text-sm text-gray-500">Launching soon</span>
@@ -24,12 +22,12 @@ export default function Page() {
             <span className="block text-indigo-600">No more duplicate gifts.</span>
           </h1>
           <p className="mt-4 text-lg text-gray-600">
-            Gift Huddle lets friends & family coordinate birthdays, weddings, Christmas and more—
+            Gift Huddle lets friends &amp; family coordinate birthdays, weddings, Christmas and more—{" "}
             with budgets, shared wishlists, and reminders that actually help.
           </p>
 
           {/* Email capture mock (wire to Supabase later) */}
-          <form className="mt-6 flex flex-col sm:flex-row gap-3">
+          <form className="mt-6 flex flex-col sm:flex-row gap-3" onSubmit={(e) => { e.preventDefault(); alert('Thanks! We&apos;ll be in touch.'); }}>
             <input
               type="email"
               placeholder="Enter your email"
@@ -39,7 +37,6 @@ export default function Page() {
             <button
               type="submit"
               className="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow hover:bg-indigo-700 transition"
-              onClick={(e) => { e.preventDefault(); alert('Thanks! We\'ll be in touch.'); }}
             >
               Notify me
             </button>
@@ -125,7 +122,7 @@ export default function Page() {
             <h3 className="text-2xl font-bold">Be first to try Gift Huddle</h3>
             <p className="text-indigo-100 mt-1">Enter your email and we&apos;ll invite you to the early beta.</p>
           </div>
-          <form className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+          <form className="w-full md:w-auto flex flex-col sm:flex-row gap-3" onSubmit={(e) => { e.preventDefault(); alert('Thanks! We&apos;ll email you soon.'); }}>
             <input
               type="email"
               placeholder="you@example.com"
@@ -135,7 +132,6 @@ export default function Page() {
             <button
               type="submit"
               className="rounded-xl bg-black/90 px-6 py-3 font-semibold text-white hover:bg-black transition"
-              onClick={(e) => { e.preventDefault(); alert('Thanks! We\'ll email you soon.'); }}
             >
               Join waitlist
             </button>
@@ -146,10 +142,7 @@ export default function Page() {
       {/* Footer */}
       <footer className="mx-auto max-w-7xl px-6 pb-10 flex flex-col sm:flex-row items-center justify-between text-sm text-gray-500">
         <div className="flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="6" width="52" height="52" rx="14" fill="#4F46E5"/>
-            <path d="M44 22c-3.866 0-7 3.134-7 7 0-3.866-3.134-7-7-7s-7 3.134-7 7c0 8.284 14 15 14 15s14-6.716 14-15c0-3.866-3.134-7-7-7z" fill="white"/>
-          </svg>
+          <img src="/icon.png" alt="Gift Huddle icon" className="h-5 w-5" />
           <span>© {new Date().getFullYear()} Gift Huddle</span>
         </div>
         <div className="mt-3 sm:mt-0 flex items-center gap-4">
