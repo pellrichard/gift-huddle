@@ -1,4 +1,5 @@
-'use client'\n/* eslint-disable @next/next/no-img-element */
+'use client';
+/* eslint-disable @next/next/no-img-element */
 export default function Page() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100 text-gray-900">
