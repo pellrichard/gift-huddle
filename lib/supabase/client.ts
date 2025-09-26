@@ -1,4 +1,4 @@
-// Browser-side Supabase client using @supabase/ssr
+// (Legacy path) keep in sync in case imports still reference ./lib/...
 import { createBrowserClient } from "@supabase/ssr";
 
 export const supabaseBrowser = () =>
