@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gh-bg text-gh-ink">
         <Header />
         <main className="">{children}</main>
+	<Footer />
       </body>
     </html>
   )
