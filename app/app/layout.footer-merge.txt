@@ -1,0 +1,12 @@
+// --- Add this import at the top of app/layout.tsx
+import Footer from "@/components/Footer";
+
+// --- Then render <Footer /> just before </body>:
+<body>
+  {children}
+  <Footer />
+</body>
+
+// NOTE: Ensure the footer file lives at: src/components/Footer.tsx
+// If you accidentally placed it under app/src/components/Footer.tsx, move it to src/components/Footer.tsx
+// so the path alias `@/* -> ./src/*` resolves correctly.

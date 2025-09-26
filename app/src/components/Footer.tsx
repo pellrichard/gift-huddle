@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Instagram, Facebook, Twitter, Linkedin, Github } from "lucide-react";
+import { Facebook, Linkedin } from "lucide-react";
 
 const socials = [
   { name: "Facebook", href: "https://www.facebook.com/profile.php?id=61581098625976", Icon: Facebook },
