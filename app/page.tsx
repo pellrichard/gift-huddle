@@ -14,9 +14,10 @@ export default function HomePage() {
           gift — all free to use, powered by affiliates and personalization.
         </p>
 
+        {/* Force visible pink CTA (in case theme primary isn't set) */}
         <Link
           href="/login"
-          className="rounded-xl bg-primary px-6 py-3 text-lg font-semibold text-white shadow-md hover:bg-primary/90"
+          className="rounded-xl bg-pink-600 px-6 py-3 text-lg font-semibold text-white shadow-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400"
         >
           Get Started
         </Link>
@@ -25,9 +26,9 @@ export default function HomePage() {
           <Image
             src="/hero.png"
             alt="Gift Huddle preview"
-            width={800}
-            height={500}
-            className="rounded-2xl shadow-lg"
+            width={1200}
+            height={600}
+            className="rounded-2xl shadow-lg w-full max-w-4xl h-auto"
             priority
           />
         </div>
