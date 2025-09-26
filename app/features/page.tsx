@@ -15,7 +15,7 @@ export default function FeaturesPage() {
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((f) => (
           <div key={f.title} className="flex flex-col items-center text-center p-6 border rounded-2xl shadow-sm">
-            <img src={f.icon} alt={f.title} width={48} height={48} className="opacity-90" />
+            <Image src={f.icon} alt={f.title} width={48} height={48} />
             <h2 className="mt-4 text-xl font-semibold">{f.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{f.description}</p>
           </div>

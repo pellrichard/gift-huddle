@@ -3,12 +3,15 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
+type FbPermission = { permission: string; status: "granted" | "declined"; };
+type FbPermissionsResponse = { data?: FbPermission[] };
+type FbPicture = { data?: { url?: string } };
 type FbResponse = {
   id?: string;
   name?: string;
   email?: string;
   birthday?: string; // "MM/DD/YYYY" or "MM/DD"
-  picture?: { data?: { url?: string } };
+  picture?: FbPicture;
 };
 
 function parseFacebookBirthday(birthday?: string): { dobDate: string | null; yearPresent: boolean } {
@@ -21,7 +24,7 @@ function parseFacebookBirthday(birthday?: string): { dobDate: string | null; yea
   if (yyyy) {
     const iso = `${yyyy}-${month}-${day}`;
     return { dobDate: iso, yearPresent: true };
-    } else {
+  } else {
     const iso = `1904-${month}-${day}`; // placeholder year; we hide it anyway
     return { dobDate: iso, yearPresent: false };
   }
@@ -31,20 +34,21 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const supabase = createRouteHandlerClient({ cookies });
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(url.searchParams);
-  if (error) {
-    console.error("exchangeCodeForSession error:", error);
+  // Exchange OAuth code for session
+  const exchange = await supabase.auth.exchangeCodeForSession(url.searchParams);
+  if (exchange.error) {
+    console.error("exchangeCodeForSession error:", exchange.error);
     return NextResponse.redirect(new URL("/login?error=oauth", req.url));
   }
 
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
+  const userRes = await supabase.auth.getUser();
+  const user = userRes.data?.user;
   if (!user) {
     return NextResponse.redirect(new URL("/login?error=nologin", req.url));
   }
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  const providerToken = sessionData?.session?.provider_token;
+  const sessionRes = await supabase.auth.getSession();
+  const providerToken = sessionRes.data?.session?.provider_token;
 
   let fb: FbResponse | null = null;
   let granted: string[] = [];
@@ -68,24 +72,23 @@ export async function GET(req: Request) {
         console.warn("Facebook Graph error:", await res.text());
       }
 
-      // Optional: permissions audit (safe to keep)
       const permsRes = await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(providerToken)}`
       );
       if (permsRes.ok) {
-        const permsJson = await permsRes.json();
-        granted = (permsJson?.data || [])
-          .filter((p: any) => p.status === "granted")
-          .map((p: any) => p.permission);
+        const permsJson = (await permsRes.json()) as FbPermissionsResponse;
+        granted = (permsJson.data ?? [])
+          .filter((p) => p.status === "granted")
+          .map((p) => p.permission);
       }
     } catch (e) {
       console.error("Graph fetch failed:", e);
     }
   }
 
-  const full_name = fb?.name ?? (user as any)?.user_metadata?.full_name ?? null;
+  const full_name = fb?.name ?? (user.user_metadata as Record<string, unknown> | undefined)?.["full_name"] ?? null;
   const email = fb?.email ?? user.email ?? null;
-  const fb_id = fb?.id ?? (user as any)?.user_metadata?.provider_id ?? null;
+  const fb_id = fb?.id ?? (user.user_metadata as Record<string, unknown> | undefined)?.["provider_id"] ?? null;
   const fb_picture_url = fb?.picture?.data?.url ?? null;
 
   const { dobDate, yearPresent } = parseFacebookBirthday(fb?.birthday);
