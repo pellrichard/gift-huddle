@@ -1,27 +1,40 @@
-# Supabase OAuth Callback (Next.js App Router)
+# Gift Huddle – Facebook profile ingest pack
 
-This pack fixes the issue where the app returns from Facebook but the user isn't created.
-It uses the PKCE (code) flow and processes the `code` on a server route to set auth cookies.
+This adds:
+- `app/auth/callback/route.ts` → Exchanges PKCE `code`, fetches Facebook fields (`id,name,email,birthday`), upserts into `public.profiles`.
+- `components/LoginWithFacebook.tsx` → Sign-in button with PKCE and minimal scopes.
+- `lib/supabase/*` → Helpers for server/client usage.
+- `sql/profiles.sql` → Table + RLS + policies.
 
-Files:
-- app/auth/callback/route.ts
-- components/LoginButtons.tsx
-- lib/supabase/client.ts
-- lib/supabase/server.ts
+## Install deps
+npm i @supabase/auth-helpers-nextjs @supabase/supabase-js
 
-Steps:
-1) Set env vars on Vercel:
-   NEXT_PUBLIC_SUPABASE_URL=...
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+## Env (Vercel)
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
-2) Supabase Dashboard → Auth → URL Configuration:
-   Site URL: https://gift-huddle-tau.vercel.app
-   Additional Redirect URLs:
-     https://gift-huddle-tau.vercel.app/auth/callback
-     http://localhost:3000/auth/callback
+## Supabase → Auth → URL Configuration
+Site URL: https://gift-huddle-tau.vercel.app
+Additional Redirect URLs:
+  https://gift-huddle-tau.vercel.app/auth/callback
+  http://localhost:3000/auth/callback
 
-3) Use the LoginButtons component or ensure your sign-in call includes:
-   redirectTo: `${location.origin}/auth/callback`
-   queryParams.flowType: "pkce"
+## Facebook scopes (keep minimal)
+- Recommended now: public_profile,email
+- Optional if you need birthday reminders: user_birthday
 
-4) Deploy. On return, /auth/callback exchanges the code and redirects to /account (changeable via ?next=).
+The example login requests: public_profile,email,user_birthday
+
+## Run the SQL
+Paste `sql/profiles.sql` into the Supabase SQL editor (or add to migrations) to create the table and policies.
+
+## Mapping stored
+- full_name ← FB `name` (or Supabase `user_metadata.full_name`)
+- email     ← FB `email` (fallback: Supabase `users.email`)
+- avatar_url← FB profile picture URL (via `https://graph.facebook.com/<id>/picture?type=large`)
+- birthdate / birth_day / birth_month / hide_birth_year ← parsed from FB `birthday` ("MM/DD[/YYYY]")
+- fb_id     ← FB `id`
+
+## Notes
+- If users hide their year on Facebook, we store day/month and set `hide_birth_year = true`.
+- If you later decide to request gender/likes/friends, extend the Graph API `fields` and add columns/policies as needed (expect App Review).
