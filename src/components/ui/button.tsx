@@ -1,12 +1,13 @@
 import * as React from "react";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "ghost";
+  variant?: "default" | "secondary" | "outline" | "ghost";
   size?: "sm" | "md" | "lg";
 }
 
-const variants = {
+const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
   default: "bg-[#F9628D] text-white hover:opacity-90",
+  secondary: "bg-gray-900 text-white hover:opacity-90",
   outline: "border border-gray-300 hover:bg-gray-50",
   ghost: "hover:bg-gray-100",
 };
