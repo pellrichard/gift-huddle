@@ -1,15 +1,18 @@
-# Styling Fix for Gift Huddle
+# Gift Huddle – Legal Pages
 
-Symptoms: page renders unstyled classes (Tailwind not applied).
+This package adds lightweight, production-ready Privacy Policy and Terms of Service pages for Next.js.
 
-This bundle includes:
-- app/globals.css (with @tailwind directives + brand tokens)
-- tailwind.config.ts (content globs for app/ and src/)
-- postcss.config.js
+## Files
+- `pages/privacy.tsx`
+- `pages/terms.tsx`
 
-Steps:
-1) Ensure globals is imported in app/layout.tsx -> `import './globals.css'`
-2) Install deps (if not already):
-   npm i -D tailwindcss postcss autoprefixer
-3) Drop files at repo root (tailwind.config.ts, postcss.config.js) and replace app/globals.css with this content.
-4) Commit & push.
+## Usage
+1. Extract to your Next.js repo root so the files land under `pages/`.
+2. Deploy to Vercel.
+3. Use these URLs in Facebook/LinkedIn App settings:
+   - Privacy Policy URL: `https://<your-domain>/privacy`
+   - Terms of Service URL: `https://<your-domain>/terms`
+
+## Customise
+- Update contact emails (privacy@ / legal@) if needed.
+- Add details about processors, cookies, and DPA as your stack evolves.
