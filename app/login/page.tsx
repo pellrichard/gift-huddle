@@ -8,7 +8,7 @@ export default function LoginPage() {
   const loginWith = async (provider: "google" | "apple" | "facebook") => {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo }, // Supabase will send users back here
+      options: { redirectTo },
     });
   };
 
@@ -18,9 +18,7 @@ export default function LoginPage() {
       <button className="w-full rounded-xl p-3 shadow" onClick={() => loginWith("google")}>Continue with Google</button>
       <button className="w-full rounded-xl p-3 shadow" onClick={() => loginWith("apple")}>Continue with Apple</button>
       <button className="w-full rounded-xl p-3 shadow" onClick={() => loginWith("facebook")}>Continue with Facebook</button>
-
-      {/* Email sign in as a fallback */}
-      {/* (You can add a magic-link flow or email+password form here) */}
+      <p className="text-sm text-gray-500">By continuing, you agree to our Terms and Privacy Policy.</p>
     </div>
   );
 }

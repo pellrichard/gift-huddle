@@ -1,4 +1,4 @@
-// Next.js App Router + @supabase/ssr
+// Server-side Supabase client using @supabase/ssr
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
@@ -9,7 +9,7 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) {
+        get(name: string) {
           return cookieStore.get(name)?.value;
         },
       },

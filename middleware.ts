@@ -9,21 +9,32 @@ export async function middleware(req: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) { return req.headers.get("cookie")?.match(new RegExp(`(?:^|; )${name}=([^;]*)`))?.[1] ?? null; },
+        get(name) {
+          const cookieHeader = (req.headers.get("cookie") ?? "");
+          const match = cookieHeader.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+          return match ? decodeURIComponent(match[1]) : null;
+        },
         set(name, value, options) {
-          res.headers.append("Set-Cookie", `${name}=${value}; Path=/; HttpOnly; SameSite=Lax${options.maxAge ? `; Max-Age=${options.maxAge}` : ""}${options.expires ? `; Expires=${options.expires.toUTCString()}` : ""}${options.domain ? `; Domain=${options.domain}` : ""}${options.path ? `; Path=${options.path}` : ""}${options.secure ? `; Secure` : ""}`);
+          const cookie = `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax` +
+            (options.maxAge ? `; Max-Age=${options.maxAge}` : "") +
+            (options.expires ? `; Expires=${options.expires.toUTCString()}` : "") +
+            (options.domain ? `; Domain=${options.domain}` : "") +
+            (options.path ? `; Path=${options.path}` : "") +
+            (options.secure ? `; Secure` : "");
+          res.headers.append("Set-Cookie", cookie);
         },
         remove(name, options) {
-          res.headers.append("Set-Cookie", `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${options.domain ? `; Domain=${options.domain}` : ""}`);
+          const cookie = `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax` +
+            (options.domain ? `; Domain=${options.domain}` : "");
+          res.headers.append("Set-Cookie", cookie);
         },
       },
     }
   );
 
-  // This will refresh the session cookies if needed
+  // Refresh/attach session cookies if needed
   await supabase.auth.getUser();
 
-  // Example: gate /app routes
   const url = new URL(req.url);
   if (url.pathname.startsWith("/app")) {
     const { data } = await supabase.auth.getUser();
@@ -36,5 +47,5 @@ export async function middleware(req: Request) {
 }
 
 export const config = {
-  matcher: ["/app/:path*"], // protect anything under /app
+  matcher: ["/app/:path*"],
 };
