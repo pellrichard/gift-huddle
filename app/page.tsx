@@ -1,19 +1,9 @@
-import Hero from '@/components/Hero'
-import Features from '@/components/Features'
-import SocialButtons from '@/components/SocialButtons'
+import Hero from "@/components/Hero";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <main>
       <Hero />
-      <div className="border-t" />
-      <Features />
-      <footer className="border-t">
-        <div className="mx-auto max-w-6xl px-4 py-10 flex items-center justify-between">
-          <p className="text-sm text-gh-muted">© 2025 Gift Huddle</p>
-          <SocialButtons variant="ghost" />
-        </div>
-      </footer>
     </main>
-  )
+  );
 }
