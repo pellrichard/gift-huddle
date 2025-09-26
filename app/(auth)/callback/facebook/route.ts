@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
-type FbPermission = { permission: string; status: "granted" | "declined"; };
+type FbPermission = { permission: string; status: "granted" | "declined" };
 type FbPermissionsResponse = { data?: FbPermission[] };
 type FbPicture = { data?: { url?: string } };
 type FbResponse = {
@@ -34,8 +34,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const supabase = createRouteHandlerClient({ cookies });
 
-  // Exchange OAuth code for session
-  const exchange = await supabase.auth.exchangeCodeForSession(url.searchParams);
+  // Exchange OAuth code for session (avoid URLSearchParams type mismatch)
+  const code = url.searchParams.get("code");
+  if (!code) {
+    return NextResponse.redirect(new URL("/login?error=missing_code", req.url));
+  }
+  const exchange = await supabase.auth.exchangeCodeForSession(code);
   if (exchange.error) {
     console.error("exchangeCodeForSession error:", exchange.error);
     return NextResponse.redirect(new URL("/login?error=oauth", req.url));
@@ -54,14 +58,7 @@ export async function GET(req: Request) {
   let granted: string[] = [];
 
   if (providerToken) {
-    const fields = [
-      "id",
-      "name",
-      "email",
-      "birthday",
-      "picture.type(large){url}",
-    ].join(",");
-
+    const fields = ["id", "name", "email", "birthday", "picture.type(large){url}"].join(",");
     const graphUrl = `https://graph.facebook.com/v20.0/me?fields=${encodeURIComponent(fields)}&access_token=${encodeURIComponent(providerToken)}`;
 
     try {
@@ -86,9 +83,11 @@ export async function GET(req: Request) {
     }
   }
 
-  const full_name = fb?.name ?? (user.user_metadata as Record<string, unknown> | undefined)?.["full_name"] ?? null;
+  const full_name =
+    fb?.name ?? (user.user_metadata as Record<string, unknown> | undefined)?.["full_name"] ?? null;
   const email = fb?.email ?? user.email ?? null;
-  const fb_id = fb?.id ?? (user.user_metadata as Record<string, unknown> | undefined)?.["provider_id"] ?? null;
+  const fb_id =
+    fb?.id ?? (user.user_metadata as Record<string, unknown> | undefined)?.["provider_id"] ?? null;
   const fb_picture_url = fb?.picture?.data?.url ?? null;
 
   const { dobDate, yearPresent } = parseFacebookBirthday(fb?.birthday);
