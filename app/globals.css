@@ -12,7 +12,7 @@
 
 .btn-accent {
   display: inline-flex; align-items: center; justify-content: center;
-  padding: .5rem .9rem; border-radius: .75rem;
+  padding: .6rem 1rem; border-radius: .75rem;
   background: var(--gh-accent); color: var(--gh-accent-fg);
 }
 .btn-accent:hover { background: var(--gh-accent-hover); }
