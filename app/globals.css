@@ -1,0 +1,21 @@
+:root {
+  --gh-accent: #EC4899;
+  --gh-accent-fg: #ffffff;
+  --gh-accent-soft: #FBCFE8;
+  --gh-accent-hover: #DB2777;
+  --gh-accent-ring: #FDA4AF;
+
+  --gh-ink: #111827;
+  --gh-bg: #ffffff;
+  --gh-muted: #6B7280;
+}
+
+.btn-accent {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: .5rem .9rem; border-radius: .75rem;
+  background: var(--gh-accent); color: var(--gh-accent-fg);
+}
+.btn-accent:hover { background: var(--gh-accent-hover); }
+.btn-accent:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--gh-accent-ring); }
+.link-accent { color: var(--gh-accent); }
+.link-accent:hover { color: var(--gh-accent-hover); }
