@@ -1,9 +1,19 @@
+// app/auth/callback/route.ts
+/* eslint react/no-unescaped-entities: 0 */
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
-export const dynamic = "force-dynamic";
-
+// Handles the PKCE code exchange and sets the Supabase auth cookies
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const next = url.searchParams.get("next") || "/app";
-  return NextResponse.redirect(new URL(next, url.origin));
+  const { searchParams, origin } = new URL(req.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") || "/account";
+
+  if (code) {
+    const supabase = createRouteHandlerClient({ cookies });
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
+  return NextResponse.redirect(`${origin}${next}`);
 }
