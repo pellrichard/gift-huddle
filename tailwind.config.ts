@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config = {
-  content: ['./app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
+  content: ['./app/**/*.{ts,tsx,js,jsx}', './src/**/*.{ts,tsx,js,jsx}'],
   theme: {
     extend: {
       colors: {
@@ -15,9 +15,6 @@ const config = {
           accentHover: '#DB2777',
           accentRing: '#FDA4AF'
         }
-      },
-      ringColor: {
-        DEFAULT: '#FDA4AF'
       }
     }
   },
