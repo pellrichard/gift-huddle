@@ -1,0 +1,36 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" width="520" height="360">
+  <defs>
+    <style>
+      .skin{fill:#ffceb6}
+      .hair{fill:#222}
+      .shirt{fill:#14b8a6}
+      .ink{fill:#0f172a}
+      .accent{fill:#ec4899}
+      .bg{fill:#ffffff}
+      .muted{fill:#94a3b8}
+      .device{fill:#111827}
+    </style>
+  </defs>
+  <rect width="520" height="360" fill="none"/>
+  <!-- torso -->
+  <rect x="96" y="140" rx="24" ry="24" width="240" height="150" class="shirt"/>
+  <!-- head -->
+  <circle cx="250" cy="110" r="48" class="skin"/>
+  <!-- hair -->
+  <path d="M208 108c0-34 28-52 56-52 26 0 48 18 52 44-10 8-30 14-54 14s-44-6-54-6z" class="hair"/>
+  <!-- arm -->
+  <rect x="300" y="190" width="120" height="26" rx="13" class="skin"/>
+  <!-- pointer hand -->
+  <circle cx="420" cy="203" r="16" class="skin"/>
+  <!-- clipboard -->
+  <rect x="390" y="90" width="100" height="140" rx="10" class="bg" stroke="#111827" stroke-width="6"/>
+  <rect x="420" y="70" width="40" height="20" rx="8" class="device"/>
+  <circle cx="420" cy="120" r="14" class="accent"/>
+  <rect x="410" y="152" width="60" height="10" class="muted"/>
+  <rect x="410" y="172" width="70" height="10" class="muted"/>
+  <rect x="410" y="192" width="50" height="10" class="muted"/>
+  <!-- pointing -->
+  <rect x="250" y="200" width="36" height="18" rx="9" class="skin"/>
+  <circle cx="290" cy="209" r="12" class="skin"/>
+</svg>

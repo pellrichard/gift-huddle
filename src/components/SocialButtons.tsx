@@ -1,22 +1,14 @@
 import Link from 'next/link'
 
 type Variant = 'brand' | 'outline' | 'ghost'
-type Size = 'sm' | 'md'
-
 const FACEBOOK_URL = process.env.NEXT_PUBLIC_FACEBOOK_URL || 'https://www.facebook.com/profile.php?id=61581098625976'
 const LINKEDIN_URL = process.env.NEXT_PUBLIC_LINKEDIN_URL || 'https://www.linkedin.com/company/gift-huddle'
 
 const base = 'inline-flex items-center gap-2 rounded-xl transition px-3 py-2'
-
-const styleByVariant: Record<Variant, string> = {
+const styles: Record<Variant, string> = {
   brand: 'bg-[var(--gh-accent)] text-[var(--gh-accent-fg)] hover:bg-[var(--gh-accent-hover)]',
   outline: 'border border-[color:var(--gh-accent)] text-[color:var(--gh-accent)] hover:bg-[var(--gh-accent-soft)]',
   ghost: 'text-gh-ink/70 hover:text-gh-ink hover:bg-black/5'
-}
-
-const sizeByVariant: Record<Size, string> = {
-  sm: 'text-sm',
-  md: 'text-base'
 }
 
 function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -26,7 +18,6 @@ function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
-
 function LinkedInIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...props}>
@@ -35,20 +26,14 @@ function LinkedInIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export default function SocialButtons({
-  variant = 'brand',
-  size = 'sm'
-}: {
-  variant?: Variant
-  size?: Size
-}) {
-  const classes = (v: Variant) => [base, styleByVariant[v], sizeByVariant[size]].join(' ')
+export default function SocialButtons({ variant='ghost' }: { variant?: Variant }) {
+  const cls = styles[variant]
   return (
     <div className="flex items-center gap-2">
-      <Link className={classes(variant)} href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" aria-label="Gift Huddle on Facebook">
+      <Link className={base + ' ' + cls} href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer">
         <FacebookIcon /> <span className="hidden sm:inline">Facebook</span>
       </Link>
-      <Link className={classes(variant)} href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label="Gift Huddle on LinkedIn">
+      <Link className={base + ' ' + cls} href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
         <LinkedInIcon /> <span className="hidden sm:inline">LinkedIn</span>
       </Link>
     </div>

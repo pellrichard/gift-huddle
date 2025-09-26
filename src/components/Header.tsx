@@ -4,25 +4,19 @@ import SocialButtons from '@/components/SocialButtons'
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
-      <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-3">
+    <header className="sticky top-0 z-40 bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-6">
         <Link href="/" className="flex items-center gap-3" aria-label="Gift Huddle home">
-          <Image
-            src="/brand/gift-huddle-logo.svg"
-            alt="Gift Huddle"
-            width={160}
-            height={48}
-            priority
-          />
+          <Image src="/brand/gift-huddle-logo.svg" alt="Gift Huddle" width={170} height={50} priority />
         </Link>
-        <nav className="ml-auto flex items-center gap-4">
-          <Link className="text-gh-ink/80 hover:text-gh-ink" href="/lists">Lists</Link>
-          <Link className="text-gh-ink/80 hover:text-gh-ink" href="/discover">Discover</Link>
-          <div className="hidden sm:flex">
-            <SocialButtons variant="ghost" />
-          </div>
-          <Link className="btn-accent" href="/sign-in">Sign in</Link>
+        <nav className="ml-auto hidden md:flex items-center gap-8 text-sm">
+          <Link href="#features" className="text-gh-ink/80 hover:text-gh-ink">Features</Link>
+          <Link href="#how" className="text-gh-ink/80 hover:text-gh-ink">How it Works</Link>
+          <Link href="#pricing" className="text-gh-ink/80 hover:text-gh-ink">Pricing</Link>
         </nav>
+        <div className="hidden md:block">
+          <Link href="/sign-in" className="btn-accent">Get Started</Link>
+        </div>
       </div>
     </header>
   )
