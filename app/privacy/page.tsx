@@ -1,13 +1,14 @@
-/* app/pages/privacy.tsx */
-import Head from "next/head";
+/* eslint react/no-unescaped-entities: 0 */
 
 export default function Privacy() {
   return (
     <main className="p-8 max-w-3xl mx-auto prose">
-      <Head>
-        <title>Privacy Policy | Gift Huddle</title>
-        <meta name="robots" content="index,follow" />
-      </Head>
+      
+<head>
+  <title>Privacy Policy | Gift Huddle</title>
+  <meta name="robots" content="index,follow" />
+</head>
+
 
       <h1>Privacy Policy</h1>
       <p>Last updated: 26 September 2025</p>

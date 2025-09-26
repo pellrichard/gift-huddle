@@ -1,81 +1,96 @@
-// pages/terms.tsx
+/* eslint react/no-unescaped-entities: 0 */
 import Head from "next/head";
 
 export default function Terms() {
   return (
     <main className="p-8 max-w-3xl mx-auto prose">
-      <Head>
-        <title>Terms of Service | Gift Huddle</title>
-        <meta name="robots" content="index,follow" />
-      </Head>
+      
+<Head>
+  <title>Terms of Service | Gift Huddle</title>
+  <meta name="robots" content="index,follow" />
+</Head>
+
 
       <h1>Terms of Service</h1>
-      <p>Last updated: {new Date().toLocaleDateString("en-GB")}</p>
+      <p>Last updated: 26 September 2025</p>
 
-      <h2>1. Agreement</h2>
+      <h2>1. Overview</h2>
       <p>
-        These Terms govern your use of Gift Huddle. By accessing or using the service,
-        you agree to them. If you do not agree, do not use the service.
+        Welcome to Gift Huddle. By using our website and apps (the &quot;Service&quot;), you agree to these Terms.
+        If you do not agree, do not use the Service.
       </p>
 
-      <h2>2. Your account</h2>
+      <h2>2. Accounts &amp; eligibility</h2>
       <ul>
-        <li>You must provide accurate information and keep your account secure.</li>
-        <li>You are responsible for activity on your account.</li>
-        <li>You must be at least 13 years old to use the service.</li>
+        <li>You must be at least 13 years old.</li>
+        <li>Provide accurate information and keep your credentials secure.</li>
+        <li>You’re responsible for activity on your account.</li>
       </ul>
 
-      <h2>3. Acceptable use</h2>
+      <h2>3. Features &amp; sharing</h2>
       <ul>
-        <li>No illegal, harmful, or abusive conduct.</li>
+        <li>Create lists, add items, connect with friends via requests you approve.</li>
+        <li>Public list links allow anyone with the link to view; do not share links publicly if you want them private.</li>
+        <li>&quot;Mark as ordered&quot; is available to signed-in users; recipients won’t see the buyer unless disclosed by you.</li>
+      </ul>
+
+      <h2>4. Acceptable use</h2>
+      <ul>
+        <li>No unlawful, harmful, or abusive activity.</li>
         <li>No infringement of others’ rights or privacy.</li>
-        <li>No attempts to disrupt or reverse-engineer the service.</li>
+        <li>No attempts to interfere with or reverse engineer the Service.</li>
       </ul>
 
-      <h2>4. Content</h2>
+      <h2>5. Your content</h2>
       <p>
-        You own your content. You grant us a limited license to host and display it
-        to provide the service. You are responsible for the content you post.
+        You own your content. You grant us a limited, worldwide, non-exclusive license to host, display,
+        and process your content as needed to operate the Service.
       </p>
 
-      <h2>5. Affiliates & external links</h2>
+      <h2>6. Affiliates &amp; external links</h2>
       <p>
-        We may include affiliate links to retailers. We are not responsible for third-party
-        sites, their products, or policies.
+        We use affiliate links to certain retailers. We do not control third-party sites or their policies and
+        are not responsible for them. Purchases from retailers are subject to the retailer’s terms.
       </p>
 
-      <h2>6. Service changes</h2>
+      <h2>7. Changes to the Service</h2>
       <p>
-        We may change, suspend, or discontinue features at any time. We may also update these Terms.
+        We may add, change, or remove features at any time. We may suspend or terminate the Service for maintenance,
+        security, or other reasons.
       </p>
 
-      <h2>7. Disclaimers</h2>
+      <h2>8. Termination</h2>
       <p>
-        The service is provided “as is” without warranties. To the extent permitted by law,
-        we disclaim implied warranties of merchantability, fitness for a particular purpose,
-        and non-infringement.
+        You may stop using the Service at any time. We may suspend or terminate your access for violations of
+        these Terms or to protect the Service.
       </p>
 
-      <h2>8. Limitation of liability</h2>
+      <h2>9. Disclaimers</h2>
       <p>
-        To the extent permitted by law, we are not liable for indirect, incidental, special,
-        consequential, or punitive damages, or for any loss of profits or data.
+        The Service is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, express or implied,
+        to the fullest extent permitted by law.
       </p>
 
-      <h2>9. Termination</h2>
+      <h2>10. Limitation of liability</h2>
       <p>
-        We may suspend or terminate your access if you violate these Terms or for security reasons.
-        You may stop using the service at any time.
+        To the fullest extent permitted by law, Gift Huddle and its providers will not be liable for any indirect,
+        incidental, special, consequential, or punitive damages, or any loss of profits, data, or goodwill.
       </p>
 
-      <h2>10. Governing law</h2>
+      <h2>11. Indemnity</h2>
       <p>
-        These Terms are governed by the laws of England and Wales, without regard to conflict of laws.
+        You agree to indemnify and hold us harmless from claims arising from your use of the Service or violation of these Terms.
       </p>
 
-      <h2>11. Contact</h2>
+      <h2>12. Governing law</h2>
       <p>
-        Questions about these Terms? Contact <a href="mailto:legal@gift-huddle.com">legal@gift-huddle.com</a>.
+        These Terms are governed by the laws of England and Wales. Courts in England and Wales will have exclusive jurisdiction,
+        except where local law gives you non-waivable consumer rights.
+      </p>
+
+      <h2>13. Contact</h2>
+      <p>
+        Questions? Email <a href="mailto:legal@gift-huddle.com">legal@gift-huddle.com</a>.
       </p>
     </main>
   );

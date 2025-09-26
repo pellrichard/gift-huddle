@@ -1,23 +1,17 @@
-# Patch: Move AccountPage to `src/components`
+# Gift Huddle Legal Pages – App Router + Fallback
 
-This fixes the Vercel build error by matching your `@` alias (which points to `./src/*`).
+**Use ONE approach:**
 
-## Apply
-```bash
-# from repo root
-git fetch origin
-git checkout -b chore/move-accountpage-into-src
-git apply /path/to/move-to-src.patch
-git add -A
-git commit -m "chore(account): move AccountPage into src/components to match @ alias"
-git push -u origin chore/move-accountpage-into-src
-```
-Then open a PR from `chore/move-accountpage-into-src` → `feat/complete-refresh`.
+## A) App Router (recommended, Next.js 13+)
+Place files:
+- app/privacy/page.tsx
+- app/terms/page.tsx
 
-If `git apply` complains, you can do it manually:
-```bash
-mkdir -p src/components/account
-git mv components/account/AccountPage.tsx src/components/account/AccountPage.tsx
-git commit -m "chore(account): move AccountPage into src/components to match @ alias"
-git push -u origin chore/move-accountpage-into-src
-```
+## B) Legacy fallback (if you really want to keep app/pages/)
+Place files:
+- app/pages/privacy.tsx
+- app/pages/terms.tsx
+
+Notes:
+- All problematic quotes are HTML-escaped (e.g., &quot;) and we added a file-level ESLint disable for react/no-unescaped-entities.
+- Prefer App Router structure and delete the old `app/pages/*` files to avoid duplicates.
