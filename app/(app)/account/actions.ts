@@ -3,7 +3,8 @@
 
 import { cookies } from "next/headers";
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
-import { profileSchema } from "@/lib/validators/profile";
+// Use a relative import to avoid alias issues in tsconfig
+import { profileSchema } from "../../../lib/validators/profile";
 
 export async function updateProfileAction(formData: FormData) {
   const supabase = createServerActionClient({ cookies });
