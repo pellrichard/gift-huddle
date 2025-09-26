@@ -1,0 +1,9 @@
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const next = url.searchParams.get("next") || "/app";
+  return NextResponse.redirect(new URL(next, url.origin));
+}
