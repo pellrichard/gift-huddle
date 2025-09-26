@@ -2,7 +2,8 @@
 "use client";
 
 import Image from "next/image";
-import { SOCIALS } from "@/lib/socials";
+// Use relative import to avoid tsconfig alias issues
+import { SOCIALS } from "../../lib/socials";
 
 export default function Footer() {
   return (
