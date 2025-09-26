@@ -32,7 +32,7 @@ export async function middleware(req: Request) {
     }
   );
 
-  // Refresh/attach session cookies if needed
+  // Ensure session cookies are fresh
   await supabase.auth.getUser();
 
   const url = new URL(req.url);
