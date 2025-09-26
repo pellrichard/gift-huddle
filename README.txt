@@ -1,30 +1,26 @@
-# Tailwind PostCSS Fix (Next 15 / Tailwind v4)
+# Gift Huddle – Complete Bundle (v8)
 
-Your build error indicates Tailwind v4 is being used, which requires the new PostCSS plugin package.
+## What's included
+- Pink brand assets (`public/brand`), hero illustration
+- Homepage components (`src/components`) + routed pages (`app/`)
+- Supabase OAuth UI and callback
+- Tailwind v4 wiring (`app/globals.css`, `tailwind.config.ts`, `postcss.config.js`)
+- Docs: signup requirements + tsconfig paths example
+- `.env.example` for social links + Supabase keys
 
-## Do this:
+## Requirements
+- Next.js 15.x
+- Tailwind CSS v4: `npm i -D tailwindcss @tailwindcss/postcss`
 
-1) **Install the correct packages**
-   ```bash
-   npm i -D tailwindcss @tailwindcss/postcss
+## Apply
+1) Copy these files into the repo root.
+2) Ensure `tsconfig.json` has:
+   ```json
+   { "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["src/*"] } } }
    ```
-   > (Remove `autoprefixer` from `postcss.config.js`; Tailwind v4 handles it via the new plugin.)
+3) Create `.env.local` from `.env.example` and fill SUPABASE keys.
+4) Commit and push.
 
-2) **Replace `postcss.config.js`** with the one in this bundle:
-   ```js
-   module.exports = {
-     plugins: { '@tailwindcss/postcss': {} },
-   }
-   ```
-
-3) Keep `app/globals.css` with:
-   ```css
-   @tailwind base;
-   @tailwind components;
-   @tailwind utilities;
-   ```
-
-4) If you still have issues, clear cache and rebuild:
-   ```bash
-   rm -rf .next node_modules && npm i && npm run build
-   ```
+## Vercel OAuth Redirects
+- `https://<your-domain>/auth/callback`
+- `http://localhost:3000/auth/callback` (dev)

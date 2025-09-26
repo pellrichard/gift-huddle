@@ -1,7 +1,6 @@
-// Tailwind CSS v4 with Next.js 15+
-// https://tailwindcss.com/docs/installation/postcss
+// Tailwind v4 + Next 15
 module.exports = {
   plugins: {
     '@tailwindcss/postcss': {},
   },
-};
+}

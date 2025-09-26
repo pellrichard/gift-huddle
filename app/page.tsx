@@ -10,7 +10,7 @@ export default function Home() {
       <Features />
       <footer className="border-t">
         <div className="mx-auto max-w-6xl px-4 py-10 flex items-center justify-between">
-          <p className="text-sm text-gh-muted">© {new Date().getFullYear()} Gift Huddle</p>
+          <p className="text-sm text-gh-muted">© 2025 Gift Huddle</p>
           <SocialButtons variant="ghost" />
         </div>
       </footer>
