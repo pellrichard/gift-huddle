@@ -1,0 +1,32 @@
+diff --git a/app/page.tsx b/app/page.tsx
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/app/page.tsx
+@@ -0,0 +1,17 @@
++// app/page.tsx
++import Link from "next/link";
++
++export default function Home() {
++  return (
++    <main className="p-6">
++      <h1 className="text-2xl font-semibold">Gift Huddle</h1>
++      <p className="mt-2">Welcome! Head to your account to manage lists.</p>
++      <Link href="/account" className="mt-4 inline-block underline">
++        Go to Account
++      </Link>
++    </main>
++  );
++}
+diff --git a/app/account/page.tsx b/app/account/page.tsx
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/app/account/page.tsx
+@@ -0,0 +1,6 @@
++// app/account/page.tsx
++import AccountPage from "@/components/account/AccountPage";
++
++export default function Page() {
++  return <AccountPage />;
++}
