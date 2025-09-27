@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // app/page.tsx
 import Image from "next/image";
 import Link from "next/link";
@@ -48,6 +49,24 @@ export default function Home() {
       </section>
 
       {/* footer icons row can remain as-is */}
+=======
+import Hero from '@/components/Hero'
+import Features from '@/components/Features'
+import SocialButtons from '@/components/SocialButtons'
+
+export default function Home() {
+  return (
+    <main>
+      <Hero />
+      <div className="border-t" />
+      <Features />
+      <footer className="border-t">
+        <div className="mx-auto max-w-6xl px-4 py-10 flex items-center justify-between">
+          <p className="text-sm text-gh-muted">© 2025 Gift Huddle</p>
+          <SocialButtons variant="ghost" />
+        </div>
+      </footer>
+>>>>>>> parent of ad3b10d (hero update)
     </main>
-  );
+  )
 }
