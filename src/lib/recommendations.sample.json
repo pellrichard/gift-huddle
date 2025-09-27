@@ -1,0 +1,18 @@
+[
+  {
+    "id": "sku-1",
+    "title": "Ember Temperature Control Smart Mug",
+    "price": 109.95,
+    "category": "Gadgets",
+    "shopId": "amazon-uk",
+    "image": "https://via.placeholder.com/400x300?text=Ember+Mug"
+  },
+  {
+    "id": "sku-2",
+    "title": "Le Creuset Stoneware Mug Set",
+    "price": 36.0,
+    "category": "Home",
+    "shopId": "john-lewis",
+    "image": "https://via.placeholder.com/400x300?text=Le+Creuset"
+  }
+]
