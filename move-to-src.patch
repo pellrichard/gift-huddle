@@ -1,0 +1,17 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gift Huddle Assistant <bot@gifthuddle.dev>
+Date: Fri, 26 Sep 2025 19:50:00 +0100
+Subject: [PATCH] chore(account): move AccountPage into src/components to match @
+ alias
+
+---
+ components/account/AccountPage.tsx | 0
+ src/components/account/AccountPage.tsx | 0
+ 2 files changed, 0 insertions(+), 0 deletions(-)
+ rename components/account/AccountPage.tsx => src/components/account/AccountPage.tsx (100%)
+diff --git a/components/account/AccountPage.tsx b/src/components/account/AccountPage.tsx
+similarity index 100%
+rename from components/account/AccountPage.tsx
+rename to src/components/account/AccountPage.tsx
+-- 
+2.47.0

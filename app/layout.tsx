@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: 'Gift Huddle',
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gh-bg text-gh-ink">
         <Header />
         <main className="">{children}</main>
+	<Footer />
       </body>
     </html>
   )

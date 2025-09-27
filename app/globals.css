@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Brand tokens */
 :root {
@@ -15,13 +13,28 @@
   --gh-muted: #6B7280;
 }
 
-/* Base typography */
 html, body { height: 100%; }
-body { background: var(--gh-bg); color: var(--gh-ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
+body {
+  background: var(--gh-bg);
+  color: var(--gh-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+}
 
-/* Buttons/Links */
-.btn-accent { @apply inline-flex items-center justify-center rounded-xl px-4 py-2; background: var(--gh-accent); color: var(--gh-accent-fg); }
+/* Buttons/Links — plain CSS (no @apply for v4 safety) */
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 0.5rem 1rem;   /* py-2 px-4 */
+  background: var(--gh-accent);
+  color: var(--gh-accent-fg);
+}
 .btn-accent:hover { background: var(--gh-accent-hover); }
-.btn-accent:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--gh-accent-ring); }
+.btn-accent:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--gh-accent-ring);
+}
+
 .link-accent { color: var(--gh-accent); }
 .link-accent:hover { color: var(--gh-accent-hover); }

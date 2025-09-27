@@ -1,0 +1,12 @@
+:root {
+  --gh-primary-50:  #f4efff;
+  --gh-primary-100: #e6dbff;
+  --gh-primary-200: #c7b6ff;
+  --gh-primary-600: #6b4eff;
+  --gh-primary-700: #5536ff;
+
+  --gh-gradient-from: #f4efff;
+  --gh-gradient-to:   #e6f2ff;
+
+  --gh-surface: #ffffff;
+}
