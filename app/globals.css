@@ -1,3 +1,5 @@
+/* Brand variables */
+@import './styles/theme.css';
 @import "tailwindcss";
 
 /* Brand tokens */

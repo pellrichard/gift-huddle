@@ -1,0 +1,8 @@
+diff --git a/app/globals.css b/app/globals.css
+index e69de29..b3f8d2a 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@
++/* Brand variables */
++@import './styles/theme.css';
++

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" role="img" aria-label="Gift Huddle hero">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff0f7"/>
+      <stop offset="1" stop-color="#ffe7f3"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="750" fill="url(#g)"/>
+  <g fill="#e83e8c">
+    <rect x="120" y="150" width="300" height="200" rx="24" opacity="0.15"/>
+    <rect x="420" y="200" width="300" height="240" rx="24" opacity="0.15"/>
+    <rect x="740" y="140" width="300" height="220" rx="24" opacity="0.15"/>
+  </g>
+  <text x="600" y="600" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui" font-size="42" fill="#9c2d60">Gift better, together.</text>
+</svg>

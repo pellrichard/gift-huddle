@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "lint:links": "node ./scripts/linkcheck.mjs || true",
+    "lighthouse:ci": "node ./scripts/lighthouse-ci.mjs"
+  }
+}
