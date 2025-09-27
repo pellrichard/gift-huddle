@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.10",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.46.1",
+    "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
     "next": "15.5.4",
     "react": "^18.3.1",
