@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Gift Huddle icon">
+  <style>
+    .box { fill:#14b8a6; stroke:#ec4899; stroke-width:6; }
+    .lid { fill:#14b8a6; stroke:#ec4899; stroke-width:6; }
+    .ribbon { fill:none; stroke:#ec4899; stroke-width:6; }
+  </style>
+  <g transform="translate(10,10)">
+    <rect x="0" y="40" width="60" height="48" rx="2" ry="2" class="box"/>
+    <rect x="-4" y="28" width="68" height="16" rx="2" ry="2" class="lid"/>
+    <line x1="30" y1="43" x2="30" y2="88" class="ribbon"/>
+    <line x1="0" y1="64" x2="60" y2="64" class="ribbon"/>
+    <path d="M30 28 C20 8, 0 8, 10 28" class="ribbon"/>
+    <path d="M30 28 C40 8, 60 8, 50 28" class="ribbon"/>
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 100" role="img" aria-label="Gift Huddle logo (Baloo 2 Bold)">
+  <style>
+    .box { fill:#14b8a6; stroke:#ec4899; stroke-width:6; }
+    .lid { fill:#14b8a6; stroke:#ec4899; stroke-width:6; }
+    .ribbon { fill:none; stroke:#ec4899; stroke-width:6; }
+    .word { font:700 42px/1 'Baloo 2', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; fill:#111827; }
+  </style>
+
+  <!-- Gift icon -->
+  <g transform="translate(10,10)">
+    <!-- Present box -->
+    <rect x="0" y="40" width="60" height="48" rx="2" ry="2" class="box"/>
+    <!-- Lid (slightly wider than box) -->
+    <rect x="-4" y="28" width="68" height="16" rx="2" ry="2" class="lid"/>
+    <!-- Vertical ribbon (shortened by 3px to avoid lid overlap) -->
+    <line x1="30" y1="43" x2="30" y2="88" class="ribbon"/>
+    <!-- Horizontal ribbon (center of box) -->
+    <line x1="0" y1="64" x2="60" y2="64" class="ribbon"/>
+    <!-- Bow on top of lid -->
+    <path d="M30 28 C20 8, 0 8, 10 28" class="ribbon"/>
+    <path d="M30 28 C40 8, 60 8, 50 28" class="ribbon"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="92" y="76" class="word">Gift Huddle</text>
+</svg>
