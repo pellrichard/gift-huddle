@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "@/components/Footer";
+import Plausible from "@/components/analytics/Plausible";
 
 export const metadata: Metadata = {
   title: {
