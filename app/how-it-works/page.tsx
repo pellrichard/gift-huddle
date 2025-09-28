@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { GHButton } from "@/components/ui/GHButton";
 
 export const metadata = {
   title: "How it Works – Gift Huddle",
@@ -17,6 +18,11 @@ export default function HowItWorks() {
             <li>Personalised suggestions from your interests and favourite shops.</li>
             <li>Your data is never shared or sold; everything is stored securely and encrypted.</li>
           </ul>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <GHButton href="/signup" variant="primary" size="md">Get Started</GHButton>
+            <GHButton href="/login" variant="outline" size="md">Login</GHButton>
+          </div>
         </div>
         <div className="relative w-full aspect-square">
           <Image

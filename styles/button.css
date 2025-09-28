@@ -1,0 +1,46 @@
+/* Gift Huddle Button (no Tailwind config required) */
+.gh-btn {
+  --_bg: var(--surface);
+  --_fg: var(--ink);
+  --_bd: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--_bd);
+  background: var(--_bg);
+  color: var(--_fg);
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .02s ease, border-color .2s ease;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gh-btn:focus { outline: 0; box-shadow: 0 0 0 4px var(--brand-pink-ring); }
+.gh-btn:active { transform: translateY(1px); }
+.gh-btn[disabled], .gh-btn.is-disabled { opacity: .6; cursor: not-allowed; pointer-events: none; }
+
+/* Sizes */
+.gh-btn--sm { padding: .5rem .875rem; font-size: .875rem; }
+.gh-btn--md { padding: .75rem 1.25rem; font-size: 1rem; }
+.gh-btn--lg { padding: 1rem 1.5rem; font-size: 1.125rem; }
+.gh-btn--block { width: 100%; }
+
+/* Variants */
+.gh-btn--primary { --_bg: var(--brand-pink); --_fg: #fff; }
+.gh-btn--primary:hover { --_bg: var(--brand-pink-hover); }
+
+.gh-btn--secondary { --_bg: #f3f4f6; --_fg: var(--ink); }
+.gh-btn--secondary:hover { --_bg: #e5e7eb; }
+
+.gh-btn--outline { --_bg: transparent; --_fg: var(--ink); --_bd: var(--surface-2); }
+.gh-btn--outline:hover { --_bg: #eef2ff1a; }
+
+.gh-btn--ghost { --_bg: transparent; --_fg: var(--ink); }
+.gh-btn--ghost:hover { --_bg: #0000000a; }
+
+.gh-btn--link { --_bg: transparent; --_fg: var(--brand-pink); border-color: transparent; }
+.gh-btn--link:hover { text-decoration: underline; }

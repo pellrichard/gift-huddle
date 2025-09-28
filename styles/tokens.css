@@ -1,0 +1,11 @@
+/* Brand tokens */
+:root {
+  --brand-pink: #ff3e8a;
+  --brand-pink-hover: #e63679;
+  --brand-pink-ring: rgba(255, 62, 138, 0.35);
+  --ink: #0b1020;
+  --ink-weak: #4b5563;
+  --surface: #ffffff;
+  --surface-2: #0b1020;
+  --radius-2xl: 1rem;
+}

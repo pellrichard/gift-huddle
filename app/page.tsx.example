@@ -9,12 +9,8 @@ export default function Home() {
         <p className="text-lg text-muted-foreground mb-8">
           Build lists, invite friends, track prices, and never double-buy again.
         </p>
-
-        <GHButton href="/signup" variant="primary" size="md">
-          Get Started
-        </GHButton>
+        <GHButton href="/signup" variant="primary" size="md">Get Started</GHButton>
       </section>
-
       <div className="relative w-full aspect-square">
         <Image
           src="/images/characters/hero-female.webp"

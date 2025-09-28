@@ -1,25 +1,38 @@
-import './globals.css'
-import type { Metadata } from 'next'
-import Header from '@/components/Header'
+import type { Metadata } from "next";
+import "./globals.css";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: 'Gift Huddle',
-  description: 'Gift lists that friends can actually use.',
-  icons: {
-    icon: '/brand/gift-huddle-favicon.svg',
-    shortcut: '/brand/gift-huddle-favicon.svg',
-    apple: '/brand/gift-huddle-favicon.svg'
+  title: {
+    default: "Gift Huddle",
+    template: "%s · Gift Huddle",
   },
-  themeColor: '#EC4899'
-}
+  description:
+    "Build gift lists, invite friends, track prices, and never double-buy again.",
+  openGraph: {
+    title: "Gift Huddle",
+    description:
+      "Build gift lists, invite friends, track prices, and never double-buy again.",
+    type: "website",
+    url: "https://gift-huddle.com",
+    images: ["/og/social-banner.webp"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Gift Huddle",
+    description:
+      "Build gift lists, invite friends, track prices, and never double-buy again.",
+    images: ["/og/social-banner.webp"],
+  },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-gh-bg text-gh-ink">
-        <Header />
-        <main className="">{children}</main>
+      <body>
+        {children}
+        <Footer />
       </body>
     </html>
-  )
+  );
 }

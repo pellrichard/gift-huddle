@@ -1,22 +1,27 @@
-# Styled UI Components Patch
+# Gift Huddle – CTA Bundle
 
-This patch replaces the temporary UI shims with styled versions using Tailwind classes, similar to shadcn/ui.
+This bundle contains ready-to-drop updates for all CTA buttons using <GHButton />.
 
-## Install steps
+## Files
+- app/page.tsx                (homepage hero CTA)
+- app/how-it-works/page.tsx   (How it Works page CTAs)
+- components/Header.tsx       (Login nav button as GHButton)
 
-1. Download and unzip into your project root (`C:/gift-huddle`).
-
-2. Install required deps:
-```bash
-npm install @radix-ui/react-avatar
+## Prerequisite
+Ensure you have the Button system installed:
+- styles/tokens.css
+- styles/button.css
+- components/ui/GHButton.tsx
+and import them in app/globals.css:
+```css
+@import "../styles/tokens.css";
+@import "../styles/button.css";
 ```
 
-3. Create a branch, commit, and push:
-```bash
-git checkout -b feat/styled-ui
-git add src/components/ui src/lib/utils.ts
-git commit -m "feat: replace temporary UI shims with styled components"
-git push -u origin feat/styled-ui
-```
+## Install
+Unzip into your repo root. It will overwrite the three files above.
 
-4. Open a PR into your main branch and merge after review.
+Then run dev server and check:
+- `/` → Hero CTA is brand pink GHButton
+- `/how-it-works` → Primary + outline CTAs present
+- Header → Login is outline GHButton (small)
