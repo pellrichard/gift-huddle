@@ -1,22 +1,25 @@
-import Link from 'next/link'
-import Image from 'next/image'
+import Link from "next/link";
+import { GHButton } from "@/components/ui/GHButton";
+
+const nav = [
+  { href: "/features", label: "Features" },
+  { href: "/how-it-works", label: "How it works" },
+];
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-40 bg-white">
-      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-3" aria-label="Gift Huddle home">
-          <Image src="/brand/gift-huddle-logo.svg" alt="Gift Huddle" width={170} height={50} priority />
-        </Link>
-        <nav className="ml-auto hidden md:flex items-center gap-8 text-sm">
-          <Link href="#features" className="text-gh-ink/80 hover:text-gh-ink">Features</Link>
-          <Link href="#how" className="text-gh-ink/80 hover:text-gh-ink">How it Works</Link>
-          <Link href="#pricing" className="text-gh-ink/80 hover:text-gh-ink">Pricing</Link>
+    <header className="w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
+        <Link href="/" className="font-bold text-xl">Gift Huddle</Link>
+        <nav className="flex items-center gap-4">
+          {nav.map((l) => (
+            <Link key={l.href} href={l.href} className="text-sm hover:underline">
+              {l.label}
+            </Link>
+          ))}
+          <GHButton href="/login" variant="outline" size="sm">Login</GHButton>
         </nav>
-        <div className="hidden md:block">
-          <Link href="/sign-in" className="btn-accent">Get Started</Link>
-        </div>
       </div>
     </header>
-  )
+  );
 }
