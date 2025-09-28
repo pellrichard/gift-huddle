@@ -11,14 +11,8 @@ export default function Header() {
   return (
     <header className="w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/images/brand/logo-full.png"
-            alt="Gift Huddle"
-            width={120}
-            height={32}
-            priority
-          />
+        <Link href="/" className="flex items-center gap-2" aria-label="Gift Huddle home">
+          <Image src="/logo.svg" alt="Gift Huddle" width={120} height={32} priority />
         </Link>
         <nav className="flex items-center gap-4">
           {nav.map((l) => (
@@ -26,9 +20,7 @@ export default function Header() {
               {l.label}
             </Link>
           ))}
-          <GHButton href="/login" variant="outline" size="sm">
-            Login
-          </GHButton>
+          <GHButton href="/login" variant="outline" size="sm">Login</GHButton>
         </nav>
       </div>
     </header>

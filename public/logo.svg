@@ -1,37 +1,26 @@
-<svg width="512" height="128" viewBox="0 0 512 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gift Huddle logo">
+<svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gift Huddle">
   <defs>
     <style>
-      .ink { fill: #0B1020; }
-      .teal { fill: #2DD4BF; }
-      .lid { fill: #14B8A6; }
+      .ink { fill: #0B2A3C; }
+      .teal { fill: #2EC8BC; }
+      .lid  { fill: #1FB2A5; }
       .pink { fill: #FF3E8A; }
-      .round { stroke-linecap: round; stroke-linejoin: round; }
     </style>
   </defs>
 
   <!-- Gift icon -->
-  <g transform="translate(16,16)">
-    <!-- box -->
-    <rect x="0" y="28" width="64" height="56" rx="12" class="teal"/>
-    <!-- lid -->
-    <rect x="-4" y="16" width="72" height="20" rx="10" class="lid"/>
-    <!-- vertical ribbon -->
-    <rect x="28" y="28" width="8" height="56" class="pink"/>
-    <!-- bow (two loops as hearts-like) -->
-    <path d="M32 16
-             c -10 -14 -26 -10 -26 3
-             c 0 6 5 10 10 10
-             c 7 0 12 -5 16 -13 z" class="pink"/>
-    <path d="M32 16
-             c 10 -14 26 -10 26 3
-             c 0 6 -5 10 -10 10
-             c -7 0 -12 -5 -16 -13 z" class="pink"/>
+  <g transform="translate(20,28)">
+    <rect x="0" y="64" width="120" height="100" rx="18" class="teal"/>
+    <rect x="-8" y="42" width="136" height="28" rx="14" class="lid"/>
+    <rect x="56" y="64" width="8" height="100" class="pink"/>
+    <!-- bow loops -->
+    <path d="M60 42 c -20 -28 -52 -20 -52 6 c 0 10 8 18 18 18 c 12 0 22 -9 34 -24 z" class="pink"/>
+    <path d="M60 42 c 20 -28 52 -20 52 6 c 0 10 -8 18 -18 18 c -12 0 -22 -9 -34 -24 z" class="pink"/>
   </g>
 
-  <!-- Wordmark -->
-  <g transform="translate(104,28)">
-    <text x="0" y="32" class="ink" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-weight="700" font-size="32">
-      Gift <tspan dx="10">Huddle</tspan>
-    </text>
+  <!-- Wordmark (uses system sans; can be replaced with custom font later) -->
+  <g transform="translate(180,45)">
+    <text x="0" y="55" class="ink" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-weight="800" font-size="72">Gift</text>
+    <text x="0" y="135" class="ink" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-weight="800" font-size="72">Huddle</text>
   </g>
 </svg>
