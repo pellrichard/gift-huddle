@@ -1,0 +1,35 @@
+diff --git a/app/layout.tsx b/app/layout.tsx
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@
+ export default function RootLayout({
+   children,
+ }: {
+   children: React.ReactNode
+ }) {
+   return (
+     <html lang="en">
+-      <head />
++      <head>
++        <script
++          defer
++          data-domain="gift-huddle.com"
++          src="https://plausible.io/js/script.js"
++        />
++      </head>
+       <body>
+         {children}
+       </body>
+     </html>
+   )
+ }
+diff --git a/app/components/Hero.tsx b/app/components/Hero.tsx
+--- a/app/components/Hero.tsx
++++ b/app/components/Hero.tsx
+@@
+-        <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-gray-100">
+-          <Image src="/hero-placeholder.svg" alt="Gifting hero" fill priority sizes="(min-width: 768px) 50vw, 100vw" />
+-        </div>
++        <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-gray-100">
++          <Image src="/hero.jpg" alt="Gifting hero" fill priority sizes="(min-width: 768px) 50vw, 100vw" />
++        </div>
