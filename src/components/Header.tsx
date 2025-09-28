@@ -13,13 +13,12 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/logo.svg"
-            alt="Gift Huddle logo"
-            width={32}
+            src="/images/brand/logo-full.png"
+            alt="Gift Huddle"
+            width={120}
             height={32}
             priority
           />
-          <span className="font-bold text-xl">Gift Huddle</span>
         </Link>
         <nav className="flex items-center gap-4">
           {nav.map((l) => (
