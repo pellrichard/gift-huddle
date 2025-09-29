@@ -78,10 +78,9 @@ const mockSuggestions = [
 ];
 
 function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
-  return (
-    <>
+  return (<>
       <ProfileForm />
-    </> && (
+      
     <div className="mb-3 flex items-center justify-between">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       <div className="flex items-center gap-2">{right}</div>
@@ -91,9 +90,6 @@ function SectionHeader({ title, right }: { title: string; right?: React.ReactNod
 
 function EmptyState({ icon, title, subtitle, cta }: { icon: React.ReactNode; title: string; subtitle?: string; cta?: React.ReactNode }) {
   return (
-    <>
-      <ProfileForm />
-    </> && (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
         <div className="rounded-2xl p-3 shadow-sm bg-[var(--gh-primary-50)] text-[var(--gh-primary-700)]">{icon}</div>
@@ -127,9 +123,6 @@ function MiniCalendar({
   const blanks = Array.from({ length: firstDow }, () => null);
 
   return (
-    <>
-      <ProfileForm />
-    </> && (
     <div className="grid grid-cols-7 gap-2">
       {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
         <div key={d} className="px-1 text-center text-xs font-medium text-muted-foreground">
@@ -143,9 +136,6 @@ function MiniCalendar({
         const key = d.toISOString().slice(0, 10);
         const has = map.get(key);
         return (
-    <>
-      <ProfileForm />
-    </> && (
           <Card key={key} className={"min-h-[84px]"}>
             <CardContent className="p-2">
               <div className="mb-1 text-xs font-semibold">{d.getDate()}</div>
@@ -176,9 +166,6 @@ export default function AccountPage() {
   );
 
   return (
-    <>
-      <ProfileForm />
-    </> && (
     <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8 font-sans">
       {/* Top banner */}
       <Card className="mb-6 overflow-hidden">
@@ -394,5 +381,5 @@ export default function AccountPage() {
         )}
       </section>
     </div>
-  );
+  </>);
 }
