@@ -8,11 +8,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Gift Huddle",
     description: "Gifting made social, fun and easy.",
-    images: ["/gift-huddle-logo.svg"],
+    images: ["/social-share.png"],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/gift-huddle-logo.svg"],
+    images: ["/social-share.png"],
   },
 };
 
@@ -23,12 +23,6 @@ import Footer from "./components/Footer";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-<head>
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-</head>
-
       <body className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">{children}</main>
