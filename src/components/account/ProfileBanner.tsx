@@ -20,29 +20,23 @@ function cn(...args: (string | false | undefined | null)[]) {
 export default function ProfileBanner() {
   const supabase = supabaseBrowser();
   const [me, setMe] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      const { data, error } = await supabase
+      if (!user) return;
+      const { data } = await supabase
         .from("profiles")
         .select("id, display_name, avatar_url, banner_url")
         .eq("id", user.id)
         .maybeSingle();
-      if (!error) {
-        const prof = data as Profile;
-        setMe(prof);
-        setNameDraft(prof?.display_name || "");
-      }
-      setLoading(false);
+      setMe((data as any) ?? null);
+      setNameDraft(((data as any)?.display_name ?? "") as string);
     })();
-  }, []);
+  }, [supabase]);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>, kind: "avatar"|"banner") => {
     const file = e.target.files?.[0];
@@ -64,7 +58,7 @@ export default function ProfileBanner() {
     const url = pub.publicUrl;
 
     setSaving(true);
-    const update: any = {};
+    const update: Partial<Profile> = {} as Partial<Profile>;
     if (kind === "avatar") update.avatar_url = url;
     else update.banner_url = url;
 
@@ -78,7 +72,7 @@ export default function ProfileBanner() {
       return;
     }
 
-    setMe(prev => prev ? { ...prev, ...update } as Profile : prev);
+    setMe(prev => prev ? { ...prev, ...(update as Profile) } : prev);
   };
 
   const saveName = async () => {
@@ -108,12 +102,10 @@ export default function ProfileBanner() {
   return (
     <Card className="mb-6 overflow-hidden">
       <div className="relative w-full" style={{ aspectRatio: "3 / 1" }}>
-        {/* background image or fallback gradient */}
         <div
           className={cn("absolute inset-0", banner ? "bg-cover bg-center" : "bg-gradient-to-r from-pink-100 via-white to-indigo-100")}
           style={banner ? { backgroundImage: `url(${banner})` } : {}}
         />
-        {/* soft dark gradient for text legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent" />
         <label className="absolute right-3 bottom-3">
           <input type="file" accept="image/*" className="hidden" onChange={e => onFile(e, "banner")} />
@@ -140,14 +132,15 @@ export default function ProfileBanner() {
         </div>
 
         <div className="mt-3 flex items-center gap-2">
+          <Input
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            className="max-w-xs"
+            placeholder="Your name"
+            disabled={!editingName}
+          />
           {editingName ? (
             <>
-              <Input
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                className="max-w-xs"
-                placeholder="Your name"
-              />
               <Button size="sm" onClick={saveName} className="gap-1">
                 <Check className="h-4 w-4" /> Save
               </Button>
@@ -156,13 +149,11 @@ export default function ProfileBanner() {
               </Button>
             </>
           ) : (
-            <>
-              <div className="text-lg font-semibold">{me?.display_name || "Your name"}</div>
-              <Button size="icon" variant="ghost" onClick={() => setEditingName(true)} aria-label="Edit name">
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </>
+            <Button size="icon" variant="ghost" onClick={() => setEditingName(true)} aria-label="Edit name">
+              <Pencil className="h-4 w-4" />
+            </Button>
           )}
+          {editingName ? null : <div className="text-lg font-semibold">{me?.display_name || "Your name"}</div>}
           {saving && <div className="text-xs text-gray-500">Saving…</div>}
         </div>
       </div>
