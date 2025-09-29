@@ -8,7 +8,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Gift Huddle",
     description: "Gifting made social, fun and easy.",
-    images: ["/social-share.png"],
+    images: [
+      { url: "/social-share.png", width: 1200, height: 630, alt: "Gift Huddle OG" },
+      { url: "/social-share-linkedin.png", width: 1200, height: 1200, alt: "Gift Huddle LinkedIn" }
+    ],
   },
   twitter: {
     card: "summary_large_image",
