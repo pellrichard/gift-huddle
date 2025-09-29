@@ -1,0 +1,31 @@
+--- a/src/components/account/ProfileBanner.tsx
++++ b/src/components/account/ProfileBanner.tsx
+@@
+-const [bannerUploading, setBannerUploading] = useState(false as any);
+-const [avatarUploading, setAvatarUploading] = useState(false as any);
++const [bannerUploading, setBannerUploading] = useState<boolean>(false);
++const [avatarUploading, setAvatarUploading] = useState<boolean>(false);
+@@
+-const onBannerChange = async (e: any) => {
++const onBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+     setBannerUploading(true);
+     try {
+       // upload logic ...
+     } finally {
+       setBannerUploading(false);
+     }
+   };
+@@
+-const onAvatarChange = async (e: any) => {
++const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+     setAvatarUploading(true);
+     try {
+       // upload logic ...
+     } finally {
+       setAvatarUploading(false);
+     }
+   };

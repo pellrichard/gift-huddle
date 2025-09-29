@@ -1,0 +1,15 @@
+--- a/app/components/Recommendations.tsx
++++ b/app/components/Recommendations.tsx
+@@
+-import React from "react";
++import React from "react";
++import Image from "next/image";
+@@
+-  <img src={item.imageUrl} alt={item.title} className="h-24 w-24 rounded-xl object-cover" />
++  <Image
++    src={item.imageUrl}
++    alt={item.title}
++    width={96}
++    height={96}
++    className="h-24 w-24 rounded-xl object-cover"
++  />

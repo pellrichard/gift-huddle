@@ -1,0 +1,30 @@
+--- a/src/components/account/EventsSection.tsx
++++ b/src/components/account/EventsSection.tsx
+@@
+-import React, { useEffect, useMemo, useState } from "react";
++import React, { useCallback, useEffect, useMemo, useState } from "react";
+@@
+-  const [events, setEvents] = useState<EventRow[]>([]);
+-  const today = new Date();
++  const [events, setEvents] = useState<EventRow[]>([]);
++  const today = new Date();
++  const fetchEvents = useCallback(async () => {
++    const { data, error } = await supabase
++      .from("events")
++      .select("*")
++      .order("date", { ascending: true });
++    if (!error && data) setEvents(data);
++  }, [supabase]);
+@@
+-  useEffect(() => {
+-    fetchEvents();
+-  }, []);
++  useEffect(() => {
++    fetchEvents();
++  }, [fetchEvents]);
+@@
+-  const upcoming = useMemo(() => events.filter(e => new Date(e.date) >= today), [events]);
++  const upcoming = useMemo(
++    () => events.filter((e) => new Date(e.date) >= today),
++    [events, today]
++  );

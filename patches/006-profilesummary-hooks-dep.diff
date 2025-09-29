@@ -1,0 +1,8 @@
+--- a/src/components/account/ProfileSummary.tsx
++++ b/src/components/account/ProfileSummary.tsx
+@@
+-  useEffect(() => {
++  useEffect(() => {
+     // load profile extras...
+-  }, []);
++  }, [supabase]);
