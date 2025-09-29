@@ -1,9 +1,8 @@
 import Image, { ImageProps } from "next/image";
 
-/**
- * SmartImage - tiny wrapper around next/image so we can change defaults in one place later.
- * Usage: <SmartImage src="/path" alt="..." width={W} height={H} className="..." />
- */
-export default function SmartImage(props: ImageProps) {
-  return <Image {...props} />;
+// Enforce an `alt` prop to satisfy jsx-a11y/alt-text.
+type SmartImageProps = Omit<ImageProps, "alt"> & { alt: string };
+
+export default function SmartImage({ alt, ...rest }: SmartImageProps) {
+  return <Image alt={alt} {...rest} />;
 }
