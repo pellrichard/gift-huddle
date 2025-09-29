@@ -1,39 +1,26 @@
-'use client';
-import { useEffect, useState } from 'react';
-import type { Shop } from '@/lib/affiliates';
-import { shops } from '@/lib/affiliates';
+import React from "react";
+import Image from "next/image";
 
-type Item = { id:string; title:string; price:number; category:string; shopId:string; image?:string };
+interface RecommendationItem {
+  id: string;
+  title: string;
+  imageUrl: string;
+}
 
-export default function Recommendations({ categories = [], preferredShops = [] }:{ categories?: string[], preferredShops?: string[] }){
-  const [items, setItems] = useState<Item[]>([]);
-  useEffect(() => {
-    async function load(){
-      const res = await fetch('/api/recommendations');
-      const data = await res.json();
-      setItems(data);
-    }
-    load();
-  }, []);
-
-  const shopMap = Object.fromEntries(shops.map(s => [s.id, s])) as Record<string, Shop>;
-  const filtered = items.filter(i => 
-    (categories.length === 0 || categories.includes(i.category)) &&
-    (preferredShops.length === 0 || preferredShops.includes(i.shopId))
-  );
-
+export default function Recommendations({ items }: { items: RecommendationItem[] }) {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filtered.map(i => (
-        <a key={i.id} href="#" className="border rounded-2xl overflow-hidden bg-white">
-          <div className="aspect-[4/3] bg-gray-100">
-            {i.image ? <img src={i.image} alt={i.title} className="w-full h-full object-cover" /> : null}
-          </div>
-          <div className="p-4">
-            <div className="font-medium">{i.title}</div>
-            <div className="text-sm text-gray-600 mt-1">£{i.price.toFixed(2)} · {(shopMap[i.shopId]?.name) ?? i.shopId}</div>
-          </div>
-        </a>
+    <div className="grid grid-cols-2 gap-4">
+      {items.map((item) => (
+        <div key={item.id} className="flex flex-col items-center">
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            width={96}
+            height={96}
+            className="h-24 w-24 rounded-xl object-cover"
+          />
+          <span>{item.title}</span>
+        </div>
       ))}
     </div>
   );
