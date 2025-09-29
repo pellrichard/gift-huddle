@@ -78,7 +78,7 @@ const mockSuggestions = [
 ];
 
 function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
-  return (<>
+  return (
     <div className="mb-3 flex items-center justify-between">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       <div className="flex items-center gap-2">{right}</div>
