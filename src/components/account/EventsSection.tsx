@@ -5,6 +5,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 type EventItem = {
   id: string;
@@ -16,6 +17,8 @@ type EventItem = {
 };
 
 export default function EventsSection() {
+  const supabase = supabaseBrowser();
+
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<EventItem[]>([]);
 
@@ -26,28 +29,31 @@ export default function EventsSection() {
 
   const fetchEvents = async () => {
     setLoading(true);
-    const res = await fetch("/api/events", { cache: "no-store" });
-    if (res.ok) {
-      const data: EventItem[] = await res.json();
-      setItems(data);
-    }
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("event_date", { ascending: true });
+    if (!error && data) setItems(data as EventItem[]);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchEvents();
+    // Re-fetch when auth state changes
+    const { data: sub } = supabase.auth.onAuthStateChange(() => fetchEvents());
+    return () => { sub.subscription.unsubscribe(); };
   }, []);
 
   const add = async () => {
     if (!title || !date) return alert("Please enter a title and date");
-    const res = await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, event_date: date, event_type: type, notes }),
+    const { error } = await supabase.from("events").insert({
+      title: title.slice(0, 140),
+      event_date: date,
+      event_type: type,
+      notes: notes ? notes.slice(0, 1000) : null,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(err.error || "Failed to add event");
+    if (error) {
+      alert(error.message || "Failed to add event (are you logged in?)");
       return;
     }
     setTitle(""); setDate(""); setType("other"); setNotes("");
@@ -55,10 +61,9 @@ export default function EventsSection() {
   };
 
   const remove = async (id: string) => {
-    const res = await fetch(`/api/events?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(err.error || "Failed to delete event");
+    const { error } = await supabase.from("events").delete().eq("id", id);
+    if (error) {
+      alert(error.message || "Failed to delete event");
       return;
     }
     setItems(prev => prev.filter(i => i.id !== id));
@@ -82,7 +87,7 @@ export default function EventsSection() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Add form */}
-        <div className="grid md:grid-cols-4 gap-3">
+        <div className="grid md:grid-cols-5 gap-3">
           <Input placeholder="Event title" value={title} onChange={e => setTitle(e.target.value)} />
           <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
           <select
@@ -95,6 +100,7 @@ export default function EventsSection() {
             <option value="anniversary">Anniversary</option>
             <option value="holiday">Holiday</option>
           </select>
+          <Input placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} />
           <Button onClick={add} className="gap-2 btn-accent"><Plus className="h-4 w-4" /> Add</Button>
         </div>
 
