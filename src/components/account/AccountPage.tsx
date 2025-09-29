@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import ProfileForm from "./ProfileForm";
-import EventsSection from "./EventsSection";
+import ProfileBanner from "./ProfileBanner";
 
 /**
  * Gift Huddle – My Account Page
@@ -181,8 +181,8 @@ export default function AccountPage() {
           </Button>
         </CardContent>
       </Card>
+      <ProfileBanner />
       <ProfileForm />
-      <EventsSection />
 
       {/* Upcoming events */}
       <section className="mb-8">
