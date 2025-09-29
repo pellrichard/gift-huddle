@@ -37,6 +37,7 @@ export default function ProfileBanner({ profile }: { profile: Profile }) {
 
   return (
     <div className="flex flex-col items-start gap-3">
+      <div className="sr-only">Profile owner: {profile.display_name ?? "Unknown"}</div>
       <div className="flex items-center gap-2">
         <label className="font-medium">Banner:</label>
         <input type="file" onChange={onBannerChange} />

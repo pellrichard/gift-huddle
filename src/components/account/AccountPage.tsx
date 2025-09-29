@@ -7,11 +7,17 @@ type Profile = {
   banner_url: string | null;
 };
 
-export default function AccountPage({ profile }: { profile: Profile }) {
+export default function AccountPage({ profile }: { profile?: Profile }) {
+  const p: Profile = profile ?? {
+    display_name: null,
+    avatar_url: null,
+    banner_url: null,
+  };
+
   return (
     <div className="p-4">
       <Image
-        src={profile.banner_url ?? "/banners/default.webp"}
+        src={p.banner_url ?? "/banners/default.webp"}
         alt=""
         width={1600}
         height={320}
@@ -19,13 +25,13 @@ export default function AccountPage({ profile }: { profile: Profile }) {
       />
       <div className="mt-4 flex items-center gap-4">
         <Image
-          src={profile.avatar_url ?? "/avatars/default.webp"}
-          alt={profile.display_name ?? ""}
+          src={p.avatar_url ?? "/avatars/default.webp"}
+          alt={p.display_name ?? ""}
           width={96}
           height={96}
           className="h-24 w-24 rounded-full object-cover ring-4 ring-white"
         />
-        <h1 className="text-xl font-semibold">{profile.display_name}</h1>
+        <h1 className="text-xl font-semibold">{p.display_name ?? "Your Name"}</h1>
       </div>
     </div>
   );
