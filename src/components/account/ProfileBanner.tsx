@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { Camera, Image as ImageIcon } from "lucide-react";
+import { Camera, Image as ImageIcon, Pencil, Check, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Profile = {
@@ -21,6 +22,8 @@ export default function ProfileBanner() {
   const [me, setMe] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -32,7 +35,11 @@ export default function ProfileBanner() {
         .select("id, display_name, avatar_url, banner_url")
         .eq("id", user.id)
         .maybeSingle();
-      if (!error) setMe(data as Profile);
+      if (!error) {
+        const prof = data as Profile;
+        setMe(prof);
+        setNameDraft(prof?.display_name || "");
+      }
       setLoading(false);
     })();
   }, []);
@@ -74,6 +81,22 @@ export default function ProfileBanner() {
     setMe(prev => prev ? { ...prev, ...update } as Profile : prev);
   };
 
+  const saveName = async () => {
+    const newName = nameDraft.trim().slice(0, 120);
+    if (!newName) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from("profiles").update({ display_name: newName }).eq("id", user.id);
+    setSaving(false);
+    if (error) {
+      alert(error.message || "Could not save name");
+      return;
+    }
+    setMe(prev => prev ? { ...prev, display_name: newName } : prev);
+    setEditingName(false);
+  };
+
   const avatar = me?.avatar_url;
   const banner = me?.banner_url;
   const initials = useMemo(() => {
@@ -83,7 +106,7 @@ export default function ProfileBanner() {
   }, [me?.display_name]);
 
   return (
-    <Card className="mb-8 overflow-hidden">
+    <Card className="mb-6 overflow-hidden">
       <div className="relative w-full" style={{ aspectRatio: "3 / 1" }}>
         {/* background image or fallback gradient */}
         <div
@@ -116,8 +139,30 @@ export default function ProfileBanner() {
           </label>
         </div>
 
-        <div className="mt-3">
-          <div className="text-lg font-semibold">{me?.display_name || "Your name"}</div>
+        <div className="mt-3 flex items-center gap-2">
+          {editingName ? (
+            <>
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                className="max-w-xs"
+                placeholder="Your name"
+              />
+              <Button size="sm" onClick={saveName} className="gap-1">
+                <Check className="h-4 w-4" /> Save
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => { setEditingName(false); setNameDraft(me?.display_name || ""); }} className="gap-1">
+                <X className="h-4 w-4" /> Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="text-lg font-semibold">{me?.display_name || "Your name"}</div>
+              <Button size="icon" variant="ghost" onClick={() => setEditingName(true)} aria-label="Edit name">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </>
+          )}
           {saving && <div className="text-xs text-gray-500">Saving…</div>}
         </div>
       </div>
