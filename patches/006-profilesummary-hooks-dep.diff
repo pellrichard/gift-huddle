@@ -3,6 +3,6 @@
 @@
 -  useEffect(() => {
 +  useEffect(() => {
-     // load profile extras...
+       // load profile extras...
 -  }, []);
 +  }, [supabase]);
