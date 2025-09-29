@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 
 type Profile = {
   id: string;
@@ -7,8 +6,6 @@ type Profile = {
   avatar_url: string | null;
   banner_url: string | null;
 };
-
-const supabase = createClient("", ""); // placeholder
 
 export default function ProfileBanner({ profile }: { profile: Profile }) {
   const [bannerUploading, setBannerUploading] = useState<boolean>(false);
@@ -19,7 +16,8 @@ export default function ProfileBanner({ profile }: { profile: Profile }) {
     if (!file) return;
     setBannerUploading(true);
     try {
-      // upload logic ...
+      // TODO: upload file to storage, update profile.banner_url
+      await new Promise((r) => setTimeout(r, 300));
     } finally {
       setBannerUploading(false);
     }
@@ -30,22 +28,25 @@ export default function ProfileBanner({ profile }: { profile: Profile }) {
     if (!file) return;
     setAvatarUploading(true);
     try {
-      // upload logic ...
+      // TODO: upload file to storage, update profile.avatar_url
+      await new Promise((r) => setTimeout(r, 300));
     } finally {
       setAvatarUploading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <label>
-        Banner:
+    <div className="flex flex-col items-start gap-3">
+      <div className="flex items-center gap-2">
+        <label className="font-medium">Banner:</label>
         <input type="file" onChange={onBannerChange} />
-      </label>
-      <label>
-        Avatar:
+        {bannerUploading && <span className="text-sm text-gray-500">Uploading…</span>}
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="font-medium">Avatar:</label>
         <input type="file" onChange={onAvatarChange} />
-      </label>
+        {avatarUploading && <span className="text-sm text-gray-500">Uploading…</span>}
+      </div>
     </div>
   );
 }

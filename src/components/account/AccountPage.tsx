@@ -1,7 +1,13 @@
 import React from "react";
 import Image from "next/image";
 
-export default function AccountPage({ profile }: { profile: any }) {
+type Profile = {
+  display_name: string | null;
+  avatar_url: string | null;
+  banner_url: string | null;
+};
+
+export default function AccountPage({ profile }: { profile: Profile }) {
   return (
     <div className="p-4">
       <Image
@@ -14,7 +20,7 @@ export default function AccountPage({ profile }: { profile: any }) {
       <div className="mt-4 flex items-center gap-4">
         <Image
           src={profile.avatar_url ?? "/avatars/default.webp"}
-          alt={profile.display_name}
+          alt={profile.display_name ?? ""}
           width={96}
           height={96}
           className="h-24 w-24 rounded-full object-cover ring-4 ring-white"

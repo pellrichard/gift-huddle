@@ -1,12 +1,9 @@
 import React, { useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient("", ""); // placeholder
 
 export default function ProfileSummary() {
   useEffect(() => {
     // load profile extras...
-  }, [supabase]);
+  }, []); // outer scoped clients shouldn't be deps; keeping empty per rule
 
   return <div>Profile Summary</div>;
 }
