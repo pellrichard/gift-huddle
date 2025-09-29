@@ -1,6 +1,5 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { CalendarDays, ListChecks, Plus, Pencil, Gift, Tag, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
