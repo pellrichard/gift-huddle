@@ -1,3 +1,4 @@
+import CodeCleanup from "./components/CodeCleanup";
 // app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
@@ -8,14 +9,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Gift Huddle",
     description: "Gifting made social, fun and easy.",
-    images: [
-      { url: "/social-share.png", width: 1200, height: 630, alt: "Gift Huddle OG" },
-      { url: "/social-share-linkedin.png", width: 1200, height: 1200, alt: "Gift Huddle LinkedIn" }
-    ],
+    images: ["/gift-huddle-logo.svg"],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/social-share.png"],
+    images: ["/gift-huddle-logo.svg"],
   },
 };
 
@@ -26,7 +24,8 @@ import Footer from "./components/Footer";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col">
+      <body\1>
+      <CodeCleanup />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
