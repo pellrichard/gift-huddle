@@ -43,11 +43,9 @@ export default function ProfileBanner() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return alert("Please sign in");
 
-    // Build a deterministic path
     const ext = (file.name.split(".").pop() || "png").toLowerCase();
     const path = `${user.id}/${kind}.${ext}`;
 
-    // Upload (upsert to overwrite)
     const { error: upErr } = await supabase.storage
       .from("profile-assets")
       .upload(path, file, { upsert: true, cacheControl: "3600" });
@@ -55,7 +53,6 @@ export default function ProfileBanner() {
       alert(upErr.message || "Upload failed");
       return;
     }
-    // Get public URL
     const { data: pub } = supabase.storage.from("profile-assets").getPublicUrl(path);
     const url = pub.publicUrl;
 
@@ -88,10 +85,13 @@ export default function ProfileBanner() {
   return (
     <Card className="mb-8 overflow-hidden">
       <div className="relative w-full" style={{ aspectRatio: "3 / 1" }}>
+        {/* background image or fallback gradient */}
         <div
-          className={cn("absolute inset-0 bg-gray-100", banner && "bg-cover bg-center")}
+          className={cn("absolute inset-0", banner ? "bg-cover bg-center" : "bg-gradient-to-r from-pink-100 via-white to-indigo-100")}
           style={banner ? { backgroundImage: `url(${banner})` } : {}}
         />
+        {/* soft dark gradient for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent" />
         <label className="absolute right-3 bottom-3">
           <input type="file" accept="image/*" className="hidden" onChange={e => onFile(e, "banner")} />
           <Button size="sm" className="gap-2"><ImageIcon className="h-4 w-4" /> Change banner</Button>
@@ -104,7 +104,7 @@ export default function ProfileBanner() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-xl font-semibold text-gray-600">
+            <div className="h-full w-full flex items-center justify-center text-xl font-semibold text-gray-600 bg-white">
               {initials}
             </div>
           )}

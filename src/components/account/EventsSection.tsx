@@ -39,21 +39,27 @@ export default function EventsSection() {
 
   useEffect(() => {
     fetchEvents();
-    // Re-fetch when auth state changes
     const { data: sub } = supabase.auth.onAuthStateChange(() => fetchEvents());
     return () => { sub.subscription.unsubscribe(); };
   }, []);
 
   const add = async () => {
     if (!title || !date) return alert("Please enter a title and date");
+    const { data: userRes } = await supabase.auth.getUser();
+    const user = userRes?.user;
+    if (!user) {
+      alert("Please sign in to add events");
+      return;
+    }
     const { error } = await supabase.from("events").insert({
+      user_id: user.id,                // ✅ include user_id to satisfy RLS with check
       title: title.slice(0, 140),
       event_date: date,
       event_type: type,
       notes: notes ? notes.slice(0, 1000) : null,
     });
     if (error) {
-      alert(error.message || "Failed to add event (are you logged in?)");
+      alert(error.message || "Failed to add event");
       return;
     }
     setTitle(""); setDate(""); setType("other"); setNotes("");
