@@ -1,0 +1,1 @@
+-- SQL draft schema for multicurrency events

@@ -1,0 +1,1 @@
+// EventsBudget UI patch stub

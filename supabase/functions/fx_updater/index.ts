@@ -1,0 +1,1 @@
+// fx_updater Edge Function TypeScript code
