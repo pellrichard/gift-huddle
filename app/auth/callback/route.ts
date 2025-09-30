@@ -2,24 +2,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions, type CookieMethodsServer, type CookieMethodsServerDeprecated } from "@supabase/ssr";
 
-type CookieSameSite = "lax" | "strict" | "none";
-interface CookieOptsLite {
-  domain?: string;
-  path?: string;
-  expires?: Date;
-  httpOnly?: boolean;
-  secure?: boolean;
-  sameSite?: CookieSameSite;
-  maxAge?: number;
-}
-
-const defaultCookieOpts: CookieOptsLite = {
-  path: "/",
-  httpOnly: true,
-  sameSite: "lax",
-  secure: true,
-};
-
 function safeNext(url: URL, nextParam: string | null) {
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/account";
   return new URL(next, url.origin);
@@ -31,23 +13,23 @@ export async function GET(req: NextRequest) {
   const nextParam = url.searchParams.get("next");
   const target = safeNext(url, nextParam);
 
+  // temp response collects any Set-Cookie from Supabase
   const tmp = NextResponse.next();
+
   const cookiesAdapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
     get(name: string): string | undefined {
       return req.cookies.get(name)?.value;
     },
-    set(name: string, value: string, options?: CookieOptions | CookieOptsLite): void {
-      const opts: CookieOptsLite = options ? { ...defaultCookieOpts, ...options } : defaultCookieOpts;
-      tmp.cookies.set({ name, value, ...opts });
+    set(name: string, value: string, options?: CookieOptions): void {
+      // Pass-through Supabase-provided options verbatim.
+      tmp.cookies.set({ name, value, ...(options ?? {}) });
     },
-    remove(name: string, valueOrOptions?: string | CookieOptions | CookieOptsLite, maybeOptions?: CookieOptions | CookieOptsLite): void {
-      const optsMerged: CookieOptsLite =
+    remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
+      const opts: CookieOptions | undefined =
         typeof valueOrOptions === "object" && valueOrOptions !== null
-          ? { ...defaultCookieOpts, ...valueOrOptions }
-          : maybeOptions
-          ? { ...defaultCookieOpts, ...maybeOptions }
-          : { ...defaultCookieOpts };
-      tmp.cookies.set({ name, value: "", ...optsMerged, maxAge: 0 });
+          ? valueOrOptions
+          : maybeOptions;
+      tmp.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
     },
   };
 
@@ -65,7 +47,7 @@ export async function GET(req: NextRequest) {
     const pending = tmp.cookies.getAll();
     for (const c of pending) res.cookies.set(c);
     res.headers.set("x-gh-set-cookie-count", String(pending.length));
-    const names = pending.slice(0, 6).map(c => c.name).join(",");
+    const names = pending.slice(0, 8).map(c => c.name).join(",");
     if (names) target.searchParams.set("cookie_names", names);
     return res;
   };
@@ -87,7 +69,7 @@ export async function GET(req: NextRequest) {
     const cookieCount = pending.length;
     const cookieNames = pending.map(c => c.name);
 
-    console.log("[auth/callback v7] exchange", {
+    console.log("[auth/callback v8] exchange", {
       host: url.host,
       elapsed_ms: elapsed,
       cookie_count: cookieCount,
@@ -100,7 +82,7 @@ export async function GET(req: NextRequest) {
     target.searchParams.set("pkce", error ? "error" : "ok");
     target.searchParams.set("cookies", String(cookieCount));
     target.searchParams.set("host", url.host);
-    if (cookieNames.length) target.searchParams.set("cookie_names", cookieNames.slice(0,6).join(","));
+    if (cookieNames.length) target.searchParams.set("cookie_names", cookieNames.slice(0,8).join(","));
     if (error) {
       target.searchParams.set("link_error", encodeURIComponent(error.message));
     } else {
@@ -111,7 +93,7 @@ export async function GET(req: NextRequest) {
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "unexpected_error_exchanging_code";
-    console.error("[auth/callback v7] exception", { host: url.host, message });
+    console.error("[auth/callback v8] exception", { host: url.host, message });
 
     target.searchParams.set("link_debug", "1");
     target.searchParams.set("pkce", "exception");
