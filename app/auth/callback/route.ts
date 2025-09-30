@@ -1,10 +1,22 @@
 /* app/auth/callback/route.ts
  * Fix: avoid const reassignment; robust Supabase PKCE exchange + safe redirects.
- * Next.js 15 / @supabase/ssr v2 style.
+ * Types cleaned up to satisfy @typescript-eslint/no-explicit-any.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+
+// Cookie options expected by Next.js cookieStore.set({...})
+type CookieSameSite = "lax" | "strict" | "none";
+interface CookieOptions {
+  domain?: string;
+  path?: string;
+  expires?: Date;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: CookieSameSite;
+  maxAge?: number;
+}
 
 function getSupabase() {
   const cookieStore = cookies();
@@ -13,14 +25,13 @@ function getSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
+        get(name: string): string | undefined {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
-          // next/headers cookies are mutable in route handlers
+        set(name: string, value: string, options: CookieOptions): void {
           cookieStore.set({ name, value, ...options });
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions): void {
           cookieStore.set({ name, value: "", ...options, maxAge: 0 });
         },
       },
