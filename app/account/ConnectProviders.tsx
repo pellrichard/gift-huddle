@@ -1,8 +1,7 @@
 'use client';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useMemo, useState } from 'react';
-// FIX: use relative path; alias '@/app/*' not configured in this repo
 import { useToast } from '../components/ToastProvider';
 
 type Provider = 'google' | 'facebook' | 'apple';
@@ -31,12 +30,19 @@ const AppleIcon = () => (
   </svg>
 );
 
+// Type for a minimal auth interface that may include linkIdentity (SDK-dependent)
+type MaybeLinkIdentity = {
+  linkIdentity?: (args: { provider: Provider; options?: { redirectTo?: string } }) =>
+    Promise<{ data?: unknown; error?: { message?: string } | null }>;
+};
+
 export default function ConnectProviders({ connected }: { connected: string[] }) {
-  const supabase = useMemo(
-    () => createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ),
+  const supabase = useMemo<SupabaseClient>(
+    () =>
+      createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
     []
   );
   const { show } = useToast();
@@ -53,10 +59,11 @@ export default function ConnectProviders({ connected }: { connected: string[] })
   }
 
   const label = (p: Provider) => p[0].toUpperCase() + p.slice(1);
-  const Icon = (p: Provider) => p === 'google' ? <GoogleIcon/> : p === 'facebook' ? <FacebookIcon/> : <AppleIcon/>;
+  const Icon = (p: Provider) => (p === 'google' ? <GoogleIcon /> : p === 'facebook' ? <FacebookIcon /> : <AppleIcon />);
 
   const btnClass = (p: Provider, disabled: boolean) => {
-    const base = 'px-3 py-2 rounded-xl text-sm inline-flex items-center gap-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shadow';
+    const base =
+      'px-3 py-2 rounded-xl text-sm inline-flex items-center gap-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shadow';
     const dis = disabled ? ' opacity-80 cursor-not-allowed' : '';
     switch (p) {
       case 'google':
@@ -72,12 +79,23 @@ export default function ConnectProviders({ connected }: { connected: string[] })
     setBusy(provider);
     const redirectTo = `${origin}/account?linked=${provider}`;
     try {
-      const hasLinkIdentity = typeof (supabase.auth as any).linkIdentity === 'function';
-      show({ type: 'info', title: `Starting ${label(provider)} linking…`, message: 'If you are not redirected, please allow pop-ups and try again.' });
-      if (hasLinkIdentity) {
-        const { data, error } = await (supabase.auth as any).linkIdentity({ provider, options: { redirectTo } });
+      const auth = (supabase.auth as unknown) as MaybeLinkIdentity;
+      const hasLinkIdentity = typeof auth.linkIdentity === 'function';
+
+      show({
+        type: 'info',
+        title: `Starting ${label(provider)} linking…`,
+        message: 'If you are not redirected, please allow pop-ups and try again.',
+      });
+
+      if (hasLinkIdentity && auth.linkIdentity) {
+        const { data, error } = await auth.linkIdentity({ provider, options: { redirectTo } });
         if (error) {
-          show({ type: 'error', title: `Failed to start ${label(provider)} linking`, message: error.message || 'Unknown error from linkIdentity()' });
+          show({
+            type: 'error',
+            title: `Failed to start ${label(provider)} linking`,
+            message: error.message || 'Unknown error from linkIdentity()',
+          });
           await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
           return;
         }
@@ -87,8 +105,10 @@ export default function ConnectProviders({ connected }: { connected: string[] })
       } else {
         await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
       }
-    } catch (e: any) {
-      show({ type: 'error', title: `Linking ${label(provider)} failed`, message: e?.message ? String(e.message) : 'Unexpected error during OAuth start' });
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error ? e.message : typeof e === 'string' ? e : 'Unexpected error during OAuth start';
+      show({ type: 'error', title: `Linking ${label(provider)} failed`, message });
     } finally {
       setBusy(null);
     }
