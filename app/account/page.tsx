@@ -8,6 +8,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 interface CookieShape { getAll(): { name: string; value: string }[] }
+interface HeadersShape { get(name: string): string | null }
+
+function isPromise<T>(x: unknown): x is Promise<T> {
+  return typeof x === "object" && x !== null && "then" in (x as Record<string, unknown>);
+}
+function hasGet(x: unknown): x is HeadersShape {
+  return typeof x === "object" && x !== null && typeof (x as Record<string, unknown>)["get"] === "function";
+}
 
 function CookieDebug() {
   const jar = cookies() as unknown as CookieShape;
@@ -30,8 +38,16 @@ export default async function AccountPage() {
   const supabase = createServerSupabase();
   const { data: { session }, error } = await supabase.auth.getSession();
 
-  const h = headers();
-  const url = h.get("x-invoke-query");
+  // Support both direct Headers and a Promise<Headers> variant
+  const hx = headers() as unknown;
+  let url: string | null = null;
+  if (hasGet(hx)) {
+    url = hx.get("x-invoke-query");
+  } else if (isPromise<HeadersShape>(hx)) {
+    const resolved = await hx;
+    url = resolved.get("x-invoke-query");
+  }
+
   const linkDebug = new URLSearchParams(url ?? "");
   const urlDebug = Object.fromEntries(linkDebug.entries());
 
