@@ -16,8 +16,6 @@ type Profile = {
   socials?: Record<string, string> | null;
 };
 
-// Create a browser Supabase client using public env vars.
-// Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 const supabase = createClient(supabaseUrl, supabaseAnon);
@@ -51,21 +49,17 @@ export default function AccountPage() {
           setProfile(data as Profile);
           setLoading(false);
         }
-      } catch (e: any) {
+      } catch (e) {
         if (isMounted) {
-          setError(e?.message ?? "Failed to load profile");
+          setError(e instanceof Error ? e.message : "Failed to load profile");
           setLoading(false);
         }
       }
     })();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  if (loading) {
-    return <div className="p-6">Loading your account…</div>;
-  }
+  if (loading) return <div className="p-6">Loading your account…</div>;
 
   if (!profile) {
     return (
@@ -110,8 +104,6 @@ export default function AccountPage() {
           )}
         </div>
       </div>
-
-      {/* Add any additional account widgets here (EventsSection, ProfileForm, etc.) */}
     </div>
   );
 }
