@@ -1,9 +1,9 @@
-
 'use client';
 
 import { createClient } from '@supabase/supabase-js';
 import { useMemo, useState } from 'react';
-import { useToast } from '@/app/components/ToastProvider';
+// FIX: use relative path; alias '@/app/*' not configured in this repo
+import { useToast } from '../components/ToastProvider';
 
 type Provider = 'google' | 'facebook' | 'apple';
 
@@ -55,7 +55,6 @@ export default function ConnectProviders({ connected }: { connected: string[] })
   const label = (p: Provider) => p[0].toUpperCase() + p.slice(1);
   const Icon = (p: Provider) => p === 'google' ? <GoogleIcon/> : p === 'facebook' ? <FacebookIcon/> : <AppleIcon/>;
 
-  // Brand styles for buttons
   const btnClass = (p: Provider, disabled: boolean) => {
     const base = 'px-3 py-2 rounded-xl text-sm inline-flex items-center gap-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shadow';
     const dis = disabled ? ' opacity-80 cursor-not-allowed' : '';
@@ -74,13 +73,7 @@ export default function ConnectProviders({ connected }: { connected: string[] })
     const redirectTo = `${origin}/account?linked=${provider}`;
     try {
       const hasLinkIdentity = typeof (supabase.auth as any).linkIdentity === 'function';
-
-      show({
-        type: 'info',
-        title: `Starting ${label(provider)} linking…`,
-        message: 'If you are not redirected, please allow pop-ups and try again.'
-      });
-
+      show({ type: 'info', title: `Starting ${label(provider)} linking…`, message: 'If you are not redirected, please allow pop-ups and try again.' });
       if (hasLinkIdentity) {
         const { data, error } = await (supabase.auth as any).linkIdentity({ provider, options: { redirectTo } });
         if (error) {
