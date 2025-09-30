@@ -21,8 +21,6 @@ interface CookieStoreFn {
 }
 
 export function createServerSupabase() {
-  // Some environments type `cookies()` as Promise-like. We narrow by treating
-  // the imported `cookies` as a function returning a minimal shape.
   const store = (cookies as unknown as CookieStoreFn)();
 
   const adapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
@@ -47,6 +45,9 @@ export function createServerSupabase() {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: adapter }
+    {
+      cookies: adapter,
+      cookieEncoding: "base64", // ensure decoding of sb-* cookies prefixed with "base64-"
+    }
   );
 }
