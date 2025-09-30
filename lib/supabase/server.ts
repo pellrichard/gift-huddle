@@ -1,19 +1,5 @@
-// (Legacy path) keep in sync in case imports still reference ./lib/...
-// Next.js 15: cookies() is async
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import type { Database } from "./types";
 
-export async function createClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-}
+export const createServerSupabase = () => createServerComponentClient<Database>({ cookies });

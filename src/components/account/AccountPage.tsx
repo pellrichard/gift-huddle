@@ -2,23 +2,15 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase/client";
 
 type Profile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
   banner_url: string | null;
-  dob?: string | null;
-  dob_show_year?: boolean | null;
   categories?: string[] | null;
-  preferred_shops?: string[] | null;
-  socials?: Record<string, string> | null;
 };
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseAnon);
 
 export default function AccountPage() {
   const [loading, setLoading] = useState(true);
@@ -26,37 +18,35 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     (async () => {
       try {
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
-        if (userErr) throw userErr;
-        if (!user) {
-          if (isMounted) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          if (mounted) {
             setProfile(null);
             setLoading(false);
           }
           return;
         }
-        const { data, error: profErr } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", user.id)
-          .limit(1)
+          .eq("id", session.user.id)
           .maybeSingle();
-        if (profErr) throw profErr;
-        if (isMounted) {
-          setProfile(data as Profile);
+        if (error) throw error;
+        if (mounted) {
+          setProfile((data ?? null) as Profile | null);
           setLoading(false);
         }
       } catch (e) {
-        if (isMounted) {
+        if (mounted) {
           setError(e instanceof Error ? e.message : "Failed to load profile");
           setLoading(false);
         }
       }
     })();
-    return () => { isMounted = false; };
+    return () => { mounted = false; };
   }, []);
 
   if (loading) return <div className="p-6">Loading your account…</div>;
