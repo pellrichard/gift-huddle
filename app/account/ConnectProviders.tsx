@@ -38,11 +38,7 @@ type MaybeLinkIdentity = {
 
 export default function ConnectProviders({ connected }: { connected: string[] }) {
   const supabase = useMemo<SupabaseClient>(
-    () =>
-      createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      ),
+    () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),
     []
   );
   const { show } = useToast();
@@ -62,8 +58,7 @@ export default function ConnectProviders({ connected }: { connected: string[] })
   const Icon = (p: Provider) => (p === 'google' ? <GoogleIcon /> : p === 'facebook' ? <FacebookIcon /> : <AppleIcon />);
 
   const btnClass = (p: Provider, disabled: boolean) => {
-    const base =
-      'px-3 py-2 rounded-xl text-sm inline-flex items-center gap-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shadow';
+    const base = 'px-3 py-2 rounded-xl text-sm inline-flex items-center gap-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shadow';
     const dis = disabled ? ' opacity-80 cursor-not-allowed' : '';
     switch (p) {
       case 'google':
@@ -77,25 +72,17 @@ export default function ConnectProviders({ connected }: { connected: string[] })
 
   const connect = async (provider: Provider) => {
     setBusy(provider);
-    const redirectTo = `${origin}/account?linked=${provider}`;
+    const redirectTo = `${origin}/auth/callback?next=/account&linked=${provider}`;
     try {
       const auth = (supabase.auth as unknown) as MaybeLinkIdentity;
       const hasLinkIdentity = typeof auth.linkIdentity === 'function';
 
-      show({
-        type: 'info',
-        title: `Starting ${label(provider)} linking…`,
-        message: 'If you are not redirected, please allow pop-ups and try again.',
-      });
+      show({ type: 'info', title: `Starting ${label(provider)} linking…`, message: 'If you are not redirected, please allow pop-ups and try again.' });
 
       if (hasLinkIdentity && auth.linkIdentity) {
         const { data, error } = await auth.linkIdentity({ provider, options: { redirectTo } });
         if (error) {
-          show({
-            type: 'error',
-            title: `Failed to start ${label(provider)} linking`,
-            message: error.message || 'Unknown error from linkIdentity()',
-          });
+          show({ type: 'error', title: `Failed to start ${label(provider)} linking`, message: error.message || 'Unknown error from linkIdentity()' });
           await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
           return;
         }
@@ -106,8 +93,7 @@ export default function ConnectProviders({ connected }: { connected: string[] })
         await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
       }
     } catch (e: unknown) {
-      const message =
-        e instanceof Error ? e.message : typeof e === 'string' ? e : 'Unexpected error during OAuth start';
+      const message = e instanceof Error ? e.message : typeof e === 'string' ? e : 'Unexpected error during OAuth start';
       show({ type: 'error', title: `Linking ${label(provider)} failed`, message });
     } finally {
       setBusy(null);
