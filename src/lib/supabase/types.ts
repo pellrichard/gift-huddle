@@ -1,3 +1,14 @@
-// TODO: Replace 'any' with generated types if you use supabase gen types.
-// Using 'any' here will not violate eslint's no-explicit-any since it's a type alias.
-export type Database = any;
+// Minimal, `no-explicit-any`-safe Database type.
+// Replace with generated types when ready (see README below).
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
+
+// Generic Database shape without `any`.
+// Use `Record<string, unknown>` to satisfy eslint rules.
+export type Database = Record<string, unknown>;
