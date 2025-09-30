@@ -24,7 +24,12 @@ export default function Header() {
           <Link href="/how-it-works" className="text-sm font-medium text-gray-700 hover:text-gray-900">
             How it works
           </Link>
-          <Link href="/account" className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700">
+          {/* Point to the OAuth entry route */}
+          <Link
+            href="/login"
+            className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700"
+            prefetch={false}
+          >
             Login
           </Link>
         </nav>
