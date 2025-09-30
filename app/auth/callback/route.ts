@@ -1,9 +1,8 @@
 /* app/auth/callback/route.ts
- * Next.js 15 + Supabase PKCE callback with reliable cookie writes on redirects.
- * Strategy:
- *  - Use a temporary Response to let Supabase write Set-Cookie
- *  - Copy those cookies onto the final NextResponse.redirect(...)
- *  - No `any`, no const reassignments, safe relative redirects only
+ * v4: Adds server-side logging + browser-visible debug flags to trace PKCE + cookies.
+ * - Captures Supabase Set-Cookie on a temp response and copies to the redirect.
+ * - Appends link_debug params: pkce, cookies, host, and error (if any).
+ * - No `any`, no const reassignments, safe relative redirects only.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
@@ -28,17 +27,16 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const nextParam = url.searchParams.get("next");
+  const target = safeNext(url, nextParam);
 
-  // Temporary response to collect Set-Cookie from Supabase
+  // temp response collects any Set-Cookie from Supabase
   const tmp = NextResponse.next();
 
-  const getCookie = (name: string): string | undefined => {
-    return req.cookies.get(name)?.value;
-  };
+  const getCookie = (name: string): string | undefined => req.cookies.get(name)?.value;
   const setCookie = (name: string, value: string, options: CookieOptions): void => {
     tmp.cookies.set({ name, value, ...options });
   };
-  const removeCookie = (name: string, options: CookieOptions): void => {
+  const removeCookie = (name: string, value: string, options: CookieOptions): void => {
     tmp.cookies.set({ name, value: "", ...options, maxAge: 0 });
   };
 
@@ -48,35 +46,64 @@ export async function GET(req: NextRequest) {
     { cookies: { get: getCookie, set: setCookie, remove: removeCookie } }
   );
 
-  // Prepare final target URL (may be augmented with error details)
-  const target = safeNext(url, nextParam);
+  const mkRedirect = () => {
+    const res = NextResponse.redirect(target);
+    // Copy all cookies the exchange wrote onto the final redirect
+    const pending = tmp.cookies.getAll();
+    for (const c of pending) res.cookies.set(c);
+    // Helpful header in Network panel
+    res.headers.set("x-gh-set-cookie-count", String(pending.length));
+    return res;
+  };
 
   if (!code) {
     target.searchParams.set("link_error", encodeURIComponent("missing_code"));
-    const res = NextResponse.redirect(target);
-    // copy any pending cookies (likely none in this branch)
-    for (const c of tmp.cookies.getAll()) res.cookies.set(c);
-    return res;
+    target.searchParams.set("link_debug", "1");
+    target.searchParams.set("pkce", "skipped_no_code");
+    target.searchParams.set("cookies", "0");
+    target.searchParams.set("host", url.host);
+    return mkRedirect();
   }
 
   try {
+    const t0 = Date.now();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const elapsed = Date.now() - t0;
+
+    // Count any cookies Supabase attempted to set
+    const cookieCount = tmp.cookies.getAll().length;
+
+    // Server-side logs visible in Vercel
+    console.log("[auth/callback] exchangeCodeForSession", {
+      host: url.host,
+      elapsed_ms: elapsed,
+      cookie_count: cookieCount,
+      has_error: Boolean(error),
+      error_message: error?.message,
+    });
+
+    target.searchParams.set("link_debug", "1");
+    target.searchParams.set("pkce", error ? "error" : "ok");
+    target.searchParams.set("cookies", String(cookieCount));
+    target.searchParams.set("host", url.host);
     if (error) {
       target.searchParams.set("link_error", encodeURIComponent(error.message));
     } else {
       target.searchParams.delete("link_error");
     }
 
-    const res = NextResponse.redirect(target);
-    // Copy cookies Supabase wrote on tmp -> res so they actually get set
-    for (const c of tmp.cookies.getAll()) res.cookies.set(c);
-    return res;
+    return mkRedirect();
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "unexpected_error_exchanging_code";
+    console.error("[auth/callback] exception", { host: url.host, message });
+
+    target.searchParams.set("link_debug", "1");
+    target.searchParams.set("pkce", "exception");
+    target.searchParams.set("cookies", "0");
+    target.searchParams.set("host", url.host);
     target.searchParams.set("link_error", encodeURIComponent(message));
-    const res = NextResponse.redirect(target);
-    for (const c of tmp.cookies.getAll()) res.cookies.set(c);
-    return res;
+
+    return mkRedirect();
   }
 }
