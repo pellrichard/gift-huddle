@@ -7,9 +7,11 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+interface CookieShape { getAll(): { name: string; value: string }[] }
+
 function CookieDebug() {
-  const jar = cookies();
-  const all = jar.getAll();
+  const jar = cookies() as unknown as CookieShape;
+  const all = typeof jar.getAll === "function" ? jar.getAll() : [];
   const supa = all.filter(c => c.name.startsWith("sb-"));
   return (
     <div className="text-xs text-gray-600 mt-2">
@@ -29,7 +31,8 @@ export default async function AccountPage() {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   const h = headers();
-  const linkDebug = new URLSearchParams(h.get("x-invoke-query") ?? "");
+  const url = h.get("x-invoke-query");
+  const linkDebug = new URLSearchParams(url ?? "");
   const urlDebug = Object.fromEntries(linkDebug.entries());
 
   if (!session) {
@@ -48,7 +51,6 @@ export default async function AccountPage() {
             {"pkce" in urlDebug ? <div>pkce: {String(urlDebug["pkce"])}</div> : null}
             {"cookies" in urlDebug ? <div>cookies (from callback): {String(urlDebug["cookies"])}</div> : null}
           </div>
-          {/* Server-visible cookies */}
           {CookieDebug()}
         </div>
       </main>
