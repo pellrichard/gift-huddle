@@ -13,6 +13,13 @@ interface CookieOptsLite {
   maxAge?: number;
 }
 
+const defaultCookieOpts: CookieOptsLite = {
+  path: "/",
+  httpOnly: true,
+  sameSite: "lax",
+  secure: true,
+};
+
 function safeNext(url: URL, nextParam: string | null) {
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/account";
   return new URL(next, url.origin);
@@ -30,17 +37,17 @@ export async function GET(req: NextRequest) {
       return req.cookies.get(name)?.value;
     },
     set(name: string, value: string, options?: CookieOptions | CookieOptsLite): void {
-      const opts: CookieOptsLite | undefined = options ? { ...options } : undefined;
-      tmp.cookies.set({ name, value, ...(opts ?? {}) });
+      const opts: CookieOptsLite = options ? { ...defaultCookieOpts, ...options } : defaultCookieOpts;
+      tmp.cookies.set({ name, value, ...opts });
     },
     remove(name: string, valueOrOptions?: string | CookieOptions | CookieOptsLite, maybeOptions?: CookieOptions | CookieOptsLite): void {
-      const opts: CookieOptsLite | undefined =
+      const optsMerged: CookieOptsLite =
         typeof valueOrOptions === "object" && valueOrOptions !== null
-          ? { ...valueOrOptions }
+          ? { ...defaultCookieOpts, ...valueOrOptions }
           : maybeOptions
-          ? { ...maybeOptions }
-          : undefined;
-      tmp.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+          ? { ...defaultCookieOpts, ...maybeOptions }
+          : { ...defaultCookieOpts };
+      tmp.cookies.set({ name, value: "", ...optsMerged, maxAge: 0 });
     },
   };
 
@@ -49,7 +56,7 @@ export async function GET(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: cookiesAdapter,
-      cookieEncoding: "base64", // write cookies with base64 marker understood by server
+      cookieEncoding: "base64url",
     }
   );
 
@@ -58,8 +65,7 @@ export async function GET(req: NextRequest) {
     const pending = tmp.cookies.getAll();
     for (const c of pending) res.cookies.set(c);
     res.headers.set("x-gh-set-cookie-count", String(pending.length));
-    // include a compact list of cookie names for quick triage (max 4 to keep URL short)
-    const names = pending.slice(0, 4).map(c => c.name).join(",");
+    const names = pending.slice(0, 6).map(c => c.name).join(",");
     if (names) target.searchParams.set("cookie_names", names);
     return res;
   };
@@ -81,7 +87,7 @@ export async function GET(req: NextRequest) {
     const cookieCount = pending.length;
     const cookieNames = pending.map(c => c.name);
 
-    console.log("[auth/callback v6] exchange", {
+    console.log("[auth/callback v7] exchange", {
       host: url.host,
       elapsed_ms: elapsed,
       cookie_count: cookieCount,
@@ -94,7 +100,7 @@ export async function GET(req: NextRequest) {
     target.searchParams.set("pkce", error ? "error" : "ok");
     target.searchParams.set("cookies", String(cookieCount));
     target.searchParams.set("host", url.host);
-    if (cookieNames.length) target.searchParams.set("cookie_names", cookieNames.slice(0,4).join(","));
+    if (cookieNames.length) target.searchParams.set("cookie_names", cookieNames.slice(0,6).join(","));
     if (error) {
       target.searchParams.set("link_error", encodeURIComponent(error.message));
     } else {
@@ -105,7 +111,7 @@ export async function GET(req: NextRequest) {
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "unexpected_error_exchanging_code";
-    console.error("[auth/callback v6] exception", { host: url.host, message });
+    console.error("[auth/callback v7] exception", { host: url.host, message });
 
     target.searchParams.set("link_debug", "1");
     target.searchParams.set("pkce", "exception");

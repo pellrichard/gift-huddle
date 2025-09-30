@@ -20,6 +20,13 @@ interface CookieStoreFn {
   (): CookieStoreShape;
 }
 
+const defaultCookieOpts: CookieOptsLite = {
+  path: "/",
+  httpOnly: true,
+  sameSite: "lax",
+  secure: true,
+};
+
 export function createServerSupabase() {
   const store = (cookies as unknown as CookieStoreFn)();
 
@@ -28,17 +35,17 @@ export function createServerSupabase() {
       return store.get(name)?.value;
     },
     set(name: string, value: string, options?: CookieOptions | CookieOptsLite): void {
-      const opts: CookieOptsLite | undefined = options ? { ...options } : undefined;
+      const opts: CookieOptsLite | undefined = options ? { ...defaultCookieOpts, ...options } : defaultCookieOpts;
       store.set({ name, value, ...(opts ?? {}) });
     },
     remove(name: string, valueOrOptions?: string | CookieOptions | CookieOptsLite, maybeOptions?: CookieOptions | CookieOptsLite): void {
-      const opts: CookieOptsLite | undefined =
+      const optsMerged: CookieOptsLite =
         typeof valueOrOptions === "object" && valueOrOptions !== null
-          ? { ...valueOrOptions }
+          ? { ...defaultCookieOpts, ...valueOrOptions }
           : maybeOptions
-          ? { ...maybeOptions }
-          : undefined;
-      store.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+          ? { ...defaultCookieOpts, ...maybeOptions }
+          : { ...defaultCookieOpts };
+      store.set({ name, value: "", ...optsMerged, maxAge: 0 });
     },
   };
 
@@ -47,7 +54,7 @@ export function createServerSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: adapter,
-      cookieEncoding: "base64", // ensure decoding of sb-* cookies prefixed with "base64-"
+      cookieEncoding: "base64url",
     }
   );
 }
