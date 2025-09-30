@@ -1,12 +1,13 @@
 /* app/auth/callback/route.ts
- * Fix: avoid const reassignment; robust Supabase PKCE exchange + safe redirects.
- * Types cleaned up to satisfy @typescript-eslint/no-explicit-any.
+ * Next.js 15 + Supabase PKCE callback.
+ * - No const reassignments
+ * - No `any` types
+ * - Works across differing `cookies()` typings by casting to a narrow interface
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-// Cookie options expected by Next.js cookieStore.set({...})
 type CookieSameSite = "lax" | "strict" | "none";
 interface CookieOptions {
   domain?: string;
@@ -17,9 +18,16 @@ interface CookieOptions {
   sameSite?: CookieSameSite;
   maxAge?: number;
 }
+interface CookieStoreShape {
+  get(name: string): { value: string } | undefined;
+  set(init: { name: string; value: string } & CookieOptions): void;
+}
 
 function getSupabase() {
-  const cookieStore = cookies();
+  // Cast to a minimal shape so we can call .get/.set without pulling in
+  // environment-specific Promise typings.
+  const cookieStore = cookies() as unknown as CookieStoreShape;
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,7 +48,6 @@ function getSupabase() {
 }
 
 function safeNext(url: URL, nextParam: string | null) {
-  // Default to /account; block open redirects
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/account";
   return new URL(next, url.origin);
 }
@@ -52,7 +59,6 @@ export async function GET(req: NextRequest) {
   const target = safeNext(url, nextParam);
 
   if (!code) {
-    // No code present; bounce to login with a hint
     target.searchParams.set("link_error", encodeURIComponent("missing_code"));
     return NextResponse.redirect(target);
   }
@@ -65,7 +71,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(target);
     }
 
-    // Success — send the user to the intended page
     target.searchParams.delete("link_error");
     return NextResponse.redirect(target);
   } catch (err: unknown) {
