@@ -1,14 +1,14 @@
 /* app/auth/callback/route.ts
- * v4: Adds server-side logging + browser-visible debug flags to trace PKCE + cookies.
- * - Captures Supabase Set-Cookie on a temp response and copies to the redirect.
- * - Appends link_debug params: pkce, cookies, host, and error (if any).
- * - No `any`, no const reassignments, safe relative redirects only.
+ * v5: Compatible cookie adapter for both CookieMethodsServer & Deprecated variant.
+ * - No `any`
+ * - Logs PKCE outcome
+ * - Copies Set-Cookie from temp response to the final redirect
  */
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions, type CookieMethodsServer, type CookieMethodsServerDeprecated } from "@supabase/ssr";
 
 type CookieSameSite = "lax" | "strict" | "none";
-interface CookieOptions {
+interface CookieOptsLite {
   domain?: string;
   path?: string;
   expires?: Date;
@@ -32,26 +32,38 @@ export async function GET(req: NextRequest) {
   // temp response collects any Set-Cookie from Supabase
   const tmp = NextResponse.next();
 
-  const getCookie = (name: string): string | undefined => req.cookies.get(name)?.value;
-  const setCookie = (name: string, value: string, options: CookieOptions): void => {
-    tmp.cookies.set({ name, value, ...options });
-  };
-  const removeCookie = (name: string, value: string, options: CookieOptions): void => {
-    tmp.cookies.set({ name, value: "", ...options, maxAge: 0 });
+  // Build a cookies adapter that matches both modern & deprecated SSR types
+  const cookiesAdapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
+    get(name: string): string | undefined {
+      return req.cookies.get(name)?.value;
+    },
+    // set(name, value, options?)
+    set(name: string, value: string, options?: CookieOptions | CookieOptsLite): void {
+      const opts: CookieOptsLite | undefined = options ? { ...options } : undefined;
+      tmp.cookies.set({ name, value, ...(opts ?? {}) });
+    },
+    // remove(name, options?)  OR deprecated: remove(name, value, options)
+    remove(name: string, valueOrOptions?: string | CookieOptions | CookieOptsLite, maybeOptions?: CookieOptions | CookieOptsLite): void {
+      const opts: CookieOptsLite | undefined =
+        typeof valueOrOptions === "object" && valueOrOptions !== null
+          ? { ...valueOrOptions }
+          : maybeOptions
+          ? { ...maybeOptions }
+          : undefined;
+      tmp.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+    },
   };
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { get: getCookie, set: setCookie, remove: removeCookie } }
+    { cookies: cookiesAdapter }
   );
 
   const mkRedirect = () => {
     const res = NextResponse.redirect(target);
-    // Copy all cookies the exchange wrote onto the final redirect
     const pending = tmp.cookies.getAll();
     for (const c of pending) res.cookies.set(c);
-    // Helpful header in Network panel
     res.headers.set("x-gh-set-cookie-count", String(pending.length));
     return res;
   };
@@ -70,11 +82,9 @@ export async function GET(req: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     const elapsed = Date.now() - t0;
 
-    // Count any cookies Supabase attempted to set
     const cookieCount = tmp.cookies.getAll().length;
 
-    // Server-side logs visible in Vercel
-    console.log("[auth/callback] exchangeCodeForSession", {
+    console.log("[auth/callback v5] exchange", {
       host: url.host,
       elapsed_ms: elapsed,
       cookie_count: cookieCount,
@@ -96,7 +106,7 @@ export async function GET(req: NextRequest) {
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "unexpected_error_exchanging_code";
-    console.error("[auth/callback] exception", { host: url.host, message });
+    console.error("[auth/callback v5] exception", { host: url.host, message });
 
     target.searchParams.set("link_debug", "1");
     target.searchParams.set("pkce", "exception");
