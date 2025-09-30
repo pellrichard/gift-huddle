@@ -1,38 +1,117 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 
 type Profile = {
+  id: string;
   display_name: string | null;
   avatar_url: string | null;
   banner_url: string | null;
+  dob?: string | null;
+  dob_show_year?: boolean | null;
+  categories?: string[] | null;
+  preferred_shops?: string[] | null;
+  socials?: Record<string, string> | null;
 };
 
-export default function AccountPage({ profile }: { profile?: Profile }) {
-  const p: Profile = profile ?? {
-    display_name: null,
-    avatar_url: null,
-    banner_url: null,
-  };
+// Create a browser Supabase client using public env vars.
+// Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+const supabase = createClient(supabaseUrl, supabaseAnon);
+
+export default function AccountPage() {
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+        if (!user) {
+          if (isMounted) {
+            setProfile(null);
+            setLoading(false);
+          }
+          return;
+        }
+        const { data, error: profErr } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .limit(1)
+          .maybeSingle();
+        if (profErr) throw profErr;
+        if (isMounted) {
+          setProfile(data as Profile);
+          setLoading(false);
+        }
+      } catch (e: any) {
+        if (isMounted) {
+          setError(e?.message ?? "Failed to load profile");
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <div className="p-6">Loading your account…</div>;
+  }
+
+  if (!profile) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold mb-2">You’re not signed in</h1>
+        <p className="mb-4 text-gray-600">Please log in to view your account.</p>
+        <Link href="/login" className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700">
+          Go to Login
+        </Link>
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4">
-      <Image
-        src={p.banner_url ?? "/banners/default.webp"}
-        alt=""
-        width={1600}
-        height={320}
-        className="h-40 w-full object-cover rounded-2xl"
-      />
-      <div className="mt-4 flex items-center gap-4">
+    <div className="p-6">
+      <div className="mb-4">
         <Image
-          src={p.avatar_url ?? "/avatars/default.webp"}
-          alt={p.display_name ?? ""}
+          src={profile.banner_url ?? "/banners/default.webp"}
+          alt=""
+          width={1600}
+          height={320}
+          className="h-40 w-full object-cover rounded-2xl"
+        />
+      </div>
+      <div className="flex items-center gap-4">
+        <Image
+          src={profile.avatar_url ?? "/avatars/default.webp"}
+          alt={profile.display_name ?? ""}
           width={96}
           height={96}
           className="h-24 w-24 rounded-full object-cover ring-4 ring-white"
         />
-        <h1 className="text-xl font-semibold">{p.display_name ?? "Your Name"}</h1>
+        <div>
+          <h1 className="text-xl font-semibold">{profile.display_name ?? "Your Name"}</h1>
+          {profile.categories && profile.categories.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-2">
+              {profile.categories.map((c) => (
+                <span key={c} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">{c}</span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Add any additional account widgets here (EventsSection, ProfileForm, etc.) */}
     </div>
   );
 }
