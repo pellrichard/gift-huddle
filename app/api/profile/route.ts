@@ -1,63 +1,57 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 
-type ProfileUpdate = {
-  display_name: string;
-  dob: string | null;             // ISO yyyy-mm-dd or null
-  dob_show_year: boolean;
-  categories: string[];
-  preferred_shops: string[];
-  socials: Record<string, string>;
-};
-
+/** Ensure a profile exists for the signed-in user (with explicit client cast). */
 export async function GET() {
-  const supabase = await createClient();
+  // Force the correct generic so table types aren't `never` in strict builds
+  const base = createClient();
+  const supabase = base as unknown as SupabaseClient<Database, "public">;
+
   const { data: { user }, error: userErr } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined) ??
+    user.email?.split("@")[0] ??
+    "";
 
   const { data, error } = await supabase
     .from("profiles")
+    .upsert(
+      { id: user.id, display_name: displayName, socials: {} },
+      { onConflict: "id" }
+    )
     .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
+    .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Auto-bootstrap an empty profile row
-  if (!data) {
-    const { data: inserted, error: insErr } = await supabase.from("profiles").insert({
-      id: user.id,
-      display_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "",
-      socials: {},
-      categories: [],
-      preferred_shops: []
-    }).select("*").single();
-    if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
-    return NextResponse.json(inserted);
-  }
-
   return NextResponse.json(data);
 }
 
-export async function PUT(req: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user }, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+/** Update profile fields (partial) — explicit client cast for safety. */
+export async function POST(req: Request) {
+  const base = createClient();
+  const supabase = base as unknown as SupabaseClient<Database, "public">;
 
-  const body = (await req.json()) as Partial<ProfileUpdate>;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const payload: ProfileUpdate = {
-    display_name: (body.display_name ?? "").toString().slice(0, 120),
-    dob: body.dob ?? null,
-    dob_show_year: Boolean(body.dob_show_year),
-    categories: Array.isArray(body.categories) ? body.categories.slice(0, 50).map(String) : [],
-    preferred_shops: Array.isArray(body.preferred_shops) ? body.preferred_shops.slice(0, 50).map(String) : [],
-    socials: body.socials && typeof body.socials === "object" ? Object.fromEntries(Object.entries(body.socials).map(([k,v]) => [String(k), String(v ?? "")])) : {},
+  const body = await req.json();
+  const payload = {
+    display_name: typeof body.display_name === "string" ? body.display_name : null,
+    dob: typeof body.dob === "string" ? body.dob : null,
+    dob_show_year: typeof body.dob_show_year === "boolean" ? body.dob_show_year : null,
+    categories: Array.isArray(body.categories) ? body.categories.slice(0, 50).map(String) : null,
+    preferred_shops: Array.isArray(body.preferred_shops) ? body.preferred_shops.slice(0, 50).map(String) : null,
+    socials: body.socials && typeof body.socials === "object" ? body.socials : null,
   };
 
   const { data, error } = await supabase
     .from("profiles")
-    .upsert({ id: user.id, ...payload }, { onConflict: "id" })
+    .update(payload)
+    .eq("id", user.id)
     .select("*")
     .single();
 
