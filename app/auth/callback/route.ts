@@ -1,40 +1,66 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+/* app/auth/callback/route.ts
+ * Fix: avoid const reassignment; robust Supabase PKCE exchange + safe redirects.
+ * Next.js 15 / @supabase/ssr v2 style.
+ */
+import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
-export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const next = url.searchParams.get('next') || '/account';
-
-  // Prepare a response we can attach cookies to
-  const res = NextResponse.redirect(new URL(next, url.origin));
-
-  // Create a Supabase server client that reads from the incoming request cookies
-  // and WRITES auth cookies to the response (this is critical).
-  const supabase = createServerClient(
+function getSupabase() {
+  const cookieStore = cookies();
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return req.cookies.get(name)?.value;
+          return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: any) {
-          res.cookies.set(name, value, options);
+          // next/headers cookies are mutable in route handlers
+          cookieStore.set({ name, value, ...options });
         },
         remove(name: string, options: any) {
-          res.cookies.set(name, '', { ...options, maxAge: 0 });
-        }
-      }
+          cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+        },
+      },
     }
   );
+}
 
-  const { error } = await supabase.auth.exchangeCodeForSession(url);
-  if (error) {
-    // Propagate a user-visible reason (account page will toast it if present)
-    const clean = new URL(next, url.origin);
-    clean.searchParams.set('link_error', encodeURIComponent(error.message));
-    res = NextResponse.redirect(clean);
+function safeNext(url: URL, nextParam: string | null) {
+  // Default to /account; block open redirects
+  const next = nextParam && nextParam.startsWith("/") ? nextParam : "/account";
+  return new URL(next, url.origin);
+}
+
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code");
+  const nextParam = url.searchParams.get("next");
+  const target = safeNext(url, nextParam);
+
+  if (!code) {
+    // No code present; bounce to login with a hint
+    target.searchParams.set("link_error", encodeURIComponent("missing_code"));
+    return NextResponse.redirect(target);
   }
 
-  return res;
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      target.searchParams.set("link_error", encodeURIComponent(error.message));
+      return NextResponse.redirect(target);
+    }
+
+    // Success — send the user to the intended page
+    target.searchParams.delete("link_error");
+    return NextResponse.redirect(target);
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "unexpected_error_exchanging_code";
+    target.searchParams.set("link_error", encodeURIComponent(message));
+    return NextResponse.redirect(target);
+  }
 }
