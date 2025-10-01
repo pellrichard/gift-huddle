@@ -59,7 +59,8 @@ export async function GET(req: NextRequest) {
 
   if (code) {
     await supabase.auth.exchangeCodeForSession(code);
+    res.cookies.set({ name: "gh_authed", value: "1", path: "/", maxAge: 60*60*24, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   }
 
-  return res;
+  return NextResponse.redirect(new URL(safeNext(new URL(req.url)) ?? "/account", req.url));
 }

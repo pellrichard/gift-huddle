@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // Simple cookie check. Supabase sets sb-access-token/sb-refresh-token in our setup.
 function hasAuthCookie(req: NextRequest) {
   const c = req.cookies;
-  return Boolean(c.get("sb-access-token") || c.get("sb-refresh-token") || c.get("supabase-auth-token"));
+  return Boolean(c.get("sb-access-token") || c.get("sb-refresh-token") || c.get("supabase-auth-token") || c.get("gh_authed"));
 }
 
 export function middleware(req: NextRequest) {
