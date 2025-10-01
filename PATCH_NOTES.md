@@ -1,4 +1,3 @@
-- Switch onboarding to a **route handler** (`POST /onboarding/update`) instead of a server action.
-  - Validates selections, updates `profiles.categories` & `profiles.preferred_shops`, handles RLS errors, and redirects.
-  - The onboarding form now posts to `/onboarding/update`.
-  - Date: 2025-10-01
+- Onboarding now uses UPSERT to create a `profiles` row if missing (fixes loop when the profile doesn't exist yet).
+- Displays a small error banner on `/onboarding` when `?err=` is present.
+- Date: 2025-10-01

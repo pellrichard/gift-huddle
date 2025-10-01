@@ -11,7 +11,7 @@ type ProfilePrefs = { categories: string[] | null; preferred_shops: string[] | n
 const CATEGORIES = ["tech", "fashion", "beauty", "home", "toys", "sports"];
 const SHOPS = ["amazon", "argos", "johnlewis", "etsy", "nike", "apple"];
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   const supabase = createServerSupabase();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/login");
@@ -27,12 +27,20 @@ export default async function OnboardingPage() {
   const initialCats = Array.isArray(profile?.categories) ? profile.categories : [];
   const initialShops = Array.isArray(profile?.preferred_shops) ? profile.preferred_shops : [];
 
+  const err = (searchParams?.err ?? "") as string;
+
   return (
     <main className="max-w-xl mx-auto px-6 py-10">
       <h1 className="text-2xl font-semibold">Finish setting up your account</h1>
       <p className="text-gray-600 mt-2">Choose interests and favourite shops.</p>
 
-      <form action="/onboarding/update" method="post" className="mt-8 space-y-8">
+      {err && (
+        <div className="mt-4 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {err === "missing" ? "Pick at least one category and one shop." : "We couldn't save your choices. Please try again."}
+        </div>
+      )}
+
+      <form action="/onboarding/update" method="post" className="mt-6 space-y-8">
         <div>
           <h2 className="text-lg font-medium">Categories (pick at least one)</h2>
           <div className="mt-3 grid grid-cols-2 gap-3">

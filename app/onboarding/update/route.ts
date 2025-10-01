@@ -6,7 +6,7 @@ export const revalidate = 0;
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-type ProfilesUpdate = { categories?: string[] | null; preferred_shops?: string[] | null };
+type ProfilesUpsert = { id: string; categories?: string[] | null; preferred_shops?: string[] | null };
 
 const CATEGORIES = ["tech", "fashion", "beauty", "home", "toys", "sports"];
 const SHOPS = ["amazon", "argos", "johnlewis", "etsy", "nike", "apple"];
@@ -29,15 +29,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL("/onboarding?err=missing", req.url));
   }
 
-  const updateData: ProfilesUpdate = { categories: cats, preferred_shops: shops };
+  const payload: ProfilesUpsert = { id: session.user.id, categories: cats, preferred_shops: shops };
 
+  // Use UPSERT so first-time users (no profile row yet) get one created.
   const { error } = await supabase
     .from("profiles")
-    .update(updateData as unknown as never) // satisfy strict TS; data validated above
-    .eq("id", session.user.id);
+    .upsert(payload as unknown as never, { onConflict: "id" })
+    .select("id")
+    .single();
 
   if (error) {
-    return NextResponse.redirect(new URL(`/onboarding?err=${encodeURIComponent(error.code || "update_failed")}`, req.url));
+    return NextResponse.redirect(new URL(`/onboarding?err=${encodeURIComponent(error.code || "upsert_failed")}`, req.url));
   }
 
   return NextResponse.redirect(new URL("/account", req.url));
