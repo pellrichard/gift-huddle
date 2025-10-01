@@ -1,4 +1,8 @@
 // app/auth/callback/route.ts
+export const runtime = "nodejs";          // ensure Node.js runtime (not Edge)
+export const dynamic = "force-dynamic";   // disable caching of this route
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions, type CookieMethodsServer, type CookieMethodsServerDeprecated } from "@supabase/ssr";
 
@@ -13,15 +17,11 @@ export async function GET(req: NextRequest) {
   const nextParam = url.searchParams.get("next");
   const target = safeNext(url, nextParam);
 
-  // Create the FINAL redirect response up front.
-  // We'll have Supabase write cookies directly onto THIS response,
-  // so we don't lose any cookie flags/options.
   const res = NextResponse.redirect(target);
+  res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
 
-  // Adapter that writes directly to `res.cookies` with EXACT options
   const cookiesAdapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
     get(name: string): string | undefined {
-      // read from incoming request (if present)
       return req.cookies.get(name)?.value;
     },
     set(name: string, value: string, options?: CookieOptions): void {
@@ -46,19 +46,18 @@ export async function GET(req: NextRequest) {
   );
 
   const withDiag = (pkce: string, errorMessage?: string) => {
-    // expose minimal debug params for quick triage
-    const cookieHeaders = res.headers.getSetCookie?.() ?? []; // nextjs runtime often exposes this helper
-    const names = cookieHeaders
-      .map((h: string) => h.split(";")[0].split("=")[0])
+    const names = (res.headers.get("set-cookie") || "")
+      .split(/,(?=[^;]+?=)/) // split multiple Set-Cookie values
+      .map(s => s.split(";")[0].split("=")[0].trim())
       .filter(Boolean)
       .slice(0, 8)
       .join(",");
     target.searchParams.set("link_debug", "1");
     target.searchParams.set("pkce", pkce);
     if (errorMessage) target.searchParams.set("link_error", encodeURIComponent(errorMessage));
-    target.searchParams.set("cookies", String(cookieHeaders.length));
-    if (names) target.searchParams.set("cookie_names", names);
-    res.headers.set("x-gh-set-cookie-count", String(cookieHeaders.length));
+    target.searchParams.set("cookie_names", names);
+    res.headers.set("x-gh-set-cookie-count", String((res.headers.get("set-cookie") || "").split(/,(?=[^;]+?=)/).filter(Boolean).length));
+    res.headers.set("Location", target.toString()); // ensure updated query params
   };
 
   if (!code) {
