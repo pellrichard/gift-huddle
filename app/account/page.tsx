@@ -6,11 +6,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Minimal shape for profile gate
-interface ProfileGate {
-  categories: string[] | null;
-  preferred_shops: string[] | null;
-}
+type ProfileGate = { categories: string[] | null; preferred_shops: string[] | null };
 
 export default async function AccountPage() {
   const supabase = createServerSupabase();
@@ -23,13 +19,18 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
-  const { data: profile } = (await supabase
+  const { data: profileRaw } = await supabase
     .from("profiles")
     .select("categories, preferred_shops")
     .eq("id", session.user.id)
-    .single()) as unknown as { data: ProfileGate | null };
+    .single();
 
-  if (!profile?.categories?.length || !profile?.preferred_shops?.length) {
+  const profile = (profileRaw ?? null) as ProfileGate | null;
+  const needsOnboarding =
+    !(profile?.categories && profile.categories.length > 0) ||
+    !(profile?.preferred_shops && profile.preferred_shops.length > 0);
+
+  if (needsOnboarding) {
     redirect("/onboarding");
   }
 
@@ -39,6 +40,15 @@ export default async function AccountPage() {
       <p className="text-gray-600 mt-1">
         Signed in as <strong>{session!.user.email ?? "(no email)"}</strong>
       </p>
+
+      <div className="mt-8">
+        <a
+          href="/onboarding?edit=1"
+          className="inline-flex items-center rounded-2xl px-4 py-2 border font-medium shadow-sm"
+        >
+          Manage preferences
+        </a>
+      </div>
     </main>
   );
 }

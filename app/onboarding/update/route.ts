@@ -6,25 +6,14 @@ export const revalidate = 0;
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-// Keep types narrow to avoid TS recursion
-type ProfilesUpsert = {
-  id: string;
-  categories?: string[] | null;
-  preferred_shops?: string[] | null;
-};
-
-type PgErr = {
-  code?: string;
-  message?: string;
-  details?: string;
-  hint?: string;
-};
+type ProfilesUpsert = { id: string; categories?: string[] | null; preferred_shops?: string[] | null };
+type PgErr = { code?: string; message?: string; details?: string; hint?: string };
 
 const CATEGORIES = ["tech", "fashion", "beauty", "home", "toys", "sports"];
 const SHOPS = ["amazon", "argos", "johnlewis", "etsy", "nike", "apple"];
 
-// simple request id for correlating logs in Vercel
 const rid = () => Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+const isProd = process.env.NODE_ENV === "production";
 
 export async function POST(req: NextRequest) {
   const requestId = rid();
@@ -36,13 +25,12 @@ export async function POST(req: NextRequest) {
       error: sessionErr,
     } = await supabase.auth.getSession();
 
-    if (sessionErr) {
-      // server-side log
+    if (sessionErr && !isProd) {
       console.error("[onboarding:update] session error", { requestId, sessionErr });
     }
 
     if (!session) {
-      console.warn("[onboarding:update] no session", { requestId });
+      if (!isProd) console.warn("[onboarding:update] no session", { requestId });
       return NextResponse.redirect(new URL(`/login?rid=${requestId}`, req.url));
     }
 
@@ -53,17 +41,18 @@ export async function POST(req: NextRequest) {
     const cats = rawCategories.filter((c) => CATEGORIES.includes(c));
     const shops = rawPreferredShops.filter((s) => SHOPS.includes(s));
 
-    // server-side debug log for inputs
-    console.log("[onboarding:update] incoming", {
-      requestId,
-      userId: session.user.id,
-      rawCategories,
-      rawPreferredShops,
-      filtered: { cats, shops },
-    });
+    if (!isProd) {
+      console.log("[onboarding:update] incoming", {
+        requestId,
+        userId: session.user.id,
+        rawCategories,
+        rawPreferredShops,
+        filtered: { cats, shops },
+      });
+    }
 
     if (cats.length === 0 || shops.length === 0) {
-      console.warn("[onboarding:update] missing selections", { requestId });
+      if (!isProd) console.warn("[onboarding:update] missing selections", { requestId });
       return NextResponse.redirect(new URL(`/onboarding?err=missing&rid=${requestId}`, req.url));
     }
 
@@ -73,7 +62,6 @@ export async function POST(req: NextRequest) {
       preferred_shops: shops,
     };
 
-    // Use UPSERT to create the row if it doesn't exist
     const { data, error } = await supabase
       .from("profiles")
       .upsert(payload as unknown as never, { onConflict: "id" })
@@ -90,7 +78,6 @@ export async function POST(req: NextRequest) {
         hint: pe.hint,
       });
 
-      // Surface both code and message in the URL for quick diagnosis
       const url = new URL("/onboarding", req.url);
       url.searchParams.set("err", pe.code || "upsert_failed");
       if (pe.message) url.searchParams.set("msg", pe.message);
@@ -98,7 +85,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    console.log("[onboarding:update] success", { requestId, userId: session.user.id, data });
+    if (!isProd) console.log("[onboarding:update] success", { requestId, userId: session.user.id, data });
     return NextResponse.redirect(new URL(`/account?rid=${requestId}`, req.url));
   } catch (e: unknown) {
     const ex = e as { name?: string; message?: string; stack?: string };

@@ -29,6 +29,18 @@ export default async function OnboardingPage({
     .single();
 
   const profile = (profileRaw ?? null) as ProfilePrefs | null;
+  const isComplete =
+    (profile?.categories?.length || 0) > 0 &&
+    (profile?.preferred_shops?.length || 0) > 0;
+
+  const editParam = searchParams?.edit;
+  const editing = Array.isArray(editParam) ? editParam[0] === "1" : editParam === "1";
+
+  // If profile is complete and not explicitly editing, go back to account
+  if (isComplete && !editing) {
+    redirect("/account");
+  }
+
   const initialCats = Array.isArray(profile?.categories) ? profile.categories : [];
   const initialShops = Array.isArray(profile?.preferred_shops) ? profile.preferred_shops : [];
 
