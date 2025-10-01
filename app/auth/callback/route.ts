@@ -5,7 +5,12 @@ export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { cookies as nextCookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import {
+  createServerClient,
+  type CookieOptions,
+  type CookieMethodsServer,
+  type CookieMethodsServerDeprecated,
+} from "@supabase/ssr";
 
 function safeNext(url: URL, nextParam: string | null) {
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/account";
@@ -13,12 +18,8 @@ function safeNext(url: URL, nextParam: string | null) {
 }
 
 function cookieBaseNameFromUrl(supabaseUrl: string) {
-  // Matches how ssr names the cookie base: 'sb-' + url host without scheme + 5-char hash
-  // We can't compute the hash here, so we derive from any existing cookie that starts with 'sb-'.
-  // Fallback to 'sb' base (Supabase will accept names we set); account page reads by prefix.
-  const fromJar = nextCookies().getAll().find(c => c.name.startsWith("sb-"));
-  if (fromJar) return fromJar.name.split("-").slice(0, 2).join("-"); // e.g., 'sb-kzcfryzzxxzyoizlehse'
-  // very conservative fallback
+  const existing = nextCookies().getAll().find(c => c.name.startsWith("sb-"));
+  if (existing) return existing.name.split("-").slice(0, 2).join("-"); // e.g., 'sb-kzcfryzzxxzyoizlehse'
   const host = new URL(supabaseUrl).hostname.replaceAll(".", "");
   return `sb-${host.slice(0,20)}`;
 }
@@ -32,34 +33,54 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(target);
 
   const cookieStore = nextCookies();
+
+  // Build a cookies adapter compatible with both SSR cookie method shapes
+  const adapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
+    get(name: string): string | undefined {
+      return cookieStore.get(name)?.value;
+    },
+    set(name: string, value: string, options?: CookieOptions): void {
+      cookieStore.set({ name, value, ...(options ?? {}) });
+    },
+    remove(
+      name: string,
+      valueOrOptions?: string | CookieOptions,
+      maybeOptions?: CookieOptions
+    ): void {
+      const opts: CookieOptions | undefined =
+        typeof valueOrOptions === "object" && valueOrOptions !== null
+          ? valueOrOptions
+          : maybeOptions;
+      cookieStore.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+    },
+  };
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        get(name: string) { return cookieStore.get(name)?.value; },
-        set(name: string, value: string, options?: any) { cookieStore.set({ name, value, ...(options ?? {}) }); },
-        remove(name: string, options?: any) { cookieStore.set({ name, value: "", ...(options ?? {}), maxAge: 0 }); },
-      },
+      cookies: adapter,
       cookieEncoding: "base64url",
     }
   );
 
   if (!code) return res;
 
-  // Exchange code for session (should set cookies internally; but if platform strips them we'll set explicitly below)
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  // 1) Exchange the code for a session
+  await supabase.auth.exchangeCodeForSession(code);
 
-  // Get session (access + refresh) to set our own cookies if needed
+  // 2) Read the tokens
   const { data: sess } = await supabase.auth.getSession();
-  const accessToken = sess?.session?.access_token ?? data?.session?.access_token;
-  const refreshToken = sess?.session?.refresh_token ?? data?.session?.refresh_token;
+  const accessToken = sess?.session?.access_token;
+  const refreshToken = sess?.session?.refresh_token;
 
+  // 3) Compute cookie base name
   const base = cookieBaseNameFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL!);
-  const now = new Date();
-  const inOneYear = new Date(now.getTime() + 365*24*60*60*1000);
 
-  // Explicitly set both cookies on the redirect response with secure flags
+  // 4) Set BOTH cookie pairs directly on the final redirect response
+  const now = Date.now();
+  const inOneYear = new Date(now + 365*24*60*60*1000);
+
   if (accessToken) {
     res.cookies.set({
       name: `${base}-auth-token.0`,
@@ -85,14 +106,8 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // add minimal diag
-  const names = (res.headers.get("set-cookie") || "")
-    .split(/,(?=[^;]+?=)/)
-    .map(s => s.split(";")[0].split("=")[0].trim())
-    .filter(Boolean)
-    .slice(0, 8)
-    .join(",");
+  // Update Location (to ensure any query params we might add later are respected)
   res.headers.set("Location", target.toString());
-  res.headers.set("x-gh-set-cookie-count", String((res.headers.get("set-cookie") || "").split(/,(?=[^;]+?=)/).filter(Boolean).length));
+
   return res;
 }
