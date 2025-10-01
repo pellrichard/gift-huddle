@@ -18,12 +18,9 @@ export function createServerSupabase() {
       return store.get(name)?.value;
     },
     set(name: string, value: string, options?: CookieOptions): void {
-      // Pass-through EXACT options from Supabase without adding defaults.
-      // Supabase sets correct flags per cookie (auth vs refresh).
       store.set({ name, value, ...(options ?? {}) });
     },
     remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
-      // Pass-through remove options as well.
       const opts: CookieOptions | undefined =
         typeof valueOrOptions === "object" && valueOrOptions !== null
           ? valueOrOptions
@@ -35,9 +32,6 @@ export function createServerSupabase() {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: adapter,
-      cookieEncoding: "base64url",
-    }
+    { cookies: adapter, cookieEncoding: "base64url" }
   );
 }
