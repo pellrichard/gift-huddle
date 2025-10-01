@@ -1,14 +1,12 @@
 // app/onboarding/page.tsx
 import "server-only";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type ProfilePrefs = { categories: string[] | null; preferred_shops: string[] | null };
-type ProfilesUpdate = { categories?: string[] | null; preferred_shops?: string[] | null };
 
 const CATEGORIES = ["tech", "fashion", "beauty", "home", "toys", "sports"];
 const SHOPS = ["amazon", "argos", "johnlewis", "etsy", "nike", "apple"];
@@ -26,33 +24,6 @@ export default async function OnboardingPage() {
 
   const profile = (profileRaw ?? null) as ProfilePrefs | null;
 
-  async function updateProfile(formData: FormData) {
-    "use server";
-    const supabase = createServerSupabase();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) redirect("/login");
-
-    const categories = formData.getAll("categories") as string[];
-    const preferred_shops = formData.getAll("preferred_shops") as string[];
-
-    const cats = categories.filter((c) => CATEGORIES.includes(c));
-    const shops = preferred_shops.filter((s) => SHOPS.includes(s));
-
-    if (cats.length === 0 || shops.length === 0) {
-      revalidatePath("/onboarding");
-      return;
-    }
-
-    const updateData: ProfilesUpdate = { categories: cats, preferred_shops: shops };
-
-    await supabase
-      .from("profiles")
-      .update(updateData as unknown as never) // strict TS workaround; validated shape above
-      .eq("id", session.user.id);
-
-    redirect("/account");
-  }
-
   const initialCats = Array.isArray(profile?.categories) ? profile.categories : [];
   const initialShops = Array.isArray(profile?.preferred_shops) ? profile.preferred_shops : [];
 
@@ -61,7 +32,7 @@ export default async function OnboardingPage() {
       <h1 className="text-2xl font-semibold">Finish setting up your account</h1>
       <p className="text-gray-600 mt-2">Choose interests and favourite shops.</p>
 
-      <form action={updateProfile} className="mt-8 space-y-8">
+      <form action="/onboarding/update" method="post" className="mt-8 space-y-8">
         <div>
           <h2 className="text-lg font-medium">Categories (pick at least one)</h2>
           <div className="mt-3 grid grid-cols-2 gap-3">

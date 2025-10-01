@@ -1,2 +1,4 @@
-- Change: Account gate checks `categories` & `preferred_shops`.
-- New: Onboarding page to set those fields via server action.
+- Switch onboarding to a **route handler** (`POST /onboarding/update`) instead of a server action.
+  - Validates selections, updates `profiles.categories` & `profiles.preferred_shops`, handles RLS errors, and redirects.
+  - The onboarding form now posts to `/onboarding/update`.
+  - Date: 2025-10-01
