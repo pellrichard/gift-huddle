@@ -6,41 +6,112 @@ export const revalidate = 0;
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-type ProfilesUpsert = { id: string; categories?: string[] | null; preferred_shops?: string[] | null };
+// Keep types narrow to avoid TS recursion
+type ProfilesUpsert = {
+  id: string;
+  categories?: string[] | null;
+  preferred_shops?: string[] | null;
+};
+
+type PgErr = {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+};
 
 const CATEGORIES = ["tech", "fashion", "beauty", "home", "toys", "sports"];
 const SHOPS = ["amazon", "argos", "johnlewis", "etsy", "nike", "apple"];
 
+// simple request id for correlating logs in Vercel
+const rid = () => Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+
 export async function POST(req: NextRequest) {
+  const requestId = rid();
   const supabase = createServerSupabase();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    return NextResponse.redirect(new URL("/login", req.url));
+
+  try {
+    const {
+      data: { session },
+      error: sessionErr,
+    } = await supabase.auth.getSession();
+
+    if (sessionErr) {
+      // server-side log
+      console.error("[onboarding:update] session error", { requestId, sessionErr });
+    }
+
+    if (!session) {
+      console.warn("[onboarding:update] no session", { requestId });
+      return NextResponse.redirect(new URL(`/login?rid=${requestId}`, req.url));
+    }
+
+    const form = await req.formData();
+    const rawCategories = form.getAll("categories").map(String);
+    const rawPreferredShops = form.getAll("preferred_shops").map(String);
+
+    const cats = rawCategories.filter((c) => CATEGORIES.includes(c));
+    const shops = rawPreferredShops.filter((s) => SHOPS.includes(s));
+
+    // server-side debug log for inputs
+    console.log("[onboarding:update] incoming", {
+      requestId,
+      userId: session.user.id,
+      rawCategories,
+      rawPreferredShops,
+      filtered: { cats, shops },
+    });
+
+    if (cats.length === 0 || shops.length === 0) {
+      console.warn("[onboarding:update] missing selections", { requestId });
+      return NextResponse.redirect(new URL(`/onboarding?err=missing&rid=${requestId}`, req.url));
+    }
+
+    const payload: ProfilesUpsert = {
+      id: session.user.id,
+      categories: cats,
+      preferred_shops: shops,
+    };
+
+    // Use UPSERT to create the row if it doesn't exist
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(payload as unknown as never, { onConflict: "id" })
+      .select("id")
+      .single();
+
+    if (error) {
+      const pe = error as PgErr;
+      console.error("[onboarding:update] upsert error", {
+        requestId,
+        code: pe.code,
+        message: pe.message,
+        details: pe.details,
+        hint: pe.hint,
+      });
+
+      // Surface both code and message in the URL for quick diagnosis
+      const url = new URL("/onboarding", req.url);
+      url.searchParams.set("err", pe.code || "upsert_failed");
+      if (pe.message) url.searchParams.set("msg", pe.message);
+      url.searchParams.set("rid", requestId);
+      return NextResponse.redirect(url);
+    }
+
+    console.log("[onboarding:update] success", { requestId, userId: session.user.id, data });
+    return NextResponse.redirect(new URL(`/account?rid=${requestId}`, req.url));
+  } catch (e: unknown) {
+    const ex = e as { name?: string; message?: string; stack?: string };
+    console.error("[onboarding:update] exception", {
+      requestId,
+      name: ex?.name,
+      message: ex?.message,
+      stack: ex?.stack,
+    });
+    const url = new URL("/onboarding", req.url);
+    url.searchParams.set("err", "exception");
+    if (ex?.message) url.searchParams.set("msg", ex.message);
+    url.searchParams.set("rid", requestId);
+    return NextResponse.redirect(url);
   }
-
-  const form = await req.formData();
-  const categories = form.getAll("categories").map(String);
-  const preferred_shops = form.getAll("preferred_shops").map(String);
-
-  const cats = categories.filter((c) => CATEGORIES.includes(c));
-  const shops = preferred_shops.filter((s) => SHOPS.includes(s));
-
-  if (cats.length === 0 || shops.length === 0) {
-    return NextResponse.redirect(new URL("/onboarding?err=missing", req.url));
-  }
-
-  const payload: ProfilesUpsert = { id: session.user.id, categories: cats, preferred_shops: shops };
-
-  // Use UPSERT so first-time users (no profile row yet) get one created.
-  const { error } = await supabase
-    .from("profiles")
-    .upsert(payload as unknown as never, { onConflict: "id" })
-    .select("id")
-    .single();
-
-  if (error) {
-    return NextResponse.redirect(new URL(`/onboarding?err=${encodeURIComponent(error.code || "upsert_failed")}`, req.url));
-  }
-
-  return NextResponse.redirect(new URL("/account", req.url));
 }

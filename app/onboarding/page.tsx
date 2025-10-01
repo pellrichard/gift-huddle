@@ -11,9 +11,15 @@ type ProfilePrefs = { categories: string[] | null; preferred_shops: string[] | n
 const CATEGORIES = ["tech", "fashion", "beauty", "home", "toys", "sports"];
 const SHOPS = ["amazon", "argos", "johnlewis", "etsy", "nike", "apple"];
 
-export default async function OnboardingPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const supabase = createServerSupabase();
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) redirect("/login");
 
   const { data: profileRaw } = await supabase
@@ -23,20 +29,25 @@ export default async function OnboardingPage({ searchParams }: { searchParams?: 
     .single();
 
   const profile = (profileRaw ?? null) as ProfilePrefs | null;
-
   const initialCats = Array.isArray(profile?.categories) ? profile.categories : [];
   const initialShops = Array.isArray(profile?.preferred_shops) ? profile.preferred_shops : [];
 
   const err = (searchParams?.err ?? "") as string;
+  const msg = (searchParams?.msg ?? "") as string;
+  const rid = (searchParams?.rid ?? "") as string;
 
   return (
     <main className="max-w-xl mx-auto px-6 py-10">
       <h1 className="text-2xl font-semibold">Finish setting up your account</h1>
       <p className="text-gray-600 mt-2">Choose interests and favourite shops.</p>
 
-      {err && (
+      {(err || msg || rid) && (
         <div className="mt-4 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {err === "missing" ? "Pick at least one category and one shop." : "We couldn't save your choices. Please try again."}
+          {err === "missing"
+            ? "Pick at least one category and one shop."
+            : "We couldn't save your choices. Please try again."}
+          {msg ? <div className="mt-1 text-xs opacity-80">Details: {msg}</div> : null}
+          {rid ? <div className="mt-1 text-xs opacity-60">Request ID: {rid}</div> : null}
         </div>
       )}
 

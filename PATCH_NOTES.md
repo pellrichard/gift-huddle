@@ -1,3 +1,3 @@
-- Onboarding now uses UPSERT to create a `profiles` row if missing (fixes loop when the profile doesn't exist yet).
-- Displays a small error banner on `/onboarding` when `?err=` is present.
-- Date: 2025-10-01
+- Onboarding logging patch (no `any`) — 2025-10-01
+  - Replace `app/onboarding/update/route.ts` to remove all `any` usages.
+  - Adds `PgErr` type and uses `unknown` in catch, with safe narrowing.
