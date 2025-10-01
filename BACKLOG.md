@@ -22,3 +22,4 @@ Auth loop persists (likely cookie/session config). DB policy errors (e.g., `upda
 - Fixed ESLint rule in debug page by adding proper TypeScript types (no `any`).
 - OAuth callback now binds to route-handler response; cookies are written during exchange and preserved on redirect to /account.
 - Fixed ESLint prefer-const in auth callback (use const res instead of let).
+- Account page scaffolded with server-rendered overview, Preferences form (categories/budget/sizes), connected accounts list, and security block.
