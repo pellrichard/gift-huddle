@@ -1,35 +1,32 @@
-# Gift Huddle — ESLint & TS Fix Patch (Drop-in)
+# Gift Huddle Login Fix – Patch
 
-This zip contains **unified diff patches** plus a small helper component. Apply them to clean your build warnings/errors exactly as seen in your latest Vercel log.
+This patch replaces **app/auth/callback/route.ts** so that:
+- Supabase SSR writes cookies via a **writable adapter** (no manual cookie plumbing).
+- The callback returns a **200 landing page** with an instant client-side navigate,
+  avoiding Set-Cookie loss on 302 redirects.
 
-## Contents
-- `patches/001-*.diff` … `007-*.diff` — targeted changes for each file from your log.
-- `src/components/ui/SmartImage.tsx` — optional helper you can start using for images.
+## Apply
 
-## How to apply
+1. Copy the file in this zip to your repo at the same path:
 
-### Option A — One shot (recommended)
-From the project root (where your `app/` and `src/` folders are):
+   - `app/auth/callback/route.ts`
 
-```bash
-git apply --whitespace=fix patches/*.diff
-```
+2. Commit and deploy on Vercel.
 
-> If any hunk fails (e.g., your file has diverged), open the `.diff` and apply the tiny edits manually — they are very small and commented.
+3. In Supabase → Authentication → URL Configuration:
+   - Add all redirect URLs you use (production + preview), for example:
+     - `https://gift-huddle.com/auth/callback`
+     - `https://www.gift-huddle.com/auth/callback`
+     - `https://*-gift-huddle.vercel.app/auth/callback` (or your preview pattern)
 
-### Option B — Manual copy/paste
-Each `.diff` shows a tiny change set (import `next/image`, replace `<img>` with `<Image>`, fix hooks deps, remove `any`). Search for the shown lines in your file and update accordingly.
+4. Test the flow:
+   - Login with Google/Facebook.
+   - On the landing page, you should be redirected to `/account` (or `next=`).
+   - In DevTools → Application → Cookies, you should see `sb-…auth-token` and `sb-…refresh-token`.
 
 ## Notes
-- These patches do **not** change behavior — they only address lint & type errors:
-  - Swap `<img>` → `<Image>` and add `width`/`height` for Next.js.
-  - Fix `react-hooks/exhaustive-deps` with `useCallback` and complete deps.
-  - Remove `any` in `ProfileBanner.tsx` by using proper React event types & booleans.
-  - Remove an unused import in `AccountPage.tsx`.
-- After applying, run:
-  ```bash
-  npm run lint && npm run build
-  ```
 
-## Using SmartImage (optional)
-Import from `@/components/ui/SmartImage` and drop it in place of raw `Image` when you want a consistent wrapper.
+- Cookie attributes are handled by Supabase (`HttpOnly`, `Secure`, `Path=/`, `SameSite=Lax`).
+- Do **not** set the `Domain=` attribute unless you need cross-subdomain cookies.
+- You can keep your existing `middleware.ts` for now. If problems persist,
+  temporarily disable the middleware to reduce moving parts during debugging.
