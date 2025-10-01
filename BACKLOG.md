@@ -19,3 +19,4 @@ Auth loop persists (likely cookie/session config). DB policy errors (e.g., `upda
   - Redirect authed users away from /login and /signup to /account.
   - Protect /account for unauthenticated users.
 - Added SQL migration to align DB schema: profiles.categories, updated_at triggers, events & event_participants with RLS.
+- Fixed ESLint rule in debug page by adding proper TypeScript types (no `any`).
