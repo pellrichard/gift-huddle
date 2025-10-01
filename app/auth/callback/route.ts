@@ -1,6 +1,6 @@
 // app/auth/callback/route.ts
-export const runtime = "nodejs";          // ensure Node.js runtime (not Edge)
-export const dynamic = "force-dynamic";   // disable caching of this route
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -11,14 +11,35 @@ function safeNext(url: URL, nextParam: string | null) {
   return new URL(next, url.origin);
 }
 
+function htmlRedirect(to: URL, diag: Record<string, string | number | undefined>) {
+  const params = new URL(to);
+  for (const [k, v] of Object.entries(diag)) {
+    if (v !== undefined) params.searchParams.set(k, String(v));
+  }
+  const dest = params.toString();
+  const body = `<!doctype html>
+<meta charset="utf-8" />
+<meta http-equiv="refresh" content="0; url=${dest}"/>
+<title>Redirecting…</title>
+<p>Redirecting to <a href="${dest}">${dest}</a></p>
+<script>location.replace(${JSON.stringify(dest)});</script>`;
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+    },
+  });
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const nextParam = url.searchParams.get("next");
   const target = safeNext(url, nextParam);
 
-  const res = NextResponse.redirect(target);
-  res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  // We'll return an HTML 200 response and navigate with JS/meta.
+  const res = NextResponse.next();
 
   const cookiesAdapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
     get(name: string): string | undefined {
@@ -45,34 +66,37 @@ export async function GET(req: NextRequest) {
     }
   );
 
-  const withDiag = (pkce: string, errorMessage?: string) => {
-    const names = (res.headers.get("set-cookie") || "")
-      .split(/,(?=[^;]+?=)/) // split multiple Set-Cookie values
-      .map(s => s.split(";")[0].split("=")[0].trim())
-      .filter(Boolean)
-      .slice(0, 8)
-      .join(",");
-    target.searchParams.set("link_debug", "1");
-    target.searchParams.set("pkce", pkce);
-    if (errorMessage) target.searchParams.set("link_error", encodeURIComponent(errorMessage));
-    target.searchParams.set("cookie_names", names);
-    res.headers.set("x-gh-set-cookie-count", String((res.headers.get("set-cookie") || "").split(/,(?=[^;]+?=)/).filter(Boolean).length));
-    res.headers.set("Location", target.toString()); // ensure updated query params
-  };
-
   if (!code) {
-    withDiag("skipped_no_code", "missing_code");
-    return res;
+    const html = htmlRedirect(target, { link_debug: 1, pkce: "skipped_no_code" });
+    // merge cookies set on res into html Response
+    const setCookie = res.headers.get("set-cookie");
+    if (setCookie) html.headers.append("set-cookie", setCookie);
+    return html;
   }
 
   try {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    withDiag(error ? "error" : "ok", error?.message);
-    return res;
+    const setCookie = res.headers.get("set-cookie") || "";
+    const cookieNames = setCookie
+      .split(/,(?=[^;]+?=)/)
+      .map(s => s.split(";")[0].split("=")[0].trim())
+      .filter(Boolean)
+      .slice(0, 8)
+      .join(",");
+
+    const html = htmlRedirect(target, {
+      link_debug: 1,
+      pkce: error ? "error" : "ok",
+      cookie_names: cookieNames || undefined,
+      link_error: error?.message ? encodeURIComponent(error.message) : undefined,
+    });
+    if (setCookie) html.headers.append("set-cookie", setCookie);
+    return html;
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "unexpected_error_exchanging_code";
-    withDiag("exception", message);
-    return res;
+    const message = err instanceof Error ? err.message : "unexpected_error_exchanging_code";
+    const html = htmlRedirect(target, { link_debug: 1, pkce: "exception", link_error: encodeURIComponent(message) });
+    const setCookie = res.headers.get("set-cookie");
+    if (setCookie) html.headers.append("set-cookie", setCookie);
+    return html;
   }
 }
