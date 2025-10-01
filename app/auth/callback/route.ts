@@ -13,23 +13,26 @@ export async function GET(req: NextRequest) {
   const nextParam = url.searchParams.get("next");
   const target = safeNext(url, nextParam);
 
-  // temp response collects any Set-Cookie from Supabase
-  const tmp = NextResponse.next();
+  // Create the FINAL redirect response up front.
+  // We'll have Supabase write cookies directly onto THIS response,
+  // so we don't lose any cookie flags/options.
+  const res = NextResponse.redirect(target);
 
+  // Adapter that writes directly to `res.cookies` with EXACT options
   const cookiesAdapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
     get(name: string): string | undefined {
+      // read from incoming request (if present)
       return req.cookies.get(name)?.value;
     },
     set(name: string, value: string, options?: CookieOptions): void {
-      // Pass-through Supabase-provided options verbatim.
-      tmp.cookies.set({ name, value, ...(options ?? {}) });
+      res.cookies.set({ name, value, ...(options ?? {}) });
     },
     remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
       const opts: CookieOptions | undefined =
         typeof valueOrOptions === "object" && valueOrOptions !== null
           ? valueOrOptions
           : maybeOptions;
-      tmp.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+      res.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
     },
   };
 
@@ -42,65 +45,35 @@ export async function GET(req: NextRequest) {
     }
   );
 
-  const mkRedirect = () => {
-    const res = NextResponse.redirect(target);
-    const pending = tmp.cookies.getAll();
-    for (const c of pending) res.cookies.set(c);
-    res.headers.set("x-gh-set-cookie-count", String(pending.length));
-    const names = pending.slice(0, 8).map(c => c.name).join(",");
+  const withDiag = (pkce: string, errorMessage?: string) => {
+    // expose minimal debug params for quick triage
+    const cookieHeaders = res.headers.getSetCookie?.() ?? []; // nextjs runtime often exposes this helper
+    const names = cookieHeaders
+      .map((h: string) => h.split(";")[0].split("=")[0])
+      .filter(Boolean)
+      .slice(0, 8)
+      .join(",");
+    target.searchParams.set("link_debug", "1");
+    target.searchParams.set("pkce", pkce);
+    if (errorMessage) target.searchParams.set("link_error", encodeURIComponent(errorMessage));
+    target.searchParams.set("cookies", String(cookieHeaders.length));
     if (names) target.searchParams.set("cookie_names", names);
-    return res;
+    res.headers.set("x-gh-set-cookie-count", String(cookieHeaders.length));
   };
 
   if (!code) {
-    target.searchParams.set("link_error", encodeURIComponent("missing_code"));
-    target.searchParams.set("link_debug", "1");
-    target.searchParams.set("pkce", "skipped_no_code");
-    target.searchParams.set("cookies", "0");
-    target.searchParams.set("host", url.host);
-    return mkRedirect();
+    withDiag("skipped_no_code", "missing_code");
+    return res;
   }
 
   try {
-    const t0 = Date.now();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    const elapsed = Date.now() - t0;
-    const pending = tmp.cookies.getAll();
-    const cookieCount = pending.length;
-    const cookieNames = pending.map(c => c.name);
-
-    console.log("[auth/callback v8] exchange", {
-      host: url.host,
-      elapsed_ms: elapsed,
-      cookie_count: cookieCount,
-      cookie_names: cookieNames,
-      has_error: Boolean(error),
-      error_message: error?.message,
-    });
-
-    target.searchParams.set("link_debug", "1");
-    target.searchParams.set("pkce", error ? "error" : "ok");
-    target.searchParams.set("cookies", String(cookieCount));
-    target.searchParams.set("host", url.host);
-    if (cookieNames.length) target.searchParams.set("cookie_names", cookieNames.slice(0,8).join(","));
-    if (error) {
-      target.searchParams.set("link_error", encodeURIComponent(error.message));
-    } else {
-      target.searchParams.delete("link_error");
-    }
-
-    return mkRedirect();
+    withDiag(error ? "error" : "ok", error?.message);
+    return res;
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "unexpected_error_exchanging_code";
-    console.error("[auth/callback v8] exception", { host: url.host, message });
-
-    target.searchParams.set("link_debug", "1");
-    target.searchParams.set("pkce", "exception");
-    target.searchParams.set("cookies", "0");
-    target.searchParams.set("host", url.host);
-    target.searchParams.set("link_error", encodeURIComponent(message));
-
-    return mkRedirect();
+    withDiag("exception", message);
+    return res;
   }
 }
