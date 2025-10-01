@@ -7,20 +7,22 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+interface CookieStoreShape {
+  get(name: string): { value: string } | undefined;
+  getAll(): { name: string; value: string }[];
+}
+type CookieStoreFn = () => CookieStoreShape;
+
 function decodeBase64Url(b64u: string): string {
-  // Strip optional "base64-" prefix
   const raw = b64u.startsWith("base64-") ? b64u.slice(7) : b64u;
-  // Convert base64url -> base64
   const base64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-  // Pad
   const pad = base64.length % 4 === 2 ? "==" : base64.length % 4 === 3 ? "=" : "";
   return Buffer.from(base64 + pad, "base64").toString("utf8");
 }
 
 function getCookieValue(name: string): string | null {
-  const jar = cookies();
-  const c = jar.get(name)?.value ?? null;
-  return c;
+  const store = (cookies as unknown as CookieStoreFn)();
+  return store.get(name)?.value ?? null;
 }
 
 function readSupabaseTokens(prefix: string) {
@@ -47,24 +49,30 @@ function readSupabaseTokens(prefix: string) {
   return { access_token, refresh_token };
 }
 
+// Minimal shape for profile gate
+interface ProfileGate {
+  preferred_currency: string | null;
+  notify_channel: string | null;
+}
+
 export default async function AccountPage() {
   const supabase = createServerSupabase();
 
-  // First attempt: normal SSR session
-  let { data: { session }, error } = await supabase.auth.getSession();
+  let {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  // Fallback: if no session but cookies exist, reconstruct
   if (!session) {
-    // discover cookie prefix (sb-...)
-    const jar = cookies();
-    const anySb = jar.getAll().find(c => c.name.startsWith("sb-") && c.name.includes("-auth-token.0"));
+    const store = (cookies as unknown as CookieStoreFn)();
+    const anySb = store
+      .getAll()
+      .find((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token.0"));
     const prefix = anySb ? anySb.name.split("-auth-token.0")[0] : null;
 
     if (prefix) {
       const { access_token, refresh_token } = readSupabaseTokens(prefix);
       if (access_token && refresh_token) {
         await supabase.auth.setSession({ access_token, refresh_token });
-        // try again
         const res2 = await supabase.auth.getSession();
         session = res2.data.session;
       }
@@ -72,16 +80,14 @@ export default async function AccountPage() {
   }
 
   if (!session) {
-    // Still no session -> go to login
     redirect("/login");
   }
 
-  // Example: profile completeness gate (optional)
-  const { data: profile } = await supabase
+  const { data: profile } = (await supabase
     .from("profiles")
     .select("preferred_currency, notify_channel")
     .eq("id", session.user.id)
-    .single();
+    .single()) as unknown as { data: ProfileGate | null };
 
   if (!profile?.preferred_currency || !profile?.notify_channel) {
     redirect("/onboarding");
@@ -90,7 +96,9 @@ export default async function AccountPage() {
   return (
     <main className="max-w-2xl mx-auto px-6 py-12">
       <h1 className="text-2xl font-semibold">Account</h1>
-      <p className="text-gray-600 mt-1">Signed in as <strong>{session.user.email ?? "(no email)"}</strong></p>
+      <p className="text-gray-600 mt-1">
+        Signed in as <strong>{session.user.email ?? "(no email)"}</strong>
+      </p>
     </main>
   );
 }
