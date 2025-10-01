@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isProd) console.log("[onboarding:update] success", { requestId, userId: session.user.id, data });
-    return NextResponse.redirect(new URL(`/account?rid=${requestId}`, req.url));
+    return NextResponse.redirect(new URL(`/account?saved=1&rid=${requestId}`, req.url));
   } catch (e: unknown) {
     const ex = e as { name?: string; message?: string; stack?: string };
     console.error("[onboarding:update] exception", {
