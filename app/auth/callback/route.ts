@@ -1,4 +1,4 @@
-// app/auth/callback/route.ts
+// app/auth/callback/route.ts (type fix)
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,12 +7,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   createServerClient,
   type CookieMethodsServer,
+  type CookieMethodsServerDeprecated,
   type CookieOptions,
 } from "@supabase/ssr";
 
 function safeNext(url: URL) {
   const n = url.searchParams.get("next");
-  // Prevent open redirects; only allow same-origin relative paths
   if (n && n.startsWith("/")) return n;
   return "/account";
 }
@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
 
-  // Prepare a 200 HTML landing page that navigates after cookies are written.
   const target = safeNext(url);
   const html = `<!doctype html>
 <meta charset="utf-8">
@@ -35,8 +34,8 @@ export async function GET(req: NextRequest) {
     headers: { "Content-Type": "text/html; charset=utf-8" },
   });
 
-  // Cookie adapter that READS from the request and WRITES to the response.
-  const adapter: CookieMethodsServer = {
+  // Use union type to satisfy current @supabase/ssr typings.
+  const adapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
     get(name: string): string | undefined {
       return req.cookies.get(name)?.value;
     },
@@ -59,10 +58,8 @@ export async function GET(req: NextRequest) {
   );
 
   if (code) {
-    // This will set the sb-… cookies via our writable adapter.
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // Return the HTML page (no 302) so cookies reliably land in the browser.
   return res;
 }

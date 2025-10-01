@@ -1,37 +1,7 @@
 // lib/supabase/server.ts
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions, type CookieMethodsServer, type CookieMethodsServerDeprecated } from "@supabase/ssr";
-
-interface CookieStoreShape {
-  get(name: string): { value: string } | undefined;
-  set(init: { name: string; value: string } & CookieOptions): void;
-}
-interface CookieStoreFn {
-  (): CookieStoreShape;
-}
-
-export function createServerSupabase() {
-  const store = (cookies as unknown as CookieStoreFn)();
-
-  const adapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
-    get(name: string): string | undefined {
-      return store.get(name)?.value;
-    },
-    set(name: string, value: string, options?: CookieOptions): void {
-      store.set({ name, value, ...(options ?? {}) });
-    },
-    remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
-      const opts: CookieOptions | undefined =
-        typeof valueOrOptions === "object" && valueOrOptions !== null
-          ? valueOrOptions
-          : maybeOptions;
-      store.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
-    },
-  };
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: adapter, cookieEncoding: "base64url" }
-  );
-}
+// Shim that re-exports the unified SSR helpers from src/lib/supabase/server.ts
+export {
+  createServerSupabase,
+  createRouteHandlerSupabase,
+  createClient,
+} from "@/lib/supabase/server";
