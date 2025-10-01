@@ -4,32 +4,23 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient, type CookieOptions, type CookieMethodsServer, type CookieMethodsServerDeprecated } from "@supabase/ssr";
+import { cookies as nextCookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 function safeNext(url: URL, nextParam: string | null) {
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/account";
   return new URL(next, url.origin);
 }
 
-function htmlRedirect(to: URL, diag: Record<string, string | number | undefined>) {
-  const params = new URL(to);
-  for (const [k, v] of Object.entries(diag)) {
-    if (v !== undefined) params.searchParams.set(k, String(v));
-  }
-  const dest = params.toString();
-  const body = `<!doctype html>
-<meta charset="utf-8" />
-<meta http-equiv="refresh" content="0; url=${dest}"/>
-<title>Redirecting…</title>
-<p>Redirecting to <a href="${dest}">${dest}</a></p>
-<script>location.replace(${JSON.stringify(dest)});</script>`;
-  return new Response(body, {
-    status: 200,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
-    },
-  });
+function cookieBaseNameFromUrl(supabaseUrl: string) {
+  // Matches how ssr names the cookie base: 'sb-' + url host without scheme + 5-char hash
+  // We can't compute the hash here, so we derive from any existing cookie that starts with 'sb-'.
+  // Fallback to 'sb' base (Supabase will accept names we set); account page reads by prefix.
+  const fromJar = nextCookies().getAll().find(c => c.name.startsWith("sb-"));
+  if (fromJar) return fromJar.name.split("-").slice(0, 2).join("-"); // e.g., 'sb-kzcfryzzxxzyoizlehse'
+  // very conservative fallback
+  const host = new URL(supabaseUrl).hostname.replaceAll(".", "");
+  return `sb-${host.slice(0,20)}`;
 }
 
 export async function GET(req: NextRequest) {
@@ -38,65 +29,70 @@ export async function GET(req: NextRequest) {
   const nextParam = url.searchParams.get("next");
   const target = safeNext(url, nextParam);
 
-  // We'll return an HTML 200 response and navigate with JS/meta.
-  const res = NextResponse.next();
+  const res = NextResponse.redirect(target);
 
-  const cookiesAdapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
-    get(name: string): string | undefined {
-      return req.cookies.get(name)?.value;
-    },
-    set(name: string, value: string, options?: CookieOptions): void {
-      res.cookies.set({ name, value, ...(options ?? {}) });
-    },
-    remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
-      const opts: CookieOptions | undefined =
-        typeof valueOrOptions === "object" && valueOrOptions !== null
-          ? valueOrOptions
-          : maybeOptions;
-      res.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
-    },
-  };
-
+  const cookieStore = nextCookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: cookiesAdapter,
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+        set(name: string, value: string, options?: any) { cookieStore.set({ name, value, ...(options ?? {}) }); },
+        remove(name: string, options?: any) { cookieStore.set({ name, value: "", ...(options ?? {}), maxAge: 0 }); },
+      },
       cookieEncoding: "base64url",
     }
   );
 
-  if (!code) {
-    const html = htmlRedirect(target, { link_debug: 1, pkce: "skipped_no_code" });
-    // merge cookies set on res into html Response
-    const setCookie = res.headers.get("set-cookie");
-    if (setCookie) html.headers.append("set-cookie", setCookie);
-    return html;
-  }
+  if (!code) return res;
 
-  try {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    const setCookie = res.headers.get("set-cookie") || "";
-    const cookieNames = setCookie
-      .split(/,(?=[^;]+?=)/)
-      .map(s => s.split(";")[0].split("=")[0].trim())
-      .filter(Boolean)
-      .slice(0, 8)
-      .join(",");
+  // Exchange code for session (should set cookies internally; but if platform strips them we'll set explicitly below)
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    const html = htmlRedirect(target, {
-      link_debug: 1,
-      pkce: error ? "error" : "ok",
-      cookie_names: cookieNames || undefined,
-      link_error: error?.message ? encodeURIComponent(error.message) : undefined,
+  // Get session (access + refresh) to set our own cookies if needed
+  const { data: sess } = await supabase.auth.getSession();
+  const accessToken = sess?.session?.access_token ?? data?.session?.access_token;
+  const refreshToken = sess?.session?.refresh_token ?? data?.session?.refresh_token;
+
+  const base = cookieBaseNameFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL!);
+  const now = new Date();
+  const inOneYear = new Date(now.getTime() + 365*24*60*60*1000);
+
+  // Explicitly set both cookies on the redirect response with secure flags
+  if (accessToken) {
+    res.cookies.set({
+      name: `${base}-auth-token.0`,
+      value: `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString("base64url")}`,
+      httpOnly: true, secure: true, sameSite: "lax", path: "/", expires: inOneYear,
     });
-    if (setCookie) html.headers.append("set-cookie", setCookie);
-    return html;
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "unexpected_error_exchanging_code";
-    const html = htmlRedirect(target, { link_debug: 1, pkce: "exception", link_error: encodeURIComponent(message) });
-    const setCookie = res.headers.get("set-cookie");
-    if (setCookie) html.headers.append("set-cookie", setCookie);
-    return html;
+    res.cookies.set({
+      name: `${base}-auth-token.1`,
+      value: Buffer.from("fields=email,first_name,last_name,full_name,avatar_url,provider,provider_id").toString("base64url"),
+      httpOnly: true, secure: true, sameSite: "lax", path: "/", expires: inOneYear,
+    });
   }
+  if (refreshToken) {
+    res.cookies.set({
+      name: `${base}-refresh-token.0`,
+      value: `base64-${Buffer.from(JSON.stringify({ refresh_token: refreshToken })).toString("base64url")}`,
+      httpOnly: true, secure: true, sameSite: "lax", path: "/", expires: inOneYear,
+    });
+    res.cookies.set({
+      name: `${base}-refresh-token.1`,
+      value: Buffer.from("fields=email,first_name,last_name,full_name,avatar_url,provider,provider_id").toString("base64url"),
+      httpOnly: true, secure: true, sameSite: "lax", path: "/", expires: inOneYear,
+    });
+  }
+
+  // add minimal diag
+  const names = (res.headers.get("set-cookie") || "")
+    .split(/,(?=[^;]+?=)/)
+    .map(s => s.split(";")[0].split("=")[0].trim())
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(",");
+  res.headers.set("Location", target.toString());
+  res.headers.set("x-gh-set-cookie-count", String((res.headers.get("set-cookie") || "").split(/,(?=[^;]+?=)/).filter(Boolean).length));
+  return res;
 }
