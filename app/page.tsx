@@ -1,7 +1,13 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 import { GHButton } from "@/components/ui/GHButton";
 
-export default function Home() {
+export default async function Home() {
+  const c = await cookies();
+  if (c.get("sb-access-token") || c.get("sb-refresh-token") || c.get("supabase-auth-token")) {
+    redirect("/account");
+  }
   return (
     <main className="mx-auto max-w-7xl px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
       <section>

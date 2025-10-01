@@ -10,3 +10,12 @@
 
 ### End-of-day summary
 Auth loop persists (likely cookie/session config). DB policy errors (e.g., `updated_at` and `is_shared`) require SQL-side fixes; not patched here. Next steps: migrate to `@supabase/ssr`, review middleware/session cookies, and align DB schema with code (profiles fields, events policies).
+- Footer socials limited to Facebook + LinkedIn; removed placeholders.
+- Fixed ESLint warning on Contact page (removed unused import).
+- Fixed Next 15 cookies() typing by awaiting cookies() in home redirect.
+- Header: logout now clears client session and redirects to the homepage after server sign-out.
+- Added /privacy page to match footer link.
+- Introduced middleware-based auth routing:
+  - Redirect authed users away from /login and /signup to /account.
+  - Protect /account for unauthenticated users.
+- Added SQL migration to align DB schema: profiles.categories, updated_at triggers, events & event_participants with RLS.

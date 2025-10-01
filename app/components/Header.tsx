@@ -2,9 +2,24 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Header() {
   const [logoFailed, setLogoFailed] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setIsLoggedIn(!!data.session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setIsLoggedIn(!!session);
+    });
+    return () => { mounted = false; sub.subscription?.unsubscribe(); };
+  }, []);
 
   return (
     <header className="w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -12,7 +27,7 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-3">
           {!logoFailed ? (
             <Image
-              src="/logo.webp"
+              src="/logo.svg"
               alt="Gift Huddle"
               width={128}
               height={32}
@@ -48,13 +63,23 @@ export default function Header() {
           <Link href="/how-it-works" className="text-sm font-medium text-gray-700 hover:text-gray-900">
             How it works
           </Link>
-          <Link
-            href="/login"
-            className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700"
-            prefetch={false}
-          >
-            Login
-          </Link>
+          <>{isLoggedIn ? (
+            <button onClick={async () => {
+              try { await supabase.auth.signOut(); } catch {}
+              try { await fetch("/logout", { method: "POST" }); } catch {}
+              setIsLoggedIn(false);
+              window.location.href = "/";
+            }}
+              className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
+              Log out
+            </button>
+          ) : (
+            <Link href="/login"
+              className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700"
+              prefetch={false}>
+              Login
+            </Link>
+          )}</>
         </nav>
       </div>
     </header>

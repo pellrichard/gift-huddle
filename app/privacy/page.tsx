@@ -1,22 +1,27 @@
-export const metadata = {
-  title: 'Privacy | Gift Huddle',
-  description: 'How we collect, use, and protect your data.',
-};
+export const metadata = { title: "Privacy | Gift Huddle" };
 
-export default function Page() {
+export default function PrivacyPage() {
   return (
-    <main className="max-w-3xl mx-auto px-4 py-12 prose">
+    <main className="mx-auto max-w-3xl px-6 py-12 prose">
       <h1>Privacy</h1>
-      <p>We collect the minimum necessary data to provide Gift Huddle. We never sell your data.</p>
-      <h2>Logins & permissions</h2>
-      <p>Facebook Login requests only <strong>email</strong> and <strong>public profile</strong>. Google and Apple provide similar basic profile info.</p>
-      <h2>Storage & security</h2>
+      <p><em>Last updated: 01 October 2025</em></p>
+      <p>We keep it simple: we do not sell your data. We collect only what we need to run Gift Huddle and improve your experience.</p>
+      <h2>What we collect</h2>
       <ul>
-        <li>Hosted on Supabase (Postgres) with encryption at rest.</li>
-        <li>Field-level: <code>dob</code> stored as a date; <code>dob_hide_year</code> controls visibility.</li>
+        <li>Account info (name, email, social login profile basics)</li>
+        <li>Your lists, preferences, and items you choose to save</li>
+        <li>Basic analytics (page views, errors) to keep the app healthy</li>
       </ul>
+      <h2>How we use it</h2>
+      <ul>
+        <li>Operate and improve Gift Huddle</li>
+        <li>Personalize recommendations and price alerts</li>
+        <li>Prevent fraud and abuse</li>
+      </ul>
+      <h2>Data sharing</h2>
+      <p>We may use affiliate links and receive a commission if you buy. We do not share or sell your personal data.</p>
       <h2>Contact</h2>
-      <p>Questions? Contact support@gift-huddle.com.</p>
+      <p>Questions? Visit our Contact page.</p>
     </main>
   );
 }
