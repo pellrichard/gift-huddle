@@ -45,3 +45,31 @@ create policy "profiles-update-own" on public.profiles for update using (id = au
 ## Dev notes
 - Logging: production logs only errors in the route; dev logs include inputs and request IDs.
 - TypeScript: the route uses a local type and a minimal cast at the callsite to avoid deep TS recursion in generated Supabase types.
+
+## Quick start
+1. `npm install`
+2. Create `.env.local` with Supabase URL & anon key.
+3. `npm run dev`
+
+## Key routes
+- `/login` → OAuth buttons
+- `/auth/callback` → persists cookies then redirects
+- `/logout` → clears cookies, redirects `/`
+- `/account` → server-rendered; Preferences form saves to `profiles`
+- `/terms` `/privacy` `/contact`
+
+## Data model
+`profiles.categories` JSONB:
+```json
+{
+  "interests": { "tech": true },
+  "budget_monthly": 100,
+  "sizes": { "clothing": "M", "shoes": "UK 9" }
+}
+```
+
+## Debugging auth
+- Visit `/_debug/auth` or call `/api/_debug/auth`
+
+## Changelog
+See `RELEASES.md`.
