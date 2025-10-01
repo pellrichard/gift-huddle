@@ -1,76 +1,34 @@
-# Gift Huddle – Backlog
+# BACKLOG
 
-## ⚠️ Outstanding
-(Active tasks only – move items here from Daily Notes as backlog until completed.)
+## Daily Notes – 2025-10-01
 
-* Convert **Baloo 2 wordmark** to proper outlined paths (no font dependency in SVG).
-* Confirm **header logo scaling** (~32px height, tight crop).
-* Test **favicons across browsers** (Safari pinned tabs, Windows, Android).
-* Ensure **Baloo 2 loads consistently** (no FOUT/flash).
-* Consider **additional logo variants** (mono, dark mode, high-contrast).
-* Verify **app/layout.tsx** vs. nested layouts if header still doesn’t show everywhere.
+- Migrated auth to **@supabase/ssr** (callback, middleware, server, client).
+- Fixed login loop: cookies now persist; account page sees session.
+- Hardened middleware with try/catch and path scoping for `/account` + `/onboarding`.
+- Type + lint fixes for Next 15 cookie typings; build passes locally.
 
----
+### 📌 End of Day Summary
+- **Auth flow stabilized**: OAuth → callback (200 page) → cookies → SSR → `/account` works.
+- **Consistency**: Unified on `@supabase/ssr` across client, server, middleware.
+- **Resilience**: Middleware narrowed to auth-critical paths; avoids 500s on edge.
 
 ## ✅ Completed
-(Tasks moved here when resolved.)
 
-* New Logo & Icon delivered (teal present with pink outline/ribbon, bow on top).
-* Font switched to **Baloo 2** via `next/font`.
-* Header & Footer updated with logo and nav links (Features, How it works, Login).
-* Favicons generated and docs provided.
-* Documentation updated with v0.6.0 changelog stub + BACKLOG.md created.
-* Brand patch, favicon patch, and header/footer hotfix delivered.
+### 2025-10-01
+- Migrate OAuth callback to `@supabase/ssr` with writable cookie adapter (return 200 landing page).
+- Replace middleware with SSR version; add resilient guards + try/catch.
+- Client migration to `createBrowserClient` (`@supabase/ssr`).
+- Server helper refactor; provide `createClient()` back-compat; route-handler writer helper.
+- Next 15 cookie typing & ESLint fixes; successful build.
 
----
-
-## Daily Notes
-(Running log of day-to-day progress. Each section is appended with date.)
-
-## Daily Notes – 2025-09-29
-
-### ✅ Completed Today
-* **New Logo & Icon**
-  * Teal present with pink outline/ribbon, lid overhang, bow on top.
-  * Wordmark in **Baloo 2 Bold**.
-  * Delivered as `public/gift-huddle-logo.svg` (full lockup) + `public/gift-huddle-icon.svg` (icon-only).
-* **Font**
-  * Sitewide font switched to **Baloo 2** via `next/font`.
-* **Header & Footer**
-  * Updated to display new logo (header) and icon (footer).
-  * Nav links: **Features**, **How it works**, **Login**.
-* **Favicons**
-  * Full set generated (`favicon.ico`, PNGs 16–512px, `site.webmanifest`).
-  * Install snippet provided in `FAVICON-INSTALL.html`.
-* **Docs**
-  * `/README.md` updated with v0.6.0 changelog stub.
-  * `BACKLOG.md` created to track outstanding items.
-* **Patches delivered**
-  * Brand patch with logos, favicons, and docs.
-  * Hotfix for build issues (fonts.ts + `<img>` for SVGs).
-  * Header/Footer restore patch (ensures they render via `app/layout.tsx`).
-
-### ⚠️ Outstanding / Backlog
-* Convert **Baloo 2 wordmark** to proper outlined paths (no font dependency in SVG).
-* Confirm **header logo scaling** (~32px height, tight crop).
-* Test **favicons across browsers** (Safari pinned tabs, Windows, Android).
-* Ensure **Baloo 2 loads consistently** (no FOUT/flash).
-* Consider **additional logo variants** (mono, dark mode, high-contrast).
-* Verify **app/layout.tsx** vs. nested layouts if header still doesn’t show everywhere.
-
-### 👉 Next Steps (Tomorrow)
-1. Verify if the **header + footer render properly in production** after the restore patch.
-2. Tick off favicon/browser checks.
-3. Start outlining or preparing the **Baloo 2 wordmark** as paths.
-
+## ⚠️ Outstanding
+- QA: Onboarding gate — redirect to `/onboarding` when profile incomplete.
+- QA: Logout route — ensure cookies are cleared; consider using `createRouteHandlerSupabase(req, res)` for explicit cookie writes.
+- Supabase Auth → Redirect URLs: confirm production + preview domains are configured.
+- Repo cleanup: remove any remaining references to `@supabase/auth-helpers-nextjs` and dead code.
+- Preview deployment check: confirm cookies persist on preview URLs.
 
 ---
 
-## 🤖 ChatGPT Context
-(This section is for guiding how ChatGPT and user collaborate on backlog management.)
-
-- Daily Notes are appended here each session to capture work done and next steps.
-- Outstanding section only shows **active items** not yet finished.
-- Completed section grows over time as tasks are resolved.
-- GitHub and Vercel logs track commit/build history, so no need to duplicate that here.
-- ChatGPT should always move items between sections as they are completed or created.
+## 🤖 Context
+- Working rules documented in `WORKING_RULES.md` (project-wide).
