@@ -32,3 +32,8 @@
 
 ## 🤖 Context
 - Working rules documented in `WORKING_RULES.md` (project-wide).
+
+### 2025-10-01
+
+- Auth hardening: removed manual token reconstruction in `app/account/page.tsx`, relying on SSR cookies; set OAuth callback to default to `/account`; updated import to `@/src/lib/supabase/server`. Next: consolidate to `src/` (delete top-level `app/` after verifying no unique routes), remove `lib/supabase/browser.ts` after updating any legacy imports.
+- Correction: fixed import path in `app/account/page.tsx` to `@/lib/supabase/server` (your alias already maps `@` to `src/`).
