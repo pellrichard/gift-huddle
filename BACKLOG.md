@@ -20,3 +20,5 @@ Auth loop persists (likely cookie/session config). DB policy errors (e.g., `upda
   - Protect /account for unauthenticated users.
 - Added SQL migration to align DB schema: profiles.categories, updated_at triggers, events & event_participants with RLS.
 - Fixed ESLint rule in debug page by adding proper TypeScript types (no `any`).
+- OAuth callback now binds to route-handler response; cookies are written during exchange and preserved on redirect to /account.
+- Fixed ESLint prefer-const in auth callback (use const res instead of let).
