@@ -1,43 +1,37 @@
-﻿// app/auth/callback/route.ts â€” persist Supabase cookies then redirect
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
+// OAuth callback: exchanges the code for a session and redirects.
+// Works with Next.js 15 Route Handlers and @supabase/ssr.
 import { NextResponse, type NextRequest } from "next/server";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
+
 function getNext(url: URL) {
   const n = url.searchParams.get("next");
-  return n && n.startsWith("/") ? n : "/account";
+  try {
+    if (!n) return "/account";
+    // Disallow open redirects
+    const asUrl = new URL(n, url.origin);
+    if (asUrl.origin !== url.origin) return "/account";
+    return asUrl.pathname + asUrl.search + asUrl.hash || "/account";
+  } catch {
+    return "/account";
+  }
 }
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const code = url.searchParams.get("code") ?? undefined;
-
-  // Prepare the redirect response first so Supabase can write cookies into it
-  const res = NextResponse.redirect(new URL(getNext(url), url));
-
-  // Bind Supabase to this req/res so exchangeCodeForSession can set cookies
+  const code = url.searchParams.get("code");
+  const next = getNext(url);
   const supabase = createRouteHandlerClient();
 
   if (code) {
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      // On failure, send back to homepage with a hint
+      const res = NextResponse.redirect(new URL(`/?auth_error=1`, req.url), { status: 303 });
+      return res;
+    }
   }
 
-  // Helper cookie to aid middleware immediately after login (optional)
-  try {
-    res.cookies.set({
-      name: "gh_authed",
-      value: "1",
-      path: "/",
-      maxAge: 60 * 60 * 6, // 6 hours
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
-  } catch {}
-
-  return res;
+  return NextResponse.redirect(new URL(next, req.url), { status: 303 });
 }
-
-
