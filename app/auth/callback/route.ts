@@ -19,16 +19,17 @@ function getNext(url: URL) {
 }
 
 export async function GET(req: NextRequest) {
-  // Debug: surface incoming params
-  try { console.info("[oauth-callback]", { url: req.url }); } catch {}
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
-  try { console.info("[oauth-callback:params]", { host: url.host, pathname: url.pathname, hasCode: Boolean(code), codeLen: code ? code.length : 0, next: url.searchParams.get("next") }); } catch {}
   const next = getNext(url);
   const supabase = createRouteHandlerClient();
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const dbg = NextResponse.redirect(new URL(next, req.url), { status: 303 });
+    try { dbg.headers.set('X-OAuth-Debug', 'has_code'); } catch {}
+    if (error) { return NextResponse.redirect(new URL(`/?auth_error=1`, req.url), { status: 303 }); }
+    return dbg;
     if (error) {
       // On failure, send back to homepage with a hint
       const res = NextResponse.redirect(new URL(`/?auth_error=1`, req.url), { status: 303 });
@@ -36,5 +37,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL(next, req.url), { status: 303 });
+  // If we got this far, we didn't have a code or we already returned above
+  const res = NextResponse.redirect(new URL(next, req.url), { status: 303 });
+  try { res.headers.set('X-OAuth-Debug', 'no_code_fallthrough'); } catch {}
+  return res;
 }

@@ -18,6 +18,7 @@
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
 
 
-### 2025-10-02 – OAuth instrumentation
-- Added structured logs to `/auth/signin` and `/auth/callback`.
-- Added `/api/debug/auth` to inspect cookie presence per host.
+### 2025-10-02 – Include /auth in middleware matcher
+- Canonical host redirect now applies to OAuth callback.
+- Added debug header `X-OAuth-Debug` when `code` present.
+- Added Facebook/Supabase config notes.
