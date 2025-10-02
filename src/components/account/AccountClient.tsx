@@ -24,7 +24,7 @@ type AccountClientProps = {
   avatarUrl?: string | null;
 };
 
-// ---- mock data (replace with Supabase when wiring) ----
+// ---------- Mock data (replace with Supabase when wiring) ----------
 const mockEvents: { id: string; title: string; date: string; icon?: React.ReactNode }[] = [
   { id: "1", title: "Mum's Birthday", date: "2025-10-04", icon: <Gift className="h-4 w-4" /> },
   { id: "2", title: "Secret Santa Reveal", date: "2025-12-14", icon: <Sparkles className="h-4 w-4" /> },
@@ -68,7 +68,7 @@ const mockSuggestions = [
   { id: "s-3", title: "Wireless Meat Thermometer", tag: "Cooking", image: "/images/suggest/thermo.png" },
 ];
 
-// ---- helpers ----
+// ----------------- Small helpers -----------------
 function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
@@ -125,7 +125,7 @@ function Chip({
   );
 }
 
-// ---- Mini calendar ----
+// ----------------- Mini Calendar -----------------
 function MiniCalendar({
   events,
   monthDate,
@@ -182,7 +182,7 @@ function MiniCalendar({
   );
 }
 
-// --- Edit Profile Modal ---
+// ----------------- Edit Profile Modal -----------------
 type EditPayload = {
   name: string;
   dob: string | null;
@@ -235,13 +235,14 @@ function EditProfileModal({
     setArr(arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]);
   };
 
+  // Selected items first, unselected at end (as per your screenshot behaviour)
   const sortedCats = useMemo(() => {
     return [...allCategories].sort((a, b) => {
       const sa = categories.includes(a) ? 0 : 1;
       const sb = categories.includes(b) ? 0 : 1;
       return sa - sb;
     });
-  }, [allCategories, categories]);
+  }, [categories]);
 
   const sortedShops = useMemo(() => {
     return [...allShops].sort((a, b) => {
@@ -249,7 +250,7 @@ function EditProfileModal({
       const sb = shops.includes(b) ? 0 : 1;
       return sa - sb;
     });
-  }, [allShops, shops]);
+  }, [shops]);
 
   // Checkbox rules
   const onToggleNone = (checked: boolean) => {
@@ -270,7 +271,7 @@ function EditProfileModal({
 
   if (!open) return null;
 
-  // Derive single notify channel for current schema (choose priority)
+  // Derive single notify value for current schema (priority: none > email > push)
   const notifyValue: "email" | "push" | "none" = notifyNone
     ? "none"
     : notifyEmail
@@ -419,7 +420,7 @@ function EditProfileModal({
   );
 }
 
-// --- Main Account Page (client) ---
+// ----------------- Main Account Page -----------------
 export default function AccountClient({ displayName, avatarUrl }: AccountClientProps) {
   const [eventsView, setEventsView] = useState<"list" | "calendar">("list");
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
@@ -434,13 +435,14 @@ export default function AccountClient({ displayName, avatarUrl }: AccountClientP
   );
 
   function handleSave(values: EditPayload) {
+    // TODO: replace with server action (Supabase upsert) + avatar upload
     console.log("TODO: save profile", values);
     setEditing(false);
   }
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8 font-sans">
-      {/* Banner */}
+      {/* Top banner */}
       <Card className="mb-8 overflow-hidden">
         <CardContent className="flex flex-col items-start gap-5 bg-gradient-to-r from-[var(--gh-gradient-from)] to-[var(--gh-gradient-to)] p-6 sm:flex-row sm:items-center">
           <Avatar className="h-16 w-16 ring-2 ring-white">
@@ -537,10 +539,151 @@ export default function AccountClient({ displayName, avatarUrl }: AccountClientP
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                  onClick={() =>
+                    setCalendarMonth(
+                      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1)
+                    )
+                  }
                 >
                   Previous
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setCalendarMonth(new Date())}>
                   Today
-                </
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCalendarMonth(
+                      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1)
+                    )
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {/* My Lists */}
+      <section className="mb-8">
+        <SectionHeader title="My lists" right={<Input placeholder="Search lists…" className="h-9 w-48" />} />
+        {mockLists.length === 0 ? (
+          <EmptyState
+            icon={<ListChecks className="h-6 w-6" />}
+            title="No lists yet"
+            subtitle="Create a wishlist for yourself or for someone you’re gifting."
+            cta={
+              <Button className="mt-2">
+                <Plus className="mr-2 h-4 w-4" />
+                Create a list
+              </Button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {mockLists.map((l) => (
+              <Card key={l.id} className="group">
+                <CardContent className="p-4">
+                  <div className="mb-1 flex items-center justify-between">
+                    <div className="font-medium">{l.name}</div>
+                    <Badge className="group-hover:scale-105 bg-[var(--gh-primary-50)] text-[var(--gh-primary-700)]">
+                      {l.items} items
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">{l.reserved} reserved</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Price Watch */}
+      <section className="mb-8">
+        <SectionHeader
+          title="Price watch"
+          right={<div className="text-sm text-muted-foreground">Tracking discounts across your lists</div>}
+        />
+        {mockPriceWatch.length === 0 ? (
+          <EmptyState icon={<Tag className="h-6 w-6" />} title="No discounts right now" subtitle="We’ll surface items when the price drops." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-[700px] w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2 pr-4">Item</th>
+                  <th className="py-2 pr-4">List</th>
+                  <th className="py-2 pr-4">Shop</th>
+                  <th className="py-2 pr-4">Baseline</th>
+                  <th className="py-2 pr-4">Current</th>
+                  <th className="py-2 pr-4">Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mockPriceWatch.map((p) => (
+                  <tr key={p.id} className="border-t">
+                    <td className="py-3 pr-4">
+                      <a href={p.url} className="flex items-center gap-3 hover:underline">
+                        <Image src={p.image} alt="" className="h-10 w-10 rounded object-cover" width={40} height={40} />
+                        <span className="font-medium">{p.title}</span>
+                      </a>
+                    </td>
+                    <td className="py-3 pr-4">{p.list}</td>
+                    <td className="py-3 pr-4">{p.shop}</td>
+                    <td className="py-3 pr-4">£{p.baseline.toFixed(2)}</td>
+                    <td className="py-3 pr-4 font-medium">£{p.current.toFixed(2)}</td>
+                    <td className="py-3 pr-4">
+                      <Badge className="bg-[var(--gh-primary-600)] text-white">-{p.percentOff.toFixed(0)}%</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Suggestions */}
+      <section className="mb-10">
+        <SectionHeader title="Suggestions for you" right={<Button variant="outline" size="sm">Refresh</Button>} />
+        {mockSuggestions.length === 0 ? (
+          <EmptyState icon={<Sparkles className="h-6 w-6" />} title="No suggestions yet" subtitle="Tell us your interests to get started." />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {mockSuggestions.map((s) => (
+              <Card key={s.id} className="overflow-hidden">
+                <Image src={s.image} alt="" className="h-36 w-full object-cover" width={640} height={144} />
+                <CardContent className="flex items-center justify-between p-4">
+                  <div>
+                    <div className="font-medium">{s.title}</div>
+                    <div className="text-xs text-muted-foreground">{s.tag}</div>
+                  </div>
+                  <Button variant="secondary" size="sm">View</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        open={editing}
+        onClose={() => setEditing(false)}
+        initial={{
+          name,
+          dob: "",
+          avatarUrl: avatar,
+          currency: "GBP",
+          notify: "email",
+          categories: ["Tech", "Spirits"],
+          shops: ["Amazon"],
+        }}
+        onSave={handleSave}
+      />
+    </div>
+  );
+}
