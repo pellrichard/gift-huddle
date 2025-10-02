@@ -33,9 +33,8 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: {
-      redirectTo: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`
-    }
+    options: { redirectTo: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+    queryParams: { flow_type: 'pkce' } }
   });
 
   if (error || !data?.url) {

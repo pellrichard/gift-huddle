@@ -18,5 +18,5 @@
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
 
 
-### 2025-10-02 – Remove unsupported `flowType`
-- Reverted `options.flowType` to fix type error in build.
+### 2025-10-02 – Force PKCE via query param
+- Added `queryParams: { flow_type: 'pkce' }` to OAuth signin options.
