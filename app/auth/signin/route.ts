@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const next = getNext(url);
 
-  // Allow-list providers you have enabled in Supabase
-  const allowed: Provider[] = ["google", "apple"];
+  // Allow-list providers enabled in Supabase
+  const allowed: Provider[] = ["google", "apple", "facebook"];
   const providerParam = url.searchParams.get("provider");
   const provider = allowed.find((p) => p === providerParam) as Provider | undefined;
 

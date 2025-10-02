@@ -6,9 +6,9 @@ import { createServerComponentClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function buildAuthLink(origin: string, provider: string, next: string) {
+function buildRelativeAuthLink(provider: string, next: string) {
   const qs = new URLSearchParams({ provider, next }).toString();
-  return `${origin}/auth/signin?${qs}`;
+  return `/auth/signin?${qs}`;
 }
 
 export default async function LoginPage({ searchParams }: { searchParams?: Record<string, string | string[]> }) {
@@ -22,11 +22,9 @@ export default async function LoginPage({ searchParams }: { searchParams?: Recor
     redirect(nextParam || "/account");
   }
 
-  // Compute absolute auth links (server component has no window; use a canonical origin placeholder at runtime)
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-  const googleHref = buildAuthLink(origin, "google", nextParam);
-  const appleHref = buildAuthLink(origin, "apple", nextParam);
+  const googleHref = buildRelativeAuthLink("google", nextParam);
+  const appleHref = buildRelativeAuthLink("apple", nextParam);
+  const facebookHref = buildRelativeAuthLink("facebook", nextParam);
 
   return (
     <main className="container mx-auto p-6">
@@ -35,6 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Recor
       <div className="space-y-3 max-w-sm">
         <a href={googleHref} className="block text-center border rounded px-4 py-2">Continue with Google</a>
         <a href={appleHref} className="block text-center border rounded px-4 py-2">Continue with Apple</a>
+        <a href={facebookHref} className="block text-center border rounded px-4 py-2">Continue with Facebook</a>
       </div>
 
       <p className="text-sm opacity-70 mt-4">
