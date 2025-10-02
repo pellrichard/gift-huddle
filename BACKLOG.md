@@ -1,2 +1,2 @@
 ### 2025-10-02
-- Added SSR guards to /login and /account and a /api/debug/session endpoint to stop OAuth redirect loop.
+- Added /auth/signin route and restored OAuth buttons on /login. Uses NEXT_PUBLIC_SITE_URL for absolute links.
