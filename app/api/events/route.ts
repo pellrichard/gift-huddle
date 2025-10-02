@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -7,7 +7,7 @@ type EventsInsert = Database["public"]["Tables"]["events"]["Insert"];
 
 // POST: create new event
 export async function POST(req: NextRequest) {
-  const base = await createClient();
+  const base = await createRouteHandlerClient();
   // Force the correct generic so table types aren't `never`
   const supabase = base as unknown as SupabaseClient<Database, "public">;
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
 // GET: list events for current user (optional date window)
 export async function GET(req: NextRequest) {
-  const base = await createClient();
+  const base = await createRouteHandlerClient();
   const supabase = base as unknown as SupabaseClient<Database, "public">;
 
   const { searchParams } = new URL(req.url);
@@ -44,3 +44,4 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 200 });
 }
+

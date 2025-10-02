@@ -1,10 +1,10 @@
-// app/onboarding/update/route.ts
+﻿// app/onboarding/update/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
 type ProfilesUpsert = { id: string; categories?: string[] | null; preferred_shops?: string[] | null };
 type PgErr = { code?: string; message?: string; details?: string; hint?: string };
@@ -17,7 +17,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 export async function POST(req: NextRequest) {
   const requestId = rid();
-  const supabase = createServerSupabase();
+  const supabase = createServerComponentClient();
 
   try {
     const {
@@ -102,3 +102,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 }
+

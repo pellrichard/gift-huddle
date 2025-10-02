@@ -1,10 +1,10 @@
-// app/auth/callback/route.ts — persist Supabase cookies then redirect
+﻿// app/auth/callback/route.ts â€” persist Supabase cookies then redirect
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { createRouteHandlerSupabase } from "@/lib/supabase/server";
+import { createRouteHandlerClient } from "@/lib/supabase/server";
 
 function getNext(url: URL) {
   const n = url.searchParams.get("next");
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(new URL(getNext(url), url));
 
   // Bind Supabase to this req/res so exchangeCodeForSession can set cookies
-  const supabase = createRouteHandlerSupabase(req, res);
+  const supabase = createRouteHandlerClient(req, res);
 
   if (code) {
     await supabase.auth.exchangeCodeForSession(code);
@@ -39,3 +39,4 @@ export async function GET(req: NextRequest) {
 
   return res;
 }
+

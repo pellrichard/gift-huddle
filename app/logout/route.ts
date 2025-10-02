@@ -1,5 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createRouteHandlerSupabase } from "@/lib/supabase/server";
+﻿import { NextResponse, type NextRequest } from "next/server";
+import { createRouteHandlerClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   // Prepare redirect response up-front so Supabase can write cookie changes into it
@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.redirect(new URL("/", url)); // send user to homepage after logout
 
   // Bind Supabase to this req/res to clear cookies properly
-  const supabase = createRouteHandlerSupabase(req, res);
+  const supabase = createRouteHandlerClient(req, res);
   try {
     await supabase.auth.signOut();
   } catch {}
@@ -19,3 +19,4 @@ export async function POST(req: NextRequest) {
 
   return res;
 }
+

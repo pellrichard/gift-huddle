@@ -1,7 +1,7 @@
-// app/account/page.tsx
+﻿// app/account/page.tsx
 import "server-only";
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,7 +9,7 @@ export const revalidate = 0;
 type ProfileGate = { categories: string[] | null; preferred_shops: string[] | null };
 
 export default async function AccountPage() {
-  const supabase = createServerSupabase();
+  const supabase = createServerComponentClient();
 
   const {
     data: { session },
@@ -52,3 +52,4 @@ export default async function AccountPage() {
     </main>
   );
 }
+

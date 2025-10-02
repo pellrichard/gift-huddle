@@ -1,16 +1,16 @@
-export const runtime = "nodejs";
+﻿export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
-  const supabase = createServerSupabase();
+  const supabase = createServerComponentClient();
   const { data: { session }, error } = await supabase.auth.getSession();
 
   const cookieEntries = Array.from(req.cookies.getAll()).map(c => ({
     name: c.name,
-    value: c.value ? (c.value.length > 6 ? c.value.slice(0,6) + "…(" + c.value.length + ")" : c.value) : "",
+    value: c.value ? (c.value.length > 6 ? c.value.slice(0,6) + "â€¦(" + c.value.length + ")" : c.value) : "",
   }));
 
   return NextResponse.json({
@@ -22,3 +22,4 @@ export async function GET(req: NextRequest) {
     cookies: cookieEntries,
   });
 }
+

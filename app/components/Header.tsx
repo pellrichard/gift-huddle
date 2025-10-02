@@ -1,9 +1,9 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Image from "next/image";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
 export default async function Header() {
-  const supabase = createServerSupabase();
+  const supabase = createServerComponentClient();
   const { data: { session } } = await supabase.auth.getSession();
   const isAuthed = !!session;
 
@@ -39,3 +39,4 @@ export default async function Header() {
     </header>
   );
 }
+

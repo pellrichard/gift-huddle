@@ -1,7 +1,7 @@
-// app/onboarding/page.tsx
+﻿// app/onboarding/page.tsx
 import "server-only";
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,7 +16,7 @@ export default async function OnboardingPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const supabase = createServerSupabase();
+  const supabase = createServerComponentClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -95,3 +95,4 @@ export default async function OnboardingPage({
     </main>
   );
 }
+

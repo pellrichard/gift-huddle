@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+﻿import { NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
 /** Ensure a profile exists for the signed-in user (with explicit client cast). */
 export async function GET() {
   // Force the correct generic so table types aren't `never` in strict builds
-  const base = createClient();
+  const base = createRouteHandlerClient();
   const supabase = base as unknown as SupabaseClient<Database, "public">;
 
   const { data: { user }, error: userErr } = await supabase.auth.getUser();
@@ -30,9 +30,9 @@ export async function GET() {
   return NextResponse.json(data);
 }
 
-/** Update profile fields (partial) — explicit client cast for safety. */
+/** Update profile fields (partial) â€” explicit client cast for safety. */
 export async function POST(req: Request) {
-  const base = createClient();
+  const base = createRouteHandlerClient();
   const supabase = base as unknown as SupabaseClient<Database, "public">;
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -58,3 +58,4 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
+
