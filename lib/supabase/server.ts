@@ -1,8 +1,7 @@
-// Safe Supabase SSR clients for Next.js 15
-// Back-compat exports included to satisfy existing imports/usages.
-
+// Supabase SSR clients for Next.js 15 (typed, no explicit return types)
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import type { Database } from "@/supabase/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -13,20 +12,17 @@ type CookieStore = {
 };
 
 function asCookieStore(x: unknown): CookieStore | null {
-  // Narrow unknown to object with get/set
   if (x && typeof x === "object" && "get" in x && "set" in x) {
     return x as CookieStore;
   }
   return null;
 }
 
-// ---------------- New, explicit factories ----------------
-
+// Server Components: read-only cookies
 export function createServerComponentClient() {
-  const raw = cookies() as unknown;
-  const cookieStore = asCookieStore(raw);
+  const cookieStore = asCookieStore(cookies() as unknown);
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string): string | undefined {
         return cookieStore?.get(name)?.value;
@@ -37,11 +33,11 @@ export function createServerComponentClient() {
   });
 }
 
+// Server Actions: read/write cookies
 export function createServerActionClient() {
-  const raw = cookies() as unknown;
-  const c = asCookieStore(raw);
+  const c = asCookieStore(cookies() as unknown);
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string): string | undefined {
         return c?.get(name)?.value;
@@ -56,11 +52,11 @@ export function createServerActionClient() {
   });
 }
 
+// Route Handlers: read/write cookies
 export function createRouteHandlerClient() {
-  const raw = cookies() as unknown;
-  const c = asCookieStore(raw);
+  const c = asCookieStore(cookies() as unknown);
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string): string | undefined {
         return c?.get(name)?.value;
@@ -73,21 +69,4 @@ export function createRouteHandlerClient() {
       },
     },
   });
-}
-
-// ---------------- Back-compat shims ----------------
-
-export function createClient(..._args: unknown[]) {
-  void _args;
-  return createRouteHandlerClient();
-}
-
-export function createRouteHandlerSupabase(..._args: unknown[]) {
-  void _args;
-  return createRouteHandlerClient();
-}
-
-export function createServerSupabase(..._args: unknown[]) {
-  void _args;
-  return createServerComponentClient();
 }

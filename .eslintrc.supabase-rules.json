@@ -1,0 +1,36 @@
+{
+  "overrides": [
+    {
+      "files": ["**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@/lib/supabase/server",
+                "importNames": ["createServerSupabase", "createRouteHandlerSupabase", "createClient"],
+                "message": "Use the final API: createServerComponentClient, createServerActionClient, or createRouteHandlerClient."
+              }
+            ]
+          }
+        ],
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "CallExpression[callee.name='createServerSupabase']",
+            "message": "Replace with createServerComponentClient()."
+          },
+          {
+            "selector": "CallExpression[callee.name='createRouteHandlerSupabase']",
+            "message": "Replace with createRouteHandlerClient()."
+          },
+          {
+            "selector": "CallExpression[callee.name='createClient']",
+            "message": "Replace with createRouteHandlerClient()."
+          }
+        ]
+      }
+    }
+  ]
+}
