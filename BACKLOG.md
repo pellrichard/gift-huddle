@@ -16,3 +16,13 @@
 - Notes:
   - Login page now adapts provider list dynamically based on env flags, with defaults if none set.
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
+
+### 2025-10-02
+- Completed:
+  - Added **/login** server page that redirects signed-in users to `next` or `/account` and renders dynamic provider buttons when signed out.
+  - Implemented **LoginProviderButtons** client component to include `next` in OAuth redirect and avoid post-auth loops.
+- Outstanding:
+  - Consolidate duplicate `app/` vs `src/app/` trees (we currently serve routes from root `app/`).
+  - Replace legacy `/sign-in` with `/login` in any links or docs.
+- Release: `0.1.3-patch-login-redirect`
+  - Safe to deploy. No DB changes.
