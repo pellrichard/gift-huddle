@@ -1,2 +1,2 @@
 ### 2025-10-02
-- Diagnostics patch v2: moved env helper to src/ for '@' alias resolution.
+- Supabase cookie safety patch v3: no stray characters, added /api/auth/refresh.
