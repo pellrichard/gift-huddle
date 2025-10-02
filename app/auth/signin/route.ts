@@ -38,9 +38,6 @@ export async function GET(req: NextRequest) {
     }
   });
 
-  if (data?.url) {
-    try { console.info("[oauth-signin:redirectTo]", data.url); } catch {}
-  }
   if (error || !data?.url) {
     return NextResponse.redirect(new URL(`/login?error=oauth_start`, req.url), { status: 303 });
   }

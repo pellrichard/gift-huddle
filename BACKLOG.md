@@ -18,7 +18,5 @@
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
 
 
-### 2025-10-02 – Include /auth in middleware matcher
-- Canonical host redirect now applies to OAuth callback.
-- Added debug header `X-OAuth-Debug` when `code` present.
-- Added Facebook/Supabase config notes.
+### 2025-10-02 – Remove unsupported `flowType`
+- Reverted `options.flowType` to fix type error in build.
