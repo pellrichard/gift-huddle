@@ -41,7 +41,8 @@ function GenericIcon() {
   );
 }
 
-const LABELS: Record<Provider, string> = {
+// Relax to Partial so we don't have to specify labels for every possible Provider
+const LABELS: Partial<Record<Provider, string>> = {
   google: "Continue with Google",
   apple: "Continue with Apple",
   facebook: "Continue with Facebook",

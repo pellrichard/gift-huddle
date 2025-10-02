@@ -1,4 +1,4 @@
-// Supabase SSR clients for Next.js 15 (typed, no explicit return types)
+// Supabase SSR clients for Next.js 15 (robust RSC cookie reads, no `any`)
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { Database } from "@/supabase/types";
@@ -6,26 +6,27 @@ import type { Database } from "@/supabase/types";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-type CookieStore = {
+// ---- helpers ----
+type CookieStoreRW = {
   get(name: string): { name: string; value: string } | undefined;
   set(init: { name: string; value: string } & Partial<CookieOptions>): void;
 };
 
-function asCookieStore(x: unknown): CookieStore | null {
-  if (x && typeof x === "object" && "get" in x && "set" in x) {
-    return x as CookieStore;
-  }
-  return null;
+function asRW(x: unknown): CookieStoreRW | null {
+  if (typeof x !== "object" || x === null) return null;
+  const obj = x as Record<string, unknown>;
+  const hasGet = typeof (obj["get"]) === "function";
+  const hasSet = typeof (obj["set"]) === "function";
+  return hasGet && hasSet ? (x as CookieStoreRW) : null;
 }
 
-// Server Components: read-only cookies
+// Server Components: **read-only** cookies, do not assume `.set` exists
 export function createServerComponentClient() {
-  const cookieStore = asCookieStore(cookies() as unknown);
-
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string): string | undefined {
-        return cookieStore?.get(name)?.value;
+        const store = cookies() as unknown as { get?: (n: string) => { value?: string } | undefined };
+        return typeof store.get === "function" ? store.get(name)?.value : undefined;
       },
       set(): void {},
       remove(): void {},
@@ -33,39 +34,39 @@ export function createServerComponentClient() {
   });
 }
 
-// Server Actions: read/write cookies
+// Server Actions: **read/write**
 export function createServerActionClient() {
-  const c = asCookieStore(cookies() as unknown);
+  const rw = asRW(cookies() as unknown);
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string): string | undefined {
-        return c?.get(name)?.value;
+        return rw?.get(name)?.value;
       },
       set(name: string, value: string, options?: CookieOptions): void {
-        c?.set({ name, value, ...(options ?? {}) });
+        rw?.set({ name, value, ...(options ?? {}) });
       },
       remove(name: string, options?: CookieOptions): void {
-        c?.set({ name, value: "", ...(options ?? {}), maxAge: 0 });
+        rw?.set({ name, value: "", ...(options ?? {}), maxAge: 0 });
       },
     },
   });
 }
 
-// Route Handlers: read/write cookies
+// Route Handlers: **read/write**
 export function createRouteHandlerClient() {
-  const c = asCookieStore(cookies() as unknown);
+  const rw = asRW(cookies() as unknown);
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string): string | undefined {
-        return c?.get(name)?.value;
+        return rw?.get(name)?.value;
       },
       set(name: string, value: string, options?: CookieOptions): void {
-        c?.set({ name, value, ...(options ?? {}) });
+        rw?.set({ name, value, ...(options ?? {}) });
       },
       remove(name: string, options?: CookieOptions): void {
-        c?.set({ name, value: "", ...(options ?? {}), maxAge: 0 });
+        rw?.set({ name, value: "", ...(options ?? {}), maxAge: 0 });
       },
     },
   });

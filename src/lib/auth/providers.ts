@@ -28,10 +28,10 @@ function truthy(v: string | undefined): boolean {
  */
 export function getEnabledProviders(): Provider[] {
   const enabled: Provider[] = [];
+  const env: Record<string, string | undefined> = process.env as Record<string, string | undefined>;
   for (const p of CANDIDATES) {
     const key = `NEXT_PUBLIC_AUTH_${p.toUpperCase()}` as const;
-    // @ts-expect-error - dynamic key from process.env
-    const val: string | undefined = process.env[key];
+    const val = env[key];
     if (truthy(val)) enabled.push(p);
   }
   return enabled;
