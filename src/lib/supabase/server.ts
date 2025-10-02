@@ -6,6 +6,16 @@ import type { Database } from "@/supabase/types";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+// Cookie defaults (can be overridden by env)
+// If you deploy on a subdomain like www., set AUTH_COOKIE_DOMAIN=.gift-huddle.com
+const COOKIE_DOMAIN = process.env.AUTH_COOKIE_DOMAIN || undefined;
+const COOKIE_BASE: Partial<CookieOptions> = {
+  path: "/",
+  sameSite: "lax",
+  secure: true,
+  domain: COOKIE_DOMAIN,
+};
+
 // ---- helpers ----
 type CookieStoreRW = {
   get(name: string): { name: string; value: string } | undefined;
@@ -44,10 +54,10 @@ export function createServerActionClient() {
         return rw?.get(name)?.value;
       },
       set(name: string, value: string, options?: CookieOptions): void {
-        rw?.set({ name, value, ...(options ?? {}) });
+        rw?.set({ name, value, ...(COOKIE_BASE), ...(options ?? {}) });
       },
       remove(name: string, options?: CookieOptions): void {
-        rw?.set({ name, value: "", ...(options ?? {}), maxAge: 0 });
+        rw?.set({ name, value: "", ...(COOKIE_BASE), ...(options ?? {}), maxAge: 0 });
       },
     },
   });
@@ -63,10 +73,10 @@ export function createRouteHandlerClient() {
         return rw?.get(name)?.value;
       },
       set(name: string, value: string, options?: CookieOptions): void {
-        rw?.set({ name, value, ...(options ?? {}) });
+        rw?.set({ name, value, ...(COOKIE_BASE), ...(options ?? {}) });
       },
       remove(name: string, options?: CookieOptions): void {
-        rw?.set({ name, value: "", ...(options ?? {}), maxAge: 0 });
+        rw?.set({ name, value: "", ...(COOKIE_BASE), ...(options ?? {}), maxAge: 0 });
       },
     },
   });

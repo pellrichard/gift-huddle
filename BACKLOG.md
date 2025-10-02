@@ -18,7 +18,8 @@
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
 
 
-### 2025-10-02 – Consolidate to single app/ tree
-- Moved `waitlist` API and `favicon.ico` into `/app`.
-- Removed duplicate `src/app` tree (manual delete in CLEANUP.txt).
-- Verified `/login` → OAuth → `/auth/callback` → `/account` flow and cookie-based middleware redirect.
+### 2025-10-02 – OAuth cookie + canonical host hardening
+- Redirect old /sign-in → /login.
+- Standardized Supabase cookie options; support AUTH_COOKIE_DOMAIN for cross-subdomain cookies.
+- Middleware: if SITE_HOST is set (e.g., www.gift-huddle.com), 308-redirect all traffic to that host.
+- Reminder: remove duplicate `src/app` (see CLEANUP.txt).

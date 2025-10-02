@@ -8,6 +8,12 @@ function hasAuthCookie(req: NextRequest) {
 }
 
 export function middleware(req: NextRequest) {
+  const siteHost = process.env.SITE_HOST;
+  if (siteHost && req.nextUrl.host !== siteHost) {
+    const url = req.nextUrl.clone();
+    url.host = siteHost;
+    return NextResponse.redirect(url, 308);
+  }
   const { pathname } = req.nextUrl;
   const isAuthed = hasAuthCookie(req);
 

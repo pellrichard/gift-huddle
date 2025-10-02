@@ -1,21 +1,17 @@
-Consolidation Patch – Single app/ tree
+Hardening Patch – Fix "no cookie after OAuth" + unify login
 
-What changed
-- Copied `src/app/api/waitlist/route.ts` to `app/api/waitlist/route.ts` (kept implementation).
-- Copied `src/app/favicon.ico` to `app/favicon.ico` (if it existed).
-- Added `CLEANUP.txt` with delete instructions for `src/app`.
-- Updated `BACKLOG.md` with today's entry.
+Changes
+- `/app/sign-in/page.tsx` now server-redirects to `/login` (removes duplicate sign-in UI).
+- `src/lib/supabase/server.ts` sets sane cookie defaults and allows `AUTH_COOKIE_DOMAIN` to scope cookies to `.gift-huddle.com` when needed.
+- `middleware.ts` optionally canonicalizes host when `SITE_HOST` is set (prevents cross-subdomain cookie traps such as apex vs www).
 
-Why
-- Having both `app/` and `src/app/` confused routing. Next.js prefers `/app`, so pages under `src/app` could be ignored or partially applied.
-- This consolidation ensures a single, predictable routing tree and stabilizes redirects after OAuth.
+Environment
+- `SITE_HOST=www.gift-huddle.com` (or your chosen canonical host)
+- `AUTH_COOKIE_DOMAIN=.gift-huddle.com` (recommended if you use both apex and www at any point)
+- Existing Supabase env remains unchanged.
 
-How to apply
-1) Unzip this patch at the repo root (paths preserved).
-2) Follow `CLEANUP.txt` to delete `src/app`.
-3) `npm run build` → `npm run dev`.
-4) QA:
-   - /login while signed out shows OAuth providers.
-   - Sign in via Google/Facebook → land on /account.
-   - Visit /login while signed in → redirect to /account.
-   - Direct-hit /account while signed out → redirect to /login.
+QA
+1) Visit `https://www.gift-huddle.com/login` while signed out → see providers.
+2) Sign in with Facebook/Google → you should land on `/account` and see `sb-access-token`/`sb-refresh-token` cookies set for the canonical host.
+3) Hit `/login` while signed in → immediate redirect to `/account`.
+4) Try loading the apex domain (if it exists) → auto-redirects to the canonical host.
