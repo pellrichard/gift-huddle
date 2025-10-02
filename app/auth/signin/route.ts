@@ -1,7 +1,7 @@
-// /auth/signin?provider=google&next=/account
+// /auth/signin?provider=<name>&next=/account
 import { NextResponse, type NextRequest } from "next/server";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
-import type { Provider } from "@supabase/supabase-js";
+import { getEnabledProviders, type Provider } from "@/lib/auth/providers";
 
 export const runtime = "nodejs";
 
@@ -21,13 +21,12 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const next = getNext(url);
 
-  // Allow-list providers enabled in Supabase
-  const allowed: Provider[] = ["google", "apple", "facebook"];
+  const allowed: Provider[] = getEnabledProviders();
   const providerParam = url.searchParams.get("provider");
   const provider = allowed.find((p) => p === providerParam) as Provider | undefined;
 
   if (!provider) {
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(next)}`, req.url), { status: 303 });
+    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(next)}&error=provider_disabled`, req.url), { status: 303 });
   }
 
   const supabase = createRouteHandlerClient();
