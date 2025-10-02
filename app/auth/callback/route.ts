@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
   const next = getNext(url);
   const supabase = createRouteHandlerClient();
 
-  if (code) {
+  if (!code) {
+    return NextResponse.redirect(new URL(`/login?error=missing_code`, req.url), { status: 303 });
+  }
+  {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       // On failure, send back to homepage with a hint

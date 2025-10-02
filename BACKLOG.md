@@ -18,8 +18,7 @@
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
 
 
-### 2025-10-02 – OAuth cookie + canonical host hardening
-- Redirect old /sign-in → /login.
-- Standardized Supabase cookie options; support AUTH_COOKIE_DOMAIN for cross-subdomain cookies.
-- Middleware: if SITE_HOST is set (e.g., www.gift-huddle.com), 308-redirect all traffic to that host.
-- Reminder: remove duplicate `src/app` (see CLEANUP.txt).
+### 2025-10-02 – OAuth callback missing `code` guard + canonical redirectTo
+- `/auth/signin` uses SITE_HOST to construct `redirectTo`.
+- `/auth/callback` shows `missing_code` error instead of silently redirecting.
+- Added README-OAUTH-COOKIES.md with Supabase config checklist.
