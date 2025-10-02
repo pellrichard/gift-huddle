@@ -1,44 +1,64 @@
-// /auth/signin?provider=<name>&next=/account
-import { NextResponse, type NextRequest } from "next/server";
-import { createRouteHandlerClient } from "@/lib/supabase/server";
-import { getEnabledProviders, type Provider } from "@/lib/auth/providers";
+import { NextResponse, type NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import type { Provider } from '@supabase/supabase-js';
 
-export const runtime = "nodejs";
+type SupaCookieOptions = {
+  domain?: string;
+  path?: string;
+  expires?: Date;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+};
 
-function getNext(url: URL) {
-  const n = url.searchParams.get("next");
-  if (!n) return "/account";
-  try {
-    const u = new URL(n, url.origin);
-    if (u.origin !== url.origin) return "/account";
-    return u.pathname + u.search + u.hash || "/account";
-  } catch {
-    return "/account";
-  }
+// Cookie adapter expected by `@supabase/ssr` (CookieMethodsServer)
+function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/headers').cookies>>) {
+  return {
+    getAll() {
+      return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
+    },
+    setAll(cookies: { name: string; value: string; options: SupaCookieOptions }[]) {
+      cookies.forEach(({ name, value, options }) => {
+        cookieStore.set({ name, value, ...options });
+      });
+    },
+  };
 }
 
-export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const next = getNext(url);
 
-  const allowed: Provider[] = getEnabledProviders();
-  const providerParam = url.searchParams.get("provider");
-  const provider = allowed.find((p) => p === providerParam) as Provider | undefined;
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const providerParam = url.searchParams.get('provider') as Provider | null;
+  const next = url.searchParams.get('next') || '/account';
 
-  if (!provider) {
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(next)}&error=provider_disabled`, req.url), { status: 303 });
+  if (!providerParam) {
+    return new NextResponse('Missing provider', { status: 400 });
   }
 
-  const supabase = createRouteHandlerClient();
+  const redirectTo = `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+
+  const store = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: cookieMethods(store),
+    }
+  );
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-    queryParams: { flow_type: 'pkce' } }
+    provider: providerParam,
+    options: {
+      redirectTo,
+      queryParams: { flow_type: 'pkce' },
+      skipBrowserRedirect: true,
+    },
   });
 
   if (error || !data?.url) {
-    return NextResponse.redirect(new URL(`/login?error=oauth_start`, req.url), { status: 303 });
+    return NextResponse.json({ error: error?.message ?? 'Failed to start OAuth' }, { status: 400 });
   }
 
   return NextResponse.redirect(data.url, { status: 303 });

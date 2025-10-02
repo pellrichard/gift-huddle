@@ -1,29 +1,52 @@
-import "server-only";
-import { redirect } from "next/navigation";
-import type { Provider } from "@supabase/supabase-js";
-import LoginProviderButtons from "@/components/LoginProviderButtons";
-import { createServerComponentClient } from "@/lib/supabase/server";
-import { getEnabledProviders } from "@/lib/auth/providers";
+import { redirect } from 'next/navigation';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+type SupaCookieOptions = {
+  domain?: string;
+  path?: string;
+  expires?: Date;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+};
 
-export default async function LoginPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
-  const next = typeof searchParams?.next === "string" ? searchParams.next : "/account";
+// Cookie adapter expected by `@supabase/ssr` (CookieMethodsServer)
+function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/headers').cookies>>) {
+  return {
+    getAll() {
+      return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
+    },
+    setAll(cookies: { name: string; value: string; options: SupaCookieOptions }[]) {
+      cookies.forEach(({ name, value, options }) => {
+        cookieStore.set({ name, value, ...options });
+      });
+    },
+  };
+}
 
-  const supabase = createServerComponentClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    redirect(next || "/account");
-  }
 
-  const providers: Provider[] = getEnabledProviders();
+export default async function Page() {
+  const store = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: cookieMethods(store),
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) redirect('/account');
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-bold mb-3">Sign in</h1>
-      <p className="text-gh-muted mb-8">Choose a provider to continue.</p>
-      <LoginProviderButtons providers={providers} next={next} />
+    <main className="mx-auto max-w-md p-6">
+      <h1 className="text-2xl font-semibold mb-4">Sign in</h1>
+      <div className="space-y-3">
+        <a className="block rounded border px-4 py-2 text-center" href="/auth/signin?provider=google&next=/account">Continue with Google</a>
+        <a className="block rounded border px-4 py-2 text-center" href="/auth/signin?provider=facebook&next=/account">Continue with Facebook</a>
+      </div>
     </main>
   );
 }

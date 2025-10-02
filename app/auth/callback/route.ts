@@ -1,44 +1,56 @@
-// OAuth callback: exchanges the code for a session and redirects.
-// Works with Next.js 15 Route Handlers and @supabase/ssr.
-import { NextResponse, type NextRequest } from "next/server";
-import { createRouteHandlerClient } from "@/lib/supabase/server";
+import { NextResponse, type NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
-export const runtime = "nodejs";
+type SupaCookieOptions = {
+  domain?: string;
+  path?: string;
+  expires?: Date;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+};
 
-function getNext(url: URL) {
-  const n = url.searchParams.get("next");
-  try {
-    if (!n) return "/account";
-    // Disallow open redirects
-    const asUrl = new URL(n, url.origin);
-    if (asUrl.origin !== url.origin) return "/account";
-    return asUrl.pathname + asUrl.search + asUrl.hash || "/account";
-  } catch {
-    return "/account";
-  }
+// Cookie adapter expected by `@supabase/ssr` (CookieMethodsServer)
+function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/headers').cookies>>) {
+  return {
+    getAll() {
+      return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
+    },
+    setAll(cookies: { name: string; value: string; options: SupaCookieOptions }[]) {
+      cookies.forEach(({ name, value, options }) => {
+        cookieStore.set({ name, value, ...options });
+      });
+    },
+  };
 }
 
-export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const code = url.searchParams.get("code");
-  const next = getNext(url);
-  const supabase = createRouteHandlerClient();
+
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const next = url.searchParams.get('next') || '/account';
+
+  const store = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: cookieMethods(store),
+    }
+  );
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    const dbg = NextResponse.redirect(new URL(next, req.url), { status: 303 });
-    try { dbg.headers.set('X-OAuth-Debug', 'has_code'); } catch {}
-    if (error) { return NextResponse.redirect(new URL(`/?auth_error=1`, req.url), { status: 303 }); }
-    return dbg;
-    if (error) {
-      // On failure, send back to homepage with a hint
-      const res = NextResponse.redirect(new URL(`/?auth_error=1`, req.url), { status: 303 });
+    try {
+      await supabase.auth.exchangeCodeForSession(code);
+      return NextResponse.redirect(new URL(next, url), { status: 303 });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const res = NextResponse.redirect(new URL('/login?error=exchange_failed', url), { status: 303 });
+      res.headers.set('X-OAuth-Error', message);
       return res;
     }
   }
-
-  // If we got this far, we didn't have a code or we already returned above
-  const res = NextResponse.redirect(new URL(next, req.url), { status: 303 });
-  try { res.headers.set('X-OAuth-Debug', 'no_code_fallthrough'); } catch {}
-  return res;
+  return NextResponse.redirect(new URL('/login?error=missing_code', url), { status: 303 });
 }

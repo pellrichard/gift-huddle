@@ -1,16 +1,46 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
-export const runtime = "nodejs";
+type SupaCookieOptions = {
+  domain?: string;
+  path?: string;
+  expires?: Date;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+};
 
-export async function GET(req: NextRequest) {
-  const names = ['sb-access-token','sb-refresh-token','supabase-auth-token','gh_authed'];
-  const present = Object.fromEntries(names.map(n => [n, Boolean(req.cookies.get(n))]));
-  const list = Array.from(req.cookies.getAll ? req.cookies.getAll() : []).map(c => c.name);
-  const body = {
-    host: req.nextUrl.host,
-    path: req.nextUrl.pathname,
-    present,
-    allCookieNames: list,
+// Cookie adapter expected by `@supabase/ssr` (CookieMethodsServer)
+function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/headers').cookies>>) {
+  return {
+    getAll() {
+      return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
+    },
+    setAll(cookies: { name: string; value: string; options: SupaCookieOptions }[]) {
+      cookies.forEach(({ name, value, options }) => {
+        cookieStore.set({ name, value, ...options });
+      });
+    },
   };
-  return NextResponse.json(body, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+}
+
+
+export async function GET() {
+  const store = await cookies();
+  const names = ['sb-access-token', 'sb-refresh-token', 'sb-provider'];
+  const presentSet = new Set(store.getAll().map(c => c.name));
+  const present = Object.fromEntries(names.map(n => [n, presentSet.has(n)]));
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: cookieMethods(store),
+    }
+  );
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return NextResponse.json({ present, user, error: error?.message ?? null });
 }

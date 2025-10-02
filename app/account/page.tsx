@@ -1,29 +1,49 @@
-// Account page: SSR checks user and disables caching so fresh cookies are seen
-import "server-only";
-import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@/lib/supabase/server";
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+type SupaCookieOptions = {
+  domain?: string;
+  path?: string;
+  expires?: Date;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+};
 
-export default async function AccountPage() {
-  const supabase = createServerComponentClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+// Cookie adapter expected by `@supabase/ssr` (CookieMethodsServer)
+function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/headers').cookies>>) {
+  return {
+    getAll() {
+      return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
+    },
+    setAll(cookies: { name: string; value: string; options: SupaCookieOptions }[]) {
+      cookies.forEach(({ name, value, options }) => {
+        cookieStore.set({ name, value, ...options });
+      });
+    },
+  };
+}
 
-  if (error) {
-    // If the user is missing OR an auth error occurred, send them to login with next.
-    redirect("/login?next=/account");
-  }
 
-  if (!user) {
-    redirect("/login?next=/account");
-  }
+export default async function Page() {
+  const store = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: cookieMethods(store),
+    }
+  );
 
-  // Minimal scaffolding; your existing account UI can render here
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
   return (
-    <main className="container mx-auto p-6">
+    <main className="mx-auto max-w-2xl p-6">
       <h1 className="text-2xl font-semibold mb-4">Your account</h1>
-      <p className="opacity-80 text-sm">Welcome back, {user.email}</p>
+      <pre className="bg-gray-100 p-4 rounded">{JSON.stringify(user, null, 2)}</pre>
     </main>
   );
 }
