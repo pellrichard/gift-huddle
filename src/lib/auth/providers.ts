@@ -1,6 +1,8 @@
 // src/lib/auth/providers.ts
 import type { Provider } from "@supabase/supabase-js";
 
+// Broad set supported by Supabase; we only show those explicitly enabled via env,
+// and if none are enabled, we fall back to a safe default list.
 const CANDIDATES: Provider[] = [
   "google",
   "apple",
@@ -16,6 +18,8 @@ const CANDIDATES: Provider[] = [
   "linkedin"
 ];
 
+const DEFAULTS: Provider[] = ["google", "facebook", "github"];
+
 function truthy(v: string | undefined): boolean {
   if (!v) return false;
   const s = v.toLowerCase();
@@ -24,7 +28,7 @@ function truthy(v: string | undefined): boolean {
 
 /**
  * Reads NEXT_PUBLIC_AUTH_<PROVIDER>=1 style flags and returns enabled list.
- * Example: NEXT_PUBLIC_AUTH_GOOGLE=1
+ * If none are set, returns DEFAULTS so login isn't empty.
  */
 export function getEnabledProviders(): Provider[] {
   const enabled: Provider[] = [];
@@ -34,7 +38,7 @@ export function getEnabledProviders(): Provider[] {
     const val = env[key];
     if (truthy(val)) enabled.push(p);
   }
-  return enabled;
+  return enabled.length > 0 ? enabled : DEFAULTS;
 }
 
 export type { Provider };

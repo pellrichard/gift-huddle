@@ -1,4 +1,4 @@
-// Login page with dynamic OAuth providers (from env flags)
+// Login page with dynamic OAuth providers (from env flags or sensible defaults)
 import "server-only";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { getEnabledProviders, type Provider } from "@/lib/auth/providers";
@@ -41,7 +41,7 @@ function GenericIcon() {
   );
 }
 
-// Relax to Partial so we don't have to specify labels for every possible Provider
+// Partial map so we don't have to label every possible provider
 const LABELS: Partial<Record<Provider, string>> = {
   google: "Continue with Google",
   apple: "Continue with Apple",
@@ -117,9 +117,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </a>
           );
         })}
-        {enabled.length === 0 ? (
-          <p className="text-sm opacity-70">No providers enabled. Ask an admin to enable at least one provider in Supabase and set NEXT_PUBLIC_AUTH_*=1 variables.</p>
-        ) : null}
       </div>
 
       <p className="text-sm opacity-70 mt-4">
