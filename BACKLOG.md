@@ -18,7 +18,6 @@
   - ESLint guard prevents use of legacy Supabase helpers (`createClient`, `createServerSupabase`, etc.).
 
 
-### 2025-10-02 – OAuth callback missing `code` guard + canonical redirectTo
-- `/auth/signin` uses SITE_HOST to construct `redirectTo`.
-- `/auth/callback` shows `missing_code` error instead of silently redirecting.
-- Added README-OAUTH-COOKIES.md with Supabase config checklist.
+### 2025-10-02 – OAuth instrumentation
+- Added structured logs to `/auth/signin` and `/auth/callback`.
+- Added `/api/debug/auth` to inspect cookie presence per host.

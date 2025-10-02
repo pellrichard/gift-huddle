@@ -20,8 +20,6 @@ function getNext(url: URL) {
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const next = getNext(url);
-  const siteHost = process.env.SITE_HOST;
-  const origin = siteHost ? `https://${siteHost}` : url.origin;
 
   const allowed: Provider[] = getEnabledProviders();
   const providerParam = url.searchParams.get("provider");
@@ -36,10 +34,13 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+      redirectTo: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`
     }
   });
 
+  if (data?.url) {
+    try { console.info("[oauth-signin:redirectTo]", data.url); } catch {}
+  }
   if (error || !data?.url) {
     return NextResponse.redirect(new URL(`/login?error=oauth_start`, req.url), { status: 303 });
   }

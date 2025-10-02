@@ -19,15 +19,15 @@ function getNext(url: URL) {
 }
 
 export async function GET(req: NextRequest) {
+  // Debug: surface incoming params
+  try { console.info("[oauth-callback]", { url: req.url }); } catch {}
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
+  try { console.info("[oauth-callback:params]", { host: url.host, pathname: url.pathname, hasCode: Boolean(code), codeLen: code ? code.length : 0, next: url.searchParams.get("next") }); } catch {}
   const next = getNext(url);
   const supabase = createRouteHandlerClient();
 
-  if (!code) {
-    return NextResponse.redirect(new URL(`/login?error=missing_code`, req.url), { status: 303 });
-  }
-  {
+  if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       // On failure, send back to homepage with a hint
