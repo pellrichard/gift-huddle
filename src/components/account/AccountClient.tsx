@@ -24,15 +24,19 @@ type AccountClientProps = {
   avatarUrl?: string | null;
 };
 
-// ---- mock data (replace with Supabase) ----
-const mockEvents = [
+// ---- mock data (replace with Supabase when wiring) ----
+const mockEvents: { id: string; title: string; date: string; icon?: React.ReactNode }[] = [
   { id: "1", title: "Mum's Birthday", date: "2025-10-04", icon: <Gift className="h-4 w-4" /> },
   { id: "2", title: "Secret Santa Reveal", date: "2025-12-14", icon: <Sparkles className="h-4 w-4" /> },
+  { id: "3", title: "Anniversary", date: "2026-01-22", icon: <Gift className="h-4 w-4" /> },
 ];
+
 const mockLists = [
   { id: "wl-1", name: "Christmas 2025", items: 14, reserved: 5 },
   { id: "wl-2", name: "Alex – Personal", items: 9, reserved: 2 },
+  { id: "wl-3", name: "Dad 70th", items: 6, reserved: 1 },
 ];
+
 const mockPriceWatch = [
   {
     id: "pw-1",
@@ -45,9 +49,23 @@ const mockPriceWatch = [
     shop: "Amazon",
     percentOff: 14.3,
   },
+  {
+    id: "pw-2",
+    title: "LEGO Millennium Falcon",
+    list: "Dad 70th",
+    url: "#",
+    image: "/images/items/lego.png",
+    baseline: 149.99,
+    current: 119.99,
+    shop: "LEGO",
+    percentOff: 20.0,
+  },
 ];
+
 const mockSuggestions = [
   { id: "s-1", title: "Whisky Tasting Set", tag: "Spirits", image: "/images/suggest/whisky.png" },
+  { id: "s-2", title: "Custom Photo Book", tag: "Personalised", image: "/images/suggest/photobook.png" },
+  { id: "s-3", title: "Wireless Meat Thermometer", tag: "Cooking", image: "/images/suggest/thermo.png" },
 ];
 
 // ---- helpers ----
@@ -107,13 +125,69 @@ function Chip({
   );
 }
 
+// ---- Mini calendar ----
+function MiniCalendar({
+  events,
+  monthDate,
+}: {
+  events: { id: string; title: string; date: string; icon?: React.ReactNode }[];
+  monthDate: Date;
+}) {
+  const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const days = Array.from({ length: end.getDate() }, (_, i) => new Date(monthDate.getFullYear(), monthDate.getMonth(), i + 1));
+
+  const map = useMemo(() => {
+    const m = new Map<string, { id: string; title: string; icon?: React.ReactNode }[]>();
+    events.forEach((e) => {
+      m.set(e.date, [...(m.get(e.date) || []), { id: e.id, title: e.title, icon: e.icon }]);
+    });
+    return m;
+  }, [events]);
+
+  const firstDow = start.getDay();
+  const blanks = Array.from({ length: firstDow }, () => null);
+
+  return (
+    <div className="grid grid-cols-7 gap-2">
+      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+        <div key={d} className="px-1 text-center text-xs font-medium text-muted-foreground">
+          {d}
+        </div>
+      ))}
+      {blanks.map((_, i) => (
+        <div key={`b-${i}`} />
+      ))}
+      {days.map((d) => {
+        const key = d.toISOString().slice(0, 10);
+        const has = map.get(key);
+        return (
+          <Card key={key} className="min-h-[84px]">
+            <CardContent className="p-2">
+              <div className="mb-1 text-xs font-semibold">{d.getDate()}</div>
+              <div className="space-y-1">
+                {has?.slice(0, 3).map((e) => (
+                  <div key={e.id} className="flex items-center gap-1 truncate text-xs">
+                    <span>{e.icon ?? <Gift className="h-3 w-3" />}</span>
+                    <span className="truncate">{e.title}</span>
+                  </div>
+                ))}
+                {has && has.length > 3 && <div className="text-[10px] text-muted-foreground">+{has.length - 3} more</div>}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 // --- Edit Profile Modal ---
 type EditPayload = {
   name: string;
   dob: string | null;
   currency: string;
   notify: "email" | "push" | "none";
-  // fine-grain flags if you later support multiple channels
   notifyEmail: boolean;
   notifyPush: boolean;
   categories: string[];
@@ -134,7 +208,6 @@ function EditProfileModal({
     dob?: string | null;
     avatarUrl?: string | null;
     currency: string;
-    // convert this into checkboxes in UI
     notify: "email" | "push" | "none";
     categories: string[];
     shops: string[];
@@ -279,27 +352,15 @@ function EditProfileModal({
             <label className="text-sm font-medium">Notify me via</label>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={notifyEmail}
-                  onChange={(e) => onToggleEmail(e.target.checked)}
-                />
+                <input type="checkbox" checked={notifyEmail} onChange={(e) => onToggleEmail(e.target.checked)} />
                 <span>Email</span>
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={notifyPush}
-                  onChange={(e) => onTogglePush(e.target.checked)}
-                />
+                <input type="checkbox" checked={notifyPush} onChange={(e) => onTogglePush(e.target.checked)} />
                 <span>Push</span>
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={notifyNone}
-                  onChange={(e) => onToggleNone(e.target.checked)}
-                />
+                <input type="checkbox" checked={notifyNone} onChange={(e) => onToggleNone(e.target.checked)} />
                 <span>None</span>
               </label>
             </div>
@@ -310,11 +371,7 @@ function EditProfileModal({
             <label className="text-sm font-medium">Interests</label>
             <div className="mt-2 flex flex-wrap gap-2">
               {sortedCats.map((c) => (
-                <Chip
-                  key={c}
-                  active={categories.includes(c)}
-                  onClick={() => toggle(categories, setCategories, c)}
-                >
+                <Chip key={c} active={categories.includes(c)} onClick={() => toggle(categories, setCategories, c)}>
                   {c}
                 </Chip>
               ))}
@@ -388,7 +445,7 @@ export default function AccountClient({ displayName, avatarUrl }: AccountClientP
         <CardContent className="flex flex-col items-start gap-5 bg-gradient-to-r from-[var(--gh-gradient-from)] to-[var(--gh-gradient-to)] p-6 sm:flex-row sm:items-center">
           <Avatar className="h-16 w-16 ring-2 ring-white">
             <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback>{name.charAt(0) || "GH"}</AvatarFallback>
+            <AvatarFallback>{(name || "").charAt(0) || "GH"}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="text-xl font-semibold">Welcome back, {name.split(" ")[0]}!</div>
@@ -400,51 +457,90 @@ export default function AccountClient({ displayName, avatarUrl }: AccountClientP
         </CardContent>
       </Card>
 
-      {/* Example sections (placeholder headers remain) */}
-      <SectionHeader title="Upcoming events" right={
-        <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-2 rounded-full border p-1 sm:flex">
-            <Button
-              size="sm"
-              variant={eventsView === "list" ? "default" : "ghost"}
-              className="gap-2"
-              onClick={() => setEventsView("list")}
-            >
-              <ListChecks className="h-4 w-4" /> List
-            </Button>
-            <Button
-              size="sm"
-              variant={eventsView === "calendar" ? "default" : "ghost"}
-              className="gap-2"
-              onClick={() => setEventsView("calendar")}
-            >
-              <CalendarDays className="h-4 w-4" /> Calendar
-            </Button>
-          </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add event
-          </Button>
-        </div>
-      } />
-      <SectionHeader title="My lists" />
-      <SectionHeader title="Price watch" />
-      <SectionHeader title="Suggestions for you" />
+      {/* Upcoming events */}
+      <section className="mb-8">
+        <SectionHeader
+          title="Upcoming events"
+          right={
+            <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-2 rounded-full border p-1 sm:flex">
+                <Button
+                  size="sm"
+                  variant={eventsView === "list" ? "default" : "ghost"}
+                  className="gap-2"
+                  onClick={() => setEventsView("list")}
+                >
+                  <ListChecks className="h-4 w-4" /> List
+                </Button>
+                <Button
+                  size="sm"
+                  variant={eventsView === "calendar" ? "default" : "ghost"}
+                  className="gap-2"
+                  onClick={() => setEventsView("calendar")}
+                >
+                  <CalendarDays className="h-4 w-4" /> Calendar
+                </Button>
+              </div>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" /> Add event
+              </Button>
+            </div>
+          }
+        />
 
-      {/* Modal */}
-      <EditProfileModal
-        open={editing}
-        onClose={() => setEditing(false)}
-        initial={{
-          name,
-          dob: "",
-          avatarUrl: avatar,
-          currency: "GBP",
-          notify: "email",
-          categories: ["Tech", "Spirits"],
-          shops: ["Amazon"],
-        }}
-        onSave={handleSave}
-      />
-    </div>
-  );
-}
+        {mockEvents.length === 0 ? (
+          <EmptyState
+            icon={<CalendarDays className="h-6 w-6" />}
+            title="No events yet"
+            subtitle="Add birthdays, anniversaries, and occasions to plan ahead."
+            cta={
+              <Button className="mt-2">
+                <Plus className="mr-2 h-4 w-4" />
+                Add your first event
+              </Button>
+            }
+          />
+        ) : eventsView === "list" ? (
+          <div className="grid gap-3">
+            {mockEvents.map((e) => (
+              <Card key={e.id}>
+                <CardContent className="flex items-center justify-between gap-4 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-muted p-2">{e.icon ?? <Gift className="h-4 w-4" />}</div>
+                    <div>
+                      <div className="font-medium">{e.title}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(e.date).toLocaleDateString(undefined, {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="ghost" className="gap-2">
+                    View <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardHeader className="pb-0">
+              <CardTitle className="text-base">{monthLabel}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-4">
+              <MiniCalendar events={mockEvents} monthDate={calendarMonth} />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                >
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setCalendarMonth(new Date())}>
+                  Today
+                </
