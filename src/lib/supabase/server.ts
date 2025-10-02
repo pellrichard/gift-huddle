@@ -1,39 +1,86 @@
-// src/lib/supabase/server.ts
-// Unified helpers with no `next/*` imports so Turbopack stays happy in any context.
+// src/lib/supabase/server.ts (lint-safe cookies() usage for Next 15)
+import { cookies as nextCookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  createServerClient,
+  type CookieMethodsServer,
+  type CookieMethodsServerDeprecated,
+  type CookieOptions,
+} from "@supabase/ssr";
+import type { Database } from "./types";
 
-import { createClient as createBrowserClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/database.types";
+// Define a minimal cookie store interface and a function type
+// that matches the runtime behavior we rely on.
+interface CookieStoreShape {
+  get(name: string): { value: string } | undefined;
+  set(init: { name: string; value: string } & CookieOptions): void;
+}
+type CookieStoreFn = () => CookieStoreShape;
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-export function createClient() {
-  return createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true },
-  });
+// Helper to obtain a cookie store with a narrow, sync-like interface.
+// We intentionally cast here to bridge the typings difference in Next 15.
+function cookieStore(): CookieStoreShape {
+  const fn = nextCookies as unknown as CookieStoreFn;
+  return fn();
 }
 
-// Back-compat aliases expected around the codebase:
+/**
+ * Server Component / RSC-friendly client (and default route-handler reader).
+ * Back-compat: `createClient()` exported to match existing imports.
+ */
 export function createServerSupabase() {
-  return createClient();
+  const adapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
+    get(name: string): string | undefined {
+      return cookieStore().get(name)?.value;
+    },
+    set(name: string, value: string, options?: CookieOptions): void {
+      cookieStore().set({ name, value, ...(options ?? {}) });
+    },
+    remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
+      const opts: CookieOptions | undefined =
+        typeof valueOrOptions === "object" && valueOrOptions !== null
+          ? valueOrOptions
+          : maybeOptions;
+      cookieStore().set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+    },
+  };
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: adapter, cookieEncoding: "base64url" }
+  );
 }
 
-export function supabaseServer() {
+/** Back-compat alias used by existing route handlers. */
+export function createClient() {
   return createServerSupabase();
 }
 
-// Minimal response-like shim (only what some call sites expect)
-type ResponseShim = {
-  cookies: { set: (opts: unknown) => void };
-  headers: Headers;
-};
-
-// Route handler variant; returns a lightweight `res` shim to satisfy call sites.
-export function createRouteHandlerSupabase(): { supabase: ReturnType<typeof createClient>; res: ResponseShim } {
-  const supabase = createClient();
-  const res: ResponseShim = {
-    cookies: { set: () => { /* noop */ } },
-    headers: new Headers(),
+/**
+ * Route Handler / API-friendly client that can WRITE cookies to the response.
+ * Use in routes that mutate auth or should refresh cookies explicitly.
+ */
+export function createRouteHandlerSupabase(req: NextRequest, res: NextResponse) {
+  const adapter: CookieMethodsServer | CookieMethodsServerDeprecated = {
+    get(name: string): string | undefined {
+      return req.cookies.get(name)?.value;
+    },
+    set(name: string, value: string, options?: CookieOptions): void {
+      res.cookies.set({ name, value, ...(options ?? {}) });
+    },
+    remove(name: string, valueOrOptions?: string | CookieOptions, maybeOptions?: CookieOptions): void {
+      const opts: CookieOptions | undefined =
+        typeof valueOrOptions === "object" && valueOrOptions !== null
+          ? valueOrOptions
+          : maybeOptions;
+      res.cookies.set({ name, value: "", ...(opts ?? {}), maxAge: 0 });
+    },
   };
-  return { supabase, res };
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: adapter, cookieEncoding: "base64url" }
+  );
 }

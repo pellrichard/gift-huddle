@@ -1,109 +1,86 @@
-import { supabaseServer } from "@/lib/supabase/server";
-import type { Database } from "@/lib/database.types";
+'use server';
 
-/**
- * Public types consumed by `PreferencesForm.tsx`
- */
-export type NotifyChannel = "email" | "sms" | "push" | "none";
+import { revalidatePath } from 'next/cache';
+import { createServerSupabase } from '@/lib/supabase/server';
+
+export type NotifyChannel = 'email' | 'push' | 'none' | null;
+
+export type Sizes = {
+  clothing?: string | null;
+  shoes?: string | null;
+} | null;
+
+export type Interests = Record<string, boolean>;
+
+export type Categories = {
+  interests: Interests;
+  budget_monthly: number | null;
+  sizes: Sizes;
+};
 
 export type PreferencesPayload = {
   preferred_currency?: string | null;
-  notify_channel?: NotifyChannel | null;
-  // Accept either string[] or { [key: string]: boolean } from the form
-  categories?: string[] | Record<string, boolean> | null;
-  // Optional extras some forms may send
+  notify_channel?: NotifyChannel;
+  /** interests only (checkbox booleans) */
+  categories?: Interests;
   budget_monthly?: number | null;
-  sizes?: { clothing: string | null; shoes: string | null } | null;
-  preferred_shops?: string[] | null;
+  sizes?: { clothing?: string | null; shoes?: string | null } | null;
 };
 
-type ProfilesUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+/** Minimal typing for the `profiles` table */
+type ProfilesRow = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  preferred_currency: string | null;
+  notify_channel: 'email' | 'push' | 'none' | null;
+  categories: Categories | null;
+  updated_at: string | null;
+};
 
-export type ActionResult = { ok: boolean; message?: string };
+type ProfileUpdate = {
+  preferred_currency: string | null;
+  notify_channel: NotifyChannel;
+  categories: Categories;
+  updated_at: string;
+};
 
-/**
- * Merge the PreferencesPayload onto the profiles table.
- * You can pass a partial payload; only provided fields will be updated.
- */
-export async function savePreferences(patch: PreferencesPayload): Promise<ActionResult> {
-  try {
-    const supabase = supabaseServer();
+export async function savePreferences(payload: PreferencesPayload) {
+  const supabase = createServerSupabase();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-    const {
-      data: { user },
-      error: userErr,
-    } = await supabase.auth.getUser();
-    if (userErr || !user) return { ok: false, message: "Not authenticated" };
-
-    // Normalize categories
-    let categoriesArray: string[] | undefined;
-    if (Array.isArray(patch.categories)) {
-      categoriesArray = patch.categories;
-    } else if (patch.categories && typeof patch.categories === "object") {
-      categoriesArray = Object.entries(patch.categories)
-        .filter(([, v]) => Boolean(v))
-        .map(([k]) => k);
-    }
-
-    // Start with fields common across schemas
-    const update: ProfilesUpdate = {
-      preferred_currency: patch.preferred_currency ?? undefined,
-      notify_channel: patch.notify_channel ?? undefined,
-    } as ProfilesUpdate;
-
-    // Optionally apply fields only if they exist in your generated types
-    const dyn = update as unknown as Record<string, unknown>;
-
-    if ("categories" in ({} as ProfilesUpdate)) {
-      dyn["categories"] = categoriesArray ?? undefined;
-    }
-    if ("preferred_shops" in ({} as ProfilesUpdate)) {
-      dyn["preferred_shops"] = patch.preferred_shops ?? undefined;
-    }
-    if ("budget_monthly" in ({} as ProfilesUpdate)) {
-      dyn["budget_monthly"] = patch.budget_monthly ?? undefined;
-    }
-    if ("sizes" in ({} as ProfilesUpdate)) {
-      dyn["sizes"] = patch.sizes ?? undefined;
-    }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update(update)
-      .eq("id", user.id);
-
-    if (error) return { ok: false, message: error.message ?? "Failed to save" };
-
-    return { ok: true, message: "Saved" };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Failed to save";
-    return { ok: false, message: msg };
+  if (userError || !user) {
+    return { ok: false as const, message: 'Not authenticated' };
   }
-}
 
-/**
- * Back-compat action used by older callers.
- */
-export async function updateProfile(patch: ProfilesUpdate): Promise<ActionResult> {
-  try {
-    const supabase = supabaseServer();
+  const categories: Categories = {
+    interests: payload.categories ?? {},
+    budget_monthly: payload.budget_monthly ?? null,
+    sizes: payload.sizes ?? null,
+  };
 
-    const {
-      data: { user },
-      error: userErr,
-    } = await supabase.auth.getUser();
-    if (userErr || !user) return { ok: false, message: "Not authenticated" };
+  const update: ProfileUpdate = {
+    preferred_currency: payload.preferred_currency ?? null,
+    notify_channel: payload.notify_channel ?? null,
+    categories,
+    updated_at: new Date().toISOString(),
+  };
 
-    const { error } = await supabase
-      .from("profiles")
-      .update(patch)
-      .eq("id", user.id);
+  // Cast the update to the table's Partial row type so supabase-js is happy
+  const patch: Partial<ProfilesRow> = update;
 
-    if (error) return { ok: false, message: error.message ?? "Failed to save" };
+  const { error } = await supabase
+    .from<ProfilesRow>('profiles')
+    .update(patch)
+    .eq('id', user.id);
 
-    return { ok: true, message: "Saved" };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Failed to save";
-    return { ok: false, message: msg };
+  if (error) {
+    return { ok: false as const, message: error.message };
   }
+
+  revalidatePath('/account');
+  return { ok: true as const };
 }
