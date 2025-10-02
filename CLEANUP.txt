@@ -1,0 +1,20 @@
+CLEANUP INSTRUCTIONS (Consolidate to single app/ tree)
+
+1) Delete the entire folder: src/app
+   This removes duplicate Next.js "app" tree so only /app is used.
+
+   On Windows (PowerShell):
+     Remove-Item -Recurse -Force .\src\app
+
+   On macOS/Linux:
+     rm -rf ./src/app
+
+2) No other folders in src/ are removed. We still keep src/lib, src/components, etc.
+
+3) New files added by this patch:
+     - app/api/waitlist/route.ts   (moved from src/app/api/waitlist)
+     - app/favicon.ico             (moved from src/app/favicon.ico if it existed)
+
+After applying this patch and cleanup, run:
+  npm run build
+  npm run dev
