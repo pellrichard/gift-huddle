@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(new URL(getNext(url), url));
 
   // Bind Supabase to this req/res so exchangeCodeForSession can set cookies
-  const supabase = createRouteHandlerClient(req, res);
+  const supabase = createRouteHandlerClient();
 
   if (code) {
     await supabase.auth.exchangeCodeForSession(code);
@@ -39,4 +39,5 @@ export async function GET(req: NextRequest) {
 
   return res;
 }
+
 

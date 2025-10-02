@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.redirect(new URL("/", url)); // send user to homepage after logout
 
   // Bind Supabase to this req/res to clear cookies properly
-  const supabase = createRouteHandlerClient(req, res);
+  const supabase = createRouteHandlerClient();
   try {
     await supabase.auth.signOut();
   } catch {}
@@ -19,4 +19,5 @@ export async function POST(req: NextRequest) {
 
   return res;
 }
+
 
