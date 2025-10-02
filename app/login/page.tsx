@@ -1,26 +1,24 @@
-"use client";
-import React from "react";
-import { supabase } from "@/lib/supabase/client";
+// Login page: if already authenticated, send to /account instead of re-prompting OAuth
+import "server-only";
+import { redirect } from "next/navigation";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
-export default function LoginPage() {
-  const onLogin = async (provider: "google" | "facebook" | "apple") => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${origin}/auth/callback`,
-      },
-    });
-  };
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
+export default async function LoginPage() {
+  const supabase = createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/account");
+  }
+
+  // Replace with your real login UI / OAuth buttons
   return (
-    <div className="p-6">
-      <h1 className="mb-4 text-2xl font-semibold">Login</h1>
-      <div className="flex flex-col gap-3">
-        <button onClick={() => onLogin("google")} className="rounded-lg bg-gray-900 px-4 py-2 text-white">Continue with Google</button>
-        <button onClick={() => onLogin("facebook")} className="rounded-lg bg-blue-600 px-4 py-2 text-white">Continue with Facebook</button>
-        <button onClick={() => onLogin("apple")} className="rounded-lg bg-black px-4 py-2 text-white">Continue with Apple</button>
-      </div>
-    </div>
+    <main className="container mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Login</h1>
+      <p className="opacity-80 text-sm">Choose a provider to continue.</p>
+    </main>
   );
 }

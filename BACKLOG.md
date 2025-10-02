@@ -1,2 +1,2 @@
 ### 2025-10-02
-- Logout route: removed 'any' usage and unused vars; robust cookie clearing.
+- Added SSR guards to /login and /account and a /api/debug/session endpoint to stop OAuth redirect loop.
