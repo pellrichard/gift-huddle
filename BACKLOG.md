@@ -1,8 +1,7 @@
-### 2025-10-04 – Fix logout (405) and account page visibility
+### 2025-10-04 – Fix homepage visibility & logout redirect
 
-- **Logout 405**: Header now submits a POST to `/logout` via a form button.
-  Added `app/logout/route.ts` to call `supabase.auth.signOut()` and redirect to `/login`.
-- **Account page**: Rewrote `app/account/page.tsx` to verify session on the server.
-  - If no user → redirect to `/login`.
-  - If user exists → render a minimal, reliable account page (email + raw user JSON) and mount `AccountClient`.
-- Header remains auth-aware and continues to use `/logo.svg` for branding.
+- **Homepage**: `/` now redirects to `/account` only when authenticated; otherwise it renders a visible public landing
+  (previously returned `null`, causing a blank page).
+- **Logout (ERR_CONNECTION_REFUSED)**: `/logout` POST handler now derives redirect origin from the incoming request
+  instead of using `NEXT_PUBLIC_SITE_URL`/localhost. This prevents production from redirecting to `http://localhost:3000`.
+- Added `/api/debug/origin` to inspect request origins during deployments.
