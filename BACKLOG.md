@@ -1,6 +1,11 @@
-### 2025-10-03 – ESLint cleanup for error boundaries & logging
+### 2025-10-03 – Auth-aware header and homepage redirect
 
-- Removed `any` casts in `app/error.tsx` and `app/global-error.tsx`; added a `RouteError` type.
-- Removed unused eslint-disable comments; kept `console.error` (rule not enforced here).
-- Kept friendly error UI with digest display and reset button.
-- Central logging helper no longer disables any lint rules.
+- Header now checks Supabase session on the server and conditionally shows:
+  - Logged-in: "My account" and "Log out"
+  - Logged-out: "Log in"
+- Homepage (`/`) now redirects authenticated users to `/account` using a server-side Supabase check.
+- Switched logo references to SVG under `/public/assets/logo.svg` per request.
+- Files touched:
+  - `src/components/chrome/HeaderBar.tsx`
+  - `src/components/chrome/FooterBar.tsx`
+  - `app/page.tsx`

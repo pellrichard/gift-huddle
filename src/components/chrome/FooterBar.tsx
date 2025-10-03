@@ -33,7 +33,7 @@ export default function FooterBar() {
       <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-gray-700 flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-2">
-            <Image src="/logo.svg" alt="Gift Huddle" width={24} height={24} />
+            <Image src="/assets/logo.svg" alt="Gift Huddle" width={24} height={24} />
             <span className="font-medium">Gift Huddle</span>
           </Link>
           <div className="flex items-center gap-3">
