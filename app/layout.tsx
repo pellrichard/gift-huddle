@@ -1,32 +1,22 @@
-// app/layout.tsx
 import type { Metadata } from "next";
+import React from "react";
 import "./globals.css";
-import CodeCleanup from "./components/CodeCleanup";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import HeaderBar from "@/components/chrome/HeaderBar";
+import FooterBar from "@/components/chrome/FooterBar";
 
 export const metadata: Metadata = {
   title: "Gift Huddle",
-  description: "Gifting made social, fun and easy.",
-  openGraph: {
-    title: "Gift Huddle",
-    description: "Gifting made social, fun and easy.",
-    images: ["/social-share.png"],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: ["/social-share.png"],
-  },
+  description: "Collect gift ideas with friends and family. Save links, plan budgets, and avoid duplicates.",
+  metadataBase: new URL("https://www.gift-huddle.com"),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col">
-        <CodeCleanup />
-        <Header />
+      <body className="min-h-screen flex flex-col antialiased">
+        <HeaderBar />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <FooterBar />
       </body>
     </html>
   );
