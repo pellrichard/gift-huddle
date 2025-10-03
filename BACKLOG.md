@@ -1,7 +1,6 @@
-### 2025-10-03 – Add error boundaries & structured logging
+### 2025-10-03 – ESLint cleanup for error boundaries & logging
 
-- Added `app/error.tsx` (segment error boundary) and `app/global-error.tsx` (global error boundary) to replace the generic
-  “Something went wrong” with a reset button and to surface the digest code.
-- Both boundaries log structured details to server logs so we can trace the exact stack on Vercel.
-- Added `src/lib/logging/server.ts` helper for consistent server error logging across the app.
-- Added `GET /api/debug/ping` endpoint to quickly verify runtime health.
+- Removed `any` casts in `app/error.tsx` and `app/global-error.tsx`; added a `RouteError` type.
+- Removed unused eslint-disable comments; kept `console.error` (rule not enforced here).
+- Kept friendly error UI with digest display and reset button.
+- Central logging helper no longer disables any lint rules.

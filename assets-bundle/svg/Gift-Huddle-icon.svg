@@ -1,0 +1,10 @@
+<svg width='64' height='64' viewBox='0 -8 64 72' role='img' aria-label='Gift Huddle present icon' xmlns='http://www.w3.org/2000/svg' style='color: #ec4899'>
+  <rect x='6' y='10' width='52' height='48' rx='3' ry='3' fill='none' stroke='currentColor' stroke-width='5' stroke-linejoin='miter' />
+  <path d='M32 10 v48' fill='none' stroke='currentColor' stroke-width='5' stroke-linecap='round' />
+  <path d='M6 34 h52' fill='none' stroke='currentColor' stroke-width='5' stroke-linecap='round' />
+  <path d='M32 6 C24 -2, 10 -2, 14 8 C16 16, 26 14, 32 8' fill='none' stroke='currentColor' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' />
+  <path d='M32 6 C40 -2, 54 -2, 50 8 C48 16, 38 14, 32 8' fill='none' stroke='currentColor' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' />
+  <circle cx='32' cy='9' r='2.5' fill='currentColor' />
+  <path d='M32 10 L22 26' fill='none' stroke='currentColor' stroke-width='5' stroke-linecap='round' />
+  <path d='M32 10 L42 26' fill='none' stroke='currentColor' stroke-width='5' stroke-linecap='round' />
+</svg>

@@ -1,5 +1,3 @@
-// Simple server-side logger helper to provide consistent structured logs
-// that show up in Vercel function logs.
 export function logServerError(label: string, error: unknown, extra?: Record<string, unknown>) {
   const payload = {
     label,
@@ -7,6 +5,5 @@ export function logServerError(label: string, error: unknown, extra?: Record<str
     stack: error instanceof Error ? error.stack : undefined,
     ...extra,
   };
-  // eslint-disable-next-line no-console
   console.error("[GH] ServerError", payload);
 }
