@@ -13,7 +13,6 @@ export default async function HeaderBar() {
     const { data: { user } } = await supabase.auth.getUser();
     userId = user?.id ?? null;
   } catch {
-    // swallow – render logged-out chrome if auth check fails
     userId = null;
   }
 
@@ -21,8 +20,8 @@ export default async function HeaderBar() {
     <header className="w-full border-b bg-white/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
         <Link href="/" className="inline-flex items-center gap-2">
-          {/* Use SVG from /public/assets as requested */}
-          <Image src="/assets/logo.svg" width={28} height={28} alt="Gift Huddle" priority />
+          {/* Use the repo's canonical SVG logo under /public */}
+          <Image src="/logo.svg" width={28} height={28} alt="Gift Huddle" priority />
           <span className="font-semibold text-lg tracking-tight">Gift Huddle</span>
         </Link>
 
