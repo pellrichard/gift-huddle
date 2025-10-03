@@ -1,5 +1,5 @@
-### 2025-10-04 – Login buttons use SVG icons (per working practice)
+### 2025-10-04 – Fix OAuth loop by exchanging code for session
 
-- Replaced raster provider logos with **inline SVG** icons for Google and Facebook.
-- Pros: crisp scaling, no external hotlinks, no Next.js image domain config needed.
-- We still follow each provider's brand colors/marks.
+- Updated `app/auth/callback/route.ts` to call `supabase.auth.exchangeCodeForSession(code)`.
+- This **sets the Supabase auth cookies** on the server response so the user is actually signed in.
+- Without this step, the app redirected to `/account` without a session, then got bounced back to `/login` (loop).
