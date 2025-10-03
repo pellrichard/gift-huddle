@@ -1,4 +1,7 @@
 // Server Component
+import Link from "next/link";
+import Image from "next/image";
+
 export const runtime = "nodejs";
 
 function SocialIcon({ label, href, path }: { label: string; href: string; path: string }) {
@@ -29,10 +32,10 @@ export default function FooterBar() {
     <footer className="w-full border-t bg-white">
       <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-gray-700 flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
-          <a href="/" className="inline-flex items-center gap-2">
-            <img src="/logo.svg" alt="Gift Huddle" width="24" height="24" />
+          <Link href="/" className="inline-flex items-center gap-2">
+            <Image src="/logo.svg" alt="Gift Huddle" width={24} height={24} />
             <span className="font-medium">Gift Huddle</span>
-          </a>
+          </Link>
           <div className="flex items-center gap-3">
             <SocialIcon label="Connect on LinkedIn" href="https://www.linkedin.com/company/gift-huddle" path={ICONS.linkedin} />
             <SocialIcon label="Like on Facebook" href="https://www.facebook.com/profile.php?id=61581098625976" path={ICONS.facebook} />
@@ -41,9 +44,9 @@ export default function FooterBar() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
           <div>© {year} Gift Huddle</div>
           <nav className="flex items-center gap-5">
-            <a href="/privacy" className="hover:underline">Privacy</a>
-            <a href="/terms" className="hover:underline">Terms</a>
-            <a href="/contact" className="hover:underline">Contact</a>
+            <Link href="/privacy" className="hover:underline">Privacy</Link>
+            <Link href="/terms" className="hover:underline">Terms</Link>
+            <Link href="/contact" className="hover:underline">Contact</Link>
           </nav>
         </div>
       </div>

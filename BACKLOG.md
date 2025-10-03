@@ -1,6 +1,7 @@
-### 2025-10-03 – Update footer socials
+### 2025-10-03 – ESLint compliance for Next.js links & images
 
-- Removed X and Instagram icons (not used).
-- Kept LinkedIn (correct company page) and updated Facebook link to:
-  https://www.facebook.com/profile.php?id=61581098625976
-- File: `src/components/chrome/FooterBar.tsx`
+- Replaced internal `<a>` tags with `<Link />` from `next/link` in Header and Footer.
+- Replaced `<img>` with optimized `<Image />` from `next/image` for the logo.
+- Files:
+  - `src/components/chrome/HeaderBar.tsx`
+  - `src/components/chrome/FooterBar.tsx`
