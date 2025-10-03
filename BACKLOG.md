@@ -1,7 +1,9 @@
-### 2025-10-04 – Harden OAuth flow (login → provider → callback)
+### 2025-10-04 – OAuth logos + callback redirect + branding path
 
-- `/auth/signin` now constructs `redirectTo` from the **request origin** to avoid localhost or wrong-domain leaks.
-- Two supported providers: **google**, **facebook**. Unknown provider → 400.
-- `/auth/callback` simply redirects to `next` (default `/account`). Supabase sets cookies on callback automatically.
-- `/login` page now renders explicit provider buttons that hit `/auth/signin?provider=...`.
-- `middleware.ts` updated to **never** intercept `/auth/*` and `/api/*` routes to avoid redirect loops before cookies are set.
+- **Branding:** Header & Footer now use `/assets-bundle/svg/Gift-Huddle.svg` (fixes broken logos).
+- **Login buttons:** Added official provider logos hosted by Google & Facebook:
+  - Google: https://developers.google.com/identity/images/g-logo.png
+  - Facebook: https://www.facebook.com/images/fb_icon_325x325.png
+  (Configured in `next.config.js` to allow these external images.)
+- **OAuth callback:** `/auth/callback` now always redirects to `next` (default `/account`) instead of returning to `/login`.
+  This avoids landing on `/login#_=_` after successful auth.
