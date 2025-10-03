@@ -20,7 +20,6 @@ export default async function HeaderBar() {
     <header className="w-full border-b bg-white/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
         <Link href="/" className="inline-flex items-center gap-2">
-          {/* Use the repo's canonical SVG logo under /public */}
           <Image src="/logo.svg" width={28} height={28} alt="Gift Huddle" priority />
           <span className="font-semibold text-lg tracking-tight">Gift Huddle</span>
         </Link>
@@ -31,10 +30,14 @@ export default async function HeaderBar() {
           <Link href="/contact" className="hover:underline">Contact</Link>
 
           {userId ? (
-            <>
-              <Link href="/account" className="ml-2 rounded px-3 py-1 border hover:bg-gray-50">My account</Link>
-              <Link href="/logout" className="rounded px-3 py-1 border hover:bg-gray-50">Log out</Link>
-            </>
+            <div className="flex items-center gap-2">
+              <Link href="/account" className="rounded px-3 py-1 border hover:bg-gray-50">My account</Link>
+              <form action="/logout" method="post">
+                <button type="submit" className="rounded px-3 py-1 border hover:bg-gray-50">
+                  Log out
+                </button>
+              </form>
+            </div>
           ) : (
             <Link href="/login" className="ml-2 rounded px-3 py-1 border hover:bg-gray-50">Log in</Link>
           )}
