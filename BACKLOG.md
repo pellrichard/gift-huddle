@@ -1,4 +1,7 @@
-### 2025-10-04 – Use assets-bundle SVG logo
+### 2025-10-04 – Harden OAuth flow (login → provider → callback)
 
-- Updated HeaderBar and FooterBar to point to `/assets-bundle/svg/Gift-Huddle.svg`.
-- Ensures consistent branding using the bundled SVG asset already in the repo.
+- `/auth/signin` now constructs `redirectTo` from the **request origin** to avoid localhost or wrong-domain leaks.
+- Two supported providers: **google**, **facebook**. Unknown provider → 400.
+- `/auth/callback` simply redirects to `next` (default `/account`). Supabase sets cookies on callback automatically.
+- `/login` page now renders explicit provider buttons that hit `/auth/signin?provider=...`.
+- `middleware.ts` updated to **never** intercept `/auth/*` and `/api/*` routes to avoid redirect loops before cookies are set.

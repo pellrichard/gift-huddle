@@ -1,19 +1,18 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-const SITE_HOST = process.env.SITE_HOST;
-
+// If you already have more complex logic, merge these early returns.
 export function middleware(req: NextRequest) {
-  if (!SITE_HOST) return NextResponse.next();
+  const { pathname } = req.nextUrl;
 
-  const { nextUrl } = req;
-  if (nextUrl.hostname !== SITE_HOST) {
-    const redirectUrl = new URL(`${nextUrl.protocol}//${SITE_HOST}${nextUrl.pathname}${nextUrl.search}`);
-    return NextResponse.redirect(redirectUrl, 308);
+  // Never block or rewrite auth or API routes
+  if (pathname.startsWith("/auth/") || pathname.startsWith("/api/")) {
+    return NextResponse.next();
   }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/', '/login', '/account', '/auth/:path*', '/api/:path*'],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
