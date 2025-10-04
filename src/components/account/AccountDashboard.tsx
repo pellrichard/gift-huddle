@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { EditProfileModal } from "@/components/account/EditProfileModal";
 
 // ---- Types for props ----
 type UserInfo = { name: string; avatar?: string | null };
@@ -170,6 +171,7 @@ export default function AccountDashboard(props: Props) {
 
   const [eventsView, setEventsView] = useState<"list" | "calendar">("list");
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+    const [openEdit, setOpenEdit] = useState(false);
 
   const monthLabel = useMemo(() =>
     new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(calendarMonth),
@@ -188,7 +190,7 @@ export default function AccountDashboard(props: Props) {
             <div className="text-xl font-semibold">Welcome back, {u.name?.split(' ')[0] ?? 'Friend'}!</div>
             <div className="text-sm text-muted-foreground">Here’s a snapshot of your gifting world.</div>
           </div>
-          <Button variant="secondary" className="gap-2">
+          <Button variant="secondary" className="gap-2" onClick={() => setOpenEdit(true)}>
             <Pencil className="h-4 w-4" /> Edit profile
           </Button>
         </CardContent>
@@ -376,6 +378,12 @@ export default function AccountDashboard(props: Props) {
           </div>
         )}
       </section>
+      <EditProfileModal
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        initial={{ display_name: u.name, avatar_url: u.avatar ?? null, interests: ['Coffee','Board Games'], preferred_shops: ['Amazon','LEGO'] }}
+        onSave={(data) => { console.log('preview save', data); }}
+      />
     </div>
   );
 }
