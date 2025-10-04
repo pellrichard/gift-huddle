@@ -14,15 +14,17 @@ function toStr(v: unknown): string | undefined {
 
 type ProfileData = {
   display_name?: string | null;
-  dob?: string | null;
+  dob?: string | null; // YYYY-MM-DD
   dob_show_year?: boolean | null;
+  // Notifications
   notify_mobile?: boolean | null;
   notify_email?: boolean | null;
   unsubscribe_all?: boolean | null;
+  // Preferences
   preferred_currency?: string | null;
 };
 
-type SaveResult = { ok?: boolean } | void;
+type SaveResult = { ok: true } | { ok: false; error?: string } | void;
 
 export function EditProfileModal({
   open,
@@ -61,6 +63,7 @@ export function EditProfileModal({
     });
   }, [open, initial]);
 
+  // Load currency list from Supabase (fx_rates)
   React.useEffect(() => {
     let active = true;
     (async () => {
@@ -138,17 +141,21 @@ export function EditProfileModal({
   }
 
   async function handleSave() {
+    // Close immediately; if it fails, we re-open and show the real server error
     onOpenChange(false);
     try {
       setSaving(true);
-      const res = await onSave?.(form);
-      if (res && typeof res === 'object' && 'ok' in res && res.ok === false) {
-        throw new Error('Save failed');
-      }
-    } catch (err) {
-      console.error('Save profile failed', err);
-      alert('Sorry, we could not save your changes. Please try again.');
+      const res = (await onSave?.(form)) as SaveResult;
+      if (!res || (typeof res === 'object' && 'ok' in res && res.ok === true)) return;
+      const message =
+        typeof res === 'object' && res && 'error' in res && res.error
+          ? res.error
+          : 'Save failed';
       onOpenChange(true);
+      alert(message);
+    } catch (err) {
+      onOpenChange(true);
+      alert(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
     }
@@ -172,11 +179,13 @@ export function EditProfileModal({
 
       <ModalBody>
         <div className="flex flex-col items-center gap-3">
+          {/* Avatar preview only */}
           <Avatar className="h-24 w-24 ring-2 ring-white shadow">
             <AvatarImage src={initial?.avatar_url ?? undefined} alt={form.display_name ?? ''} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
+          {/* Inputs under picture */}
           <div className="w-full max-w-md grid gap-3">
             <div className="grid gap-1">
               <label htmlFor="display_name" className="text-sm font-medium">Display name</label>
@@ -208,6 +217,7 @@ export function EditProfileModal({
               </label>
             </div>
 
+            {/* Notifications */}
             <div className="grid gap-2 rounded-lg border p-3">
               <div className="text-sm font-medium">Notifications</div>
               <label className="inline-flex items-center gap-2 text-sm">
@@ -251,6 +261,7 @@ export function EditProfileModal({
               )}
             </div>
 
+            {/* Preferred currency */}
             <div className="grid gap-1">
               <label htmlFor="preferred_currency" className="text-sm font-medium">Preferred currency</label>
               <select
@@ -277,18 +288,19 @@ export function EditProfileModal({
         </div>
       </ModalBody>
 
+      {/* Buttons: explicit classes so they render as boxes even with modal resets */}
       <ModalFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button
           variant="outline"
           size="lg"
-          className="w-full sm:w-auto border rounded-md px-4 py-2"
+          className="w-full sm:w-auto border px-4 py-2 rounded-md"
           onClick={() => onOpenChange(false)}
         >
           Cancel
         </Button>
         <Button
           size="lg"
-          className="w-full sm:w-auto rounded-md px-4 py-2"
+          className="w-full sm:w-auto px-4 py-2 rounded-md"
           onClick={handleSave}
           disabled={saving}
         >

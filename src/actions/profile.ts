@@ -1,4 +1,5 @@
 'use server';
+
 import { revalidatePath } from 'next/cache';
 import { createServerComponentClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -16,12 +17,12 @@ export async function saveProfile(data: {
   unsubscribe_all?: boolean | null;
   preferred_currency?: string | null;
 }) {
-  const supabase = createServerComponentClient();
-  const db = supabase as unknown as SupabaseClient<DB>;
+  // Use the project's server wrapper (already wired to cookies/headers) to avoid typing mismatch
+  const supabase = createServerComponentClient() as unknown as SupabaseClient<DB>;
 
-  const { data: { user }, error: userErr } = await db.auth.getUser();
-  if (userErr) throw new Error(userErr.message);
-  if (!user) throw new Error('Not authenticated');
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr) return { ok: false as const, error: authErr.message };
+  if (!user) return { ok: false as const, error: 'Not authenticated' };
 
   const upsertObj: Insert = {
     id: user.id,
@@ -34,11 +35,13 @@ export async function saveProfile(data: {
     preferred_currency: data.preferred_currency ?? null,
   };
 
-  const { error } = await db
+  const { error } = await supabase
     .from('profiles')
-    .upsert(upsertObj, { onConflict: 'id' });
+    .upsert(upsertObj, { onConflict: 'id' })
+    .select('id')
+    .single();
 
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false as const, error: error.message };
 
   revalidatePath('/account');
   return { ok: true as const };
