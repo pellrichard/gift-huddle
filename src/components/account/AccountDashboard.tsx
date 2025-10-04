@@ -381,7 +381,7 @@ export default function AccountDashboard(props: Props) {
       <EditProfileModal
         open={openEdit}
         onOpenChange={setOpenEdit}
-        initial={{ display_name: u.name, avatar_url: u.avatar ?? null, interests: ['Coffee','Board Games'], preferred_shops: ['Amazon','LEGO'] }}
+        initial={{ display_name: u.name, avatar_url: u.avatar ?? null, preferred_currency: 'GBP', notify_email: true, notify_mobile: false, unsubscribe_all: false }}
         onSave={(data) => { console.log('preview save', data); }}
       />
     </div>

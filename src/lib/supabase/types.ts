@@ -12,6 +12,12 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+        currencies: {
+          Row: { code: string; name: string; symbol: string | null };
+          Insert: { code: string; name: string; symbol?: string | null };
+          Update: { code?: string; name?: string; symbol?: string | null };
+          Relationships: [];
+        };
       profiles: {
         Row: {
           id: string;
