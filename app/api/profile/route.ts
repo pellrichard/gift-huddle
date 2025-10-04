@@ -39,14 +39,31 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const payload = {
-    display_name: typeof body.display_name === "string" ? body.display_name : null,
-    dob: typeof body.dob === "string" ? body.dob : null,
-    dob_show_year: typeof body.dob_show_year === "boolean" ? body.dob_show_year : null,
-    categories: Array.isArray(body.categories) ? body.categories.slice(0, 50).map(String) : null,
-    preferred_shops: Array.isArray(body.preferred_shops) ? body.preferred_shops.slice(0, 50).map(String) : null,
-    socials: body.socials && typeof body.socials === "object" ? body.socials : null,
-  };
+  const payload: Record<string, unknown> = {};
+
+  if (typeof body.display_name === "string") {
+    payload.display_name = body.display_name;
+  }
+
+  if (typeof body.dob === "string") {
+    payload.dob = body.dob;
+  }
+
+  if (typeof body.dob_show_year === "boolean") {
+    payload.dob_show_year = body.dob_show_year;
+  }
+
+  if (Array.isArray(body.categories)) {
+    payload.categories = body.categories.slice(0, 50).map(String);
+  }
+
+  if (Array.isArray(body.preferred_shops)) {
+    payload.preferred_shops = body.preferred_shops.slice(0, 50).map(String);
+  }
+
+  if (body.socials && typeof body.socials === "object") {
+    payload.socials = body.socials;
+  }
 
   const { data, error } = await supabase
     .from("profiles")
