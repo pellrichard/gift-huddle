@@ -11,7 +11,7 @@ type Insert = DB['public']['Tables']['profiles']['Insert'];
 export type ProfileForEdit = {
   full_name: string | null;
   dob: string | null;
-  dob_show_year: boolean | null;
+  show_dob_year: boolean | null;
   notify_mobile: boolean | null;
   notify_email: boolean | null;
   unsubscribe_all: boolean | null;
@@ -20,7 +20,7 @@ export type ProfileForEdit = {
   email: string | null;
 };
 
-// Helpers
+// Helpers (no any)
 function pick(obj: Record<string, unknown> | null | undefined, key: string): unknown {
   return obj && typeof obj === 'object' && key in obj
     ? (obj as Record<string, unknown>)[key]
@@ -77,63 +77,32 @@ export async function bootstrapProfileFromAuth() {
   return { ok: true as const };
 }
 
-/** Load profile for edit modal; tolerant to full_name vs display_name. Bootstraps from OAuth if missing. */
+/** Load profile for the edit modal (tolerant to show_dob_year vs historical dob_show_year in types). */
 export async function getProfileForEdit(): Promise<{ ok: true; data: ProfileForEdit } | { ok: false; error: string }> {
   const supabase = createServerComponentClient() as unknown as SupabaseClient<DB>;
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr) return { ok: false, error: authErr.message };
   if (!auth?.user) return { ok: false, error: 'Not authenticated' };
 
-  // Narrow once and capture for inner closures to satisfy TS
-  const userId: string = auth.user.id;
-  const userEmail: string | null = auth.user.email ?? null;
+  const userId = auth.user.id;
+  const userEmail = auth.user.email ?? null;
   const userMeta: Record<string, unknown> = (auth.user as unknown as { user_metadata: Record<string, unknown> }).user_metadata ?? {};
 
-  async function fetchOnce() {
-    const { data: row, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    return { row, error };
-  }
-
-  let { row, error } = await fetchOnce();
-
-  const noRow = !row && (!error || (error.message && error.message.includes('0 rows')));
-  const fullNameCandidate = toStr(pick(row as Record<string, unknown> | null, 'full_name')) ?? toStr(pick(row as Record<string, unknown> | null, 'display_name'));
-  const missingName = !row || !fullNameCandidate;
-
-  if (noRow || missingName) {
-    const boot = await bootstrapProfileFromAuth();
-    if (!boot.ok) {
-      const dm = deriveNameAndAvatar({ email: userEmail, user_metadata: userMeta });
-      const fallback: ProfileForEdit = {
-        full_name: dm.full_name,
-        dob: null,
-        dob_show_year: true,
-        notify_mobile: false,
-        notify_email: true,
-        unsubscribe_all: false,
-        preferred_currency: 'GBP',
-        avatar_url: dm.avatar_url,
-        email: userEmail,
-      };
-      return { ok: true, data: fallback };
-    }
-    ({ row, error } = await fetchOnce());
-  }
+  const { data: row, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
 
   if (error && error.message && !error.message.includes('Results contain 0 rows')) {
     return { ok: false, error: error.message };
   }
 
   const r = (row ?? null) as Record<string, unknown> | null;
-
-  const result: ProfileForEdit = {
+  const data: ProfileForEdit = {
     full_name: toStr(pick(r, 'full_name')) ?? toStr(pick(r, 'display_name')),
     dob: toStr(pick(r, 'dob')),
-    dob_show_year: toBool(pick(r, 'dob_show_year')) ?? true,
+    show_dob_year: toBool(pick(r, 'show_dob_year')) ?? toBool(pick(r, 'dob_show_year')) ?? true,
     notify_mobile: toBool(pick(r, 'notify_mobile')) ?? false,
     notify_email: toBool(pick(r, 'notify_email')) ?? true,
     unsubscribe_all: toBool(pick(r, 'unsubscribe_all')) ?? false,
@@ -142,14 +111,46 @@ export async function getProfileForEdit(): Promise<{ ok: true; data: ProfileForE
     email: userEmail,
   };
 
-  return { ok: true, data: result };
+  // If row is missing or has no name, try to bootstrap once
+  if (!row || !data.full_name) {
+    const boot = await bootstrapProfileFromAuth();
+    if (boot.ok) {
+      const { data: row2 } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      const r2 = (row2 ?? null) as Record<string, unknown> | null;
+      return {
+        ok: true,
+        data: {
+          ...data,
+          full_name: toStr(pick(r2, 'full_name')) ?? data.full_name,
+          avatar_url: toStr(pick(r2, 'avatar_url')) ?? data.avatar_url,
+        }
+      };
+    } else {
+      // fallback to auth metadata
+      const dm = deriveNameAndAvatar({ email: userEmail, user_metadata: userMeta });
+      return {
+        ok: true,
+        data: {
+          ...data,
+          full_name: dm.full_name,
+          avatar_url: dm.avatar_url,
+        }
+      };
+    }
+  }
+
+  return { ok: true, data };
 }
 
-/** Save edits; creates profile row if missing (UPSERT). */
+/** Save edits; writes show_dob_year (DB column) and not the legacy dob_show_year. */
 export async function saveProfile(data: {
   full_name?: string | null;
   dob?: string | null;
-  dob_show_year?: boolean | null;
+  show_dob_year?: boolean | null;
   notify_mobile?: boolean | null;
   notify_email?: boolean | null;
   unsubscribe_all?: boolean | null;
@@ -165,7 +166,7 @@ export async function saveProfile(data: {
     id: user.id,
     full_name: data.full_name ?? null,
     dob: data.dob ?? null,
-    dob_show_year: data.dob_show_year ?? null,
+    show_dob_year: data.show_dob_year ?? null,
     notify_mobile: data.notify_mobile ?? null,
     notify_email: data.notify_email ?? null,
     unsubscribe_all: data.unsubscribe_all ?? null,

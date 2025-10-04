@@ -44,7 +44,7 @@ export default function AccountDashboard(props: {
   initialProfile?: {
     full_name: string | null;
     dob: string | null;
-    dob_show_year: boolean | null;
+    show_dob_year: boolean | null;
     notify_mobile: boolean | null;
     notify_email: boolean | null;
     unsubscribe_all: boolean | null;
@@ -183,7 +183,7 @@ export default function AccountDashboard(props: {
       <EditProfileModal
         open={openEdit}
         onOpenChange={setOpenEdit}
-        initial={initialProfile ?? { full_name: user.name, avatar_url: user.avatar ?? null, preferred_currency: 'GBP', notify_email: true, notify_mobile: false, unsubscribe_all: false, dob: null, dob_show_year: true, email: null }}
+        initial={initialProfile ?? { full_name: user.name, avatar_url: user.avatar ?? null, preferred_currency: 'GBP', notify_email: true, notify_mobile: false, unsubscribe_all: false, dob: null, show_dob_year: true, email: null }}
         onSave={saveProfile}
       />
     </div>

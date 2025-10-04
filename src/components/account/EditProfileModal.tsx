@@ -15,7 +15,7 @@ function toStr(v: unknown): string | undefined {
 type ProfileData = {
   full_name?: string | null;
   dob?: string | null; // YYYY-MM-DD
-  dob_show_year?: boolean | null;
+  show_dob_year?: boolean | null;
   // Notifications
   notify_mobile?: boolean | null;
   notify_email?: boolean | null;
@@ -34,13 +34,13 @@ export function EditProfileModal({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initial?: ProfileData & { display_name?: string | null; email?: string | null; avatar_url?: string | null };
+  initial?: ProfileData & { display_name?: string | null; dob_show_year?: boolean | null; email?: string | null; avatar_url?: string | null };
   onSave?: (data: ProfileData) => Promise<SaveResult> | SaveResult;
 }) {
   const [form, setForm] = React.useState<ProfileData>({
     full_name: initial?.full_name ?? initial?.display_name ?? '',
     dob: initial?.dob ?? '',
-    dob_show_year: initial?.dob_show_year ?? true,
+    show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
     notify_mobile: initial?.notify_mobile ?? false,
     notify_email: initial?.notify_email ?? true,
     unsubscribe_all: initial?.unsubscribe_all ?? false,
@@ -55,7 +55,7 @@ export function EditProfileModal({
     setForm({
       full_name: initial?.full_name ?? initial?.display_name ?? '',
       dob: initial?.dob ?? '',
-      dob_show_year: initial?.dob_show_year ?? true,
+      show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
       notify_mobile: initial?.notify_mobile ?? false,
       notify_email: initial?.notify_email ?? true,
       unsubscribe_all: initial?.unsubscribe_all ?? false,
@@ -141,19 +141,19 @@ export function EditProfileModal({
   }
 
   async function handleSave() {
-    onOpenChange(false);
     try {
       setSaving(true);
       const res = (await onSave?.(form)) as SaveResult;
-      if (!res || (typeof res === 'object' && 'ok' in res && res.ok === true)) return;
+      if (!res || (typeof res === 'object' && 'ok' in res && res.ok === true)) {
+        onOpenChange(false);
+        return;
+      }
       const message =
         typeof res === 'object' && res && 'error' in res && res.error
           ? res.error
           : 'Save failed';
-      onOpenChange(true);
       alert(message);
     } catch (err) {
-      onOpenChange(true);
       alert(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
@@ -207,8 +207,8 @@ export function EditProfileModal({
               <label className="mt-6 inline-flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={!!form.dob_show_year}
-                  onChange={(e) => setField('dob_show_year', e.target.checked)}
+                  checked={!!form.show_dob_year}
+                  onChange={(e) => setField('show_dob_year', e.target.checked)}
                 />
                 Show birth year
               </label>
