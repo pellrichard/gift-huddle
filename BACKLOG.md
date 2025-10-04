@@ -1,5 +1,4 @@
-### 2025-10-04 – ESLint: replace `any` in auth routes
+### 2025-10-04 – Cookie adapter: fix `expires` typing for Next.js
 
-- Replaced `any` with `Record<string, unknown>` in `/auth/signin` and `/auth/callback` cookie adapters.
-- Inferred `CookieOptions` from `NextResponse.cookies.set` for safe typing.
-- Functionality unchanged: PKCE cookies set on `/auth/signin`, session cookies set on `/auth/callback`.
+- Updated `CookieOptions.expires` to `number | Date` (no string) to match `NextResponse.cookies.set`.
+- Build error resolved where `string | Date` conflicted with Next.js type.

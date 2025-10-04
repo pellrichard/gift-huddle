@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { buildCookieAdapter } from "@/lib/auth/cookies";
 
 export const runtime = "nodejs";
 
@@ -14,25 +15,14 @@ export async function GET(request: Request) {
 
   const redirectTo = `${url.origin}/auth/callback?next=/account`;
 
-  // Prepare a response so we can attach PKCE cookies via setAll(...)
+  // Prepare response now so we can attach PKCE cookies
   const response = NextResponse.redirect(url, { status: 302 });
-
-  // Infer cookie options type from NextResponse
-  type CookieOptions = Parameters<typeof response.cookies.set>[2];
-  type SupabaseCookie = { name: string; value: string; options?: Record<string, unknown> };
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL as string,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
     {
-      cookies: {
-        getAll() { return []; },
-        setAll(cookiesToSet: SupabaseCookie[]) {
-          for (const { name, value, options } of cookiesToSet) {
-            response.cookies.set(name, value, options as CookieOptions);
-          }
-        },
-      },
+      cookies: buildCookieAdapter(request.headers.get("cookie"), response),
     }
   );
 
