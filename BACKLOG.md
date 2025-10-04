@@ -1,4 +1,5 @@
-### 2025-10-04 – Type-safe cookie write in OAuth callback
+### 2025-10-04 – ESLint: replace `any` in auth routes
 
-- Removed `@ts-expect-error` and inferred `CookieOptions` from `response.cookies.set` signature.
-- Callback still writes Supabase `sb-*` cookies onto the redirect response and fixes the login loop.
+- Replaced `any` with `Record<string, unknown>` in `/auth/signin` and `/auth/callback` cookie adapters.
+- Inferred `CookieOptions` from `NextResponse.cookies.set` for safe typing.
+- Functionality unchanged: PKCE cookies set on `/auth/signin`, session cookies set on `/auth/callback`.
