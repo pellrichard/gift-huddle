@@ -97,7 +97,6 @@ export function EditProfileModal({
                 const name = toStr(row['name']);
                 return code ? { code, name: name ?? undefined } : null;
               })
-              // IMPORTANT: Use a compatible type predicate (no optional here)
               .filter((x): x is { code: string; name: string | undefined } => Boolean(x));
             if (list.length > 0) {
               got = list;
@@ -116,7 +115,6 @@ export function EditProfileModal({
             const seen = new Set<string>();
             const norm = got
               .filter((c) => { if (seen.has(c.code)) return false; seen.add(c.code); return true; })
-              // here we force name to a definite string for state typing
               .map((c) => ({ code: c.code, name: c.name ?? c.code }))
               .sort((a, b) => a.code.localeCompare(b.code));
             setCurrencies(norm);
@@ -142,10 +140,11 @@ export function EditProfileModal({
   }
 
   async function handleSave() {
+    // Close the modal immediately on save click
+    onOpenChange(false);
     try {
       setSaving(true);
       await onSave?.(form);
-      onOpenChange(false);
     } finally {
       setSaving(false);
     }
@@ -169,11 +168,13 @@ export function EditProfileModal({
 
       <ModalBody>
         <div className="flex flex-col items-center gap-3">
+          {/* Avatar preview only — no editable Avatar URL field */}
           <Avatar className="h-24 w-24 ring-2 ring-white shadow">
             <AvatarImage src={initial?.avatar_url ?? undefined} alt={form.display_name ?? ''} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
+          {/* All inputs stacked under picture (no avatar url input) */}
           <div className="w-full max-w-md grid gap-3">
             <div className="grid gap-1">
               <label htmlFor="display_name" className="text-sm font-medium">Display name</label>
@@ -205,6 +206,7 @@ export function EditProfileModal({
               </label>
             </div>
 
+            {/* Notifications */}
             <div className="grid gap-2 rounded-lg border p-3">
               <div className="text-sm font-medium">Notifications</div>
               <label className="inline-flex items-center gap-2 text-sm">
@@ -248,6 +250,7 @@ export function EditProfileModal({
               )}
             </div>
 
+            {/* Preferred currency */}
             <div className="grid gap-1">
               <label htmlFor="preferred_currency" className="text-sm font-medium">Preferred currency</label>
               <select
@@ -274,9 +277,24 @@ export function EditProfileModal({
         </div>
       </ModalBody>
 
-      <ModalFooter>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-        <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button>
+      {/* Footer updated to match login/logout button sizing/flow */}
+      <ModalFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full sm:w-auto"
+          onClick={() => onOpenChange(false)}
+        >
+          Cancel
+        </Button>
+        <Button
+          size="lg"
+          className="w-full sm:w-auto"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </Button>
       </ModalFooter>
     </Modal>
   );
