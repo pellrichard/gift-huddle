@@ -14,6 +14,8 @@ function isCookieStore(x: unknown): x is CookieStore {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
+
   const raw = cookies() as unknown;
   const store = isCookieStore(raw) ? raw : null;
   const list = store?.getAll ? store.getAll() : [];

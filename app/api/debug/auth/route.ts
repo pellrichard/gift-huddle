@@ -28,6 +28,8 @@ function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/heade
 
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
+
   const store = await cookies();
   const names = ['sb-access-token', 'sb-refresh-token', 'sb-provider'];
   const presentSet = new Set(store.getAll().map(c => c.name));

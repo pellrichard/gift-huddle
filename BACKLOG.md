@@ -34,3 +34,7 @@
 
 ### 2025-10-04
 - Audit patch: (2) confirmed no `flowType` in OAuth; (3) removed unused `@ts-expect-error`; (5) enforced CookieMethodsServer adapter (`getAll`/`setAll`); (7) ensured `/login` and `/` redirect authed users to `/account` and homepage CTA → `/login`.
+
+### 2025-10-05
+- Consolidated Supabase server client by adding a shim at `lib/supabase/server.ts` that re-exports from `src/lib/supabase/server.ts` (no logic duplication). Prefer `@/lib/supabase/server` imports going forward.
+- Gated all debug endpoints (`/api/debug/*`, `/api/_debug/*`) and the `/_debug/auth` page: in production they now return `404` (API) or show a disabled message (page).

@@ -5,6 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerComponentClient } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
+  if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
+
   const supabase = createServerComponentClient();
   const { data: { session }, error } = await supabase.auth.getSession();
 
