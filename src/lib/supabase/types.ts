@@ -1,6 +1,5 @@
-// Minimal Supabase types for Gift Huddle.
-// Replace with generated types later: `supabase gen types typescript --project-id <ref>`.
-
+// Minimal Supabase types for Gift Huddle (profiles/events/currencies).
+// Replace with generated types later via `supabase gen types typescript`.
 export type Json =
   | string
   | number
@@ -12,12 +11,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-        currencies: {
-          Row: { code: string; name: string; symbol: string | null };
-          Insert: { code: string; name: string; symbol?: string | null };
-          Update: { code?: string; name?: string; symbol?: string | null };
-          Relationships: [];
-        };
       profiles: {
         Row: {
           id: string;
@@ -30,6 +23,11 @@ export type Database = {
           avatar_url: string | null;
           banner_url: string | null;
           created_at: string | null;
+          // NEW FIELDS
+          notify_mobile: boolean | null;
+          notify_email: boolean | null;
+          unsubscribe_all: boolean | null;
+          preferred_currency: string | null;
         };
         Insert: {
           id: string;
@@ -42,6 +40,11 @@ export type Database = {
           avatar_url?: string | null;
           banner_url?: string | null;
           created_at?: string | null;
+          // NEW FIELDS
+          notify_mobile?: boolean | null;
+          notify_email?: boolean | null;
+          unsubscribe_all?: boolean | null;
+          preferred_currency?: string | null;
         };
         Update: {
           id?: string;
@@ -54,6 +57,11 @@ export type Database = {
           avatar_url?: string | null;
           banner_url?: string | null;
           created_at?: string | null;
+          // NEW FIELDS
+          notify_mobile?: boolean | null;
+          notify_email?: boolean | null;
+          unsubscribe_all?: boolean | null;
+          preferred_currency?: string | null;
         };
         Relationships: [];
       };
@@ -82,6 +90,12 @@ export type Database = {
           is_shared?: boolean | null;
           created_at?: string | null;
         };
+        Relationships: [];
+      };
+      currencies: {
+        Row: { code: string; name: string; symbol: string | null };
+        Insert: { code: string; name: string; symbol?: string | null };
+        Update: { code?: string; name?: string; symbol?: string | null };
         Relationships: [];
       };
     };
