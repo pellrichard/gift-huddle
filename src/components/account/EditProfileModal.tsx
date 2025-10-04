@@ -13,7 +13,7 @@ function toStr(v: unknown): string | undefined {
 }
 
 type ProfileData = {
-  display_name?: string | null;
+  full_name?: string | null;
   dob?: string | null; // YYYY-MM-DD
   dob_show_year?: boolean | null;
   // Notifications
@@ -34,11 +34,11 @@ export function EditProfileModal({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initial?: ProfileData & { email?: string | null; avatar_url?: string | null };
+  initial?: ProfileData & { display_name?: string | null; email?: string | null; avatar_url?: string | null };
   onSave?: (data: ProfileData) => Promise<SaveResult> | SaveResult;
 }) {
   const [form, setForm] = React.useState<ProfileData>({
-    display_name: initial?.display_name ?? '',
+    full_name: initial?.full_name ?? initial?.display_name ?? '',
     dob: initial?.dob ?? '',
     dob_show_year: initial?.dob_show_year ?? true,
     notify_mobile: initial?.notify_mobile ?? false,
@@ -53,7 +53,7 @@ export function EditProfileModal({
   React.useEffect(() => {
     if (!open) return;
     setForm({
-      display_name: initial?.display_name ?? '',
+      full_name: initial?.full_name ?? initial?.display_name ?? '',
       dob: initial?.dob ?? '',
       dob_show_year: initial?.dob_show_year ?? true,
       notify_mobile: initial?.notify_mobile ?? false,
@@ -141,7 +141,6 @@ export function EditProfileModal({
   }
 
   async function handleSave() {
-    // Close immediately; if it fails, we re-open and show the real server error
     onOpenChange(false);
     try {
       setSaving(true);
@@ -161,7 +160,7 @@ export function EditProfileModal({
     }
   }
 
-  const initials = (initial?.display_name || initial?.email || 'U')
+  const initials = (initial?.full_name || initial?.display_name || initial?.email || 'U')
     .split(' ')
     .map((s) => s[0])
     .slice(0, 2)
@@ -179,21 +178,19 @@ export function EditProfileModal({
 
       <ModalBody>
         <div className="flex flex-col items-center gap-3">
-          {/* Avatar preview only */}
           <Avatar className="h-24 w-24 ring-2 ring-white shadow">
-            <AvatarImage src={initial?.avatar_url ?? undefined} alt={form.display_name ?? ''} />
+            <AvatarImage src={initial?.avatar_url ?? undefined} alt={form.full_name ?? ''} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
-          {/* Inputs under picture */}
           <div className="w-full max-w-md grid gap-3">
             <div className="grid gap-1">
-              <label htmlFor="display_name" className="text-sm font-medium">Display name</label>
+              <label htmlFor="full_name" className="text-sm font-medium">Display name</label>
               <Input
-                id="display_name"
+                id="full_name"
                 placeholder="Your name"
-                value={form.display_name ?? ''}
-                onChange={(e) => setField('display_name', e.target.value)}
+                value={form.full_name ?? ''}
+                onChange={(e) => setField('full_name', e.target.value)}
               />
             </div>
 
@@ -288,7 +285,6 @@ export function EditProfileModal({
         </div>
       </ModalBody>
 
-      {/* Buttons: explicit classes so they render as boxes even with modal resets */}
       <ModalFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button
           variant="outline"

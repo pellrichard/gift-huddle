@@ -1,23 +1,17 @@
-import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@/lib/supabase/server";
-import AccountDashboard from "@/components/account/AccountDashboard";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { getProfileForEdit } from '@/actions/profile';
+import AccountDashboard from '@/components/account/AccountDashboard';
 
 export default async function AccountPage() {
-  const supabase = createServerComponentClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const result = await getProfileForEdit();
+  const initialProfile = result.ok ? result.data : undefined;
 
-  const displayName =
-    (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
-    user.email?.split("@")[0] ||
-    "Friend";
-  const avatarUrl =
-    (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) ||
-    null;
+  const name = initialProfile?.full_name ?? 'Friend';
+  const avatar = initialProfile?.avatar_url ?? null;
 
-  return <AccountDashboard user={{ name: displayName, avatar: avatarUrl }} />;
+  return (
+    <AccountDashboard
+      user={{ name, avatar }}
+      initialProfile={initialProfile}
+    />
+  );
 }

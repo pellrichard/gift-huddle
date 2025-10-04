@@ -1,16 +1,15 @@
 'use client';
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { CalendarDays, ListChecks, Plus, Pencil, Gift, ChevronRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { EditProfileModal } from "@/components/account/EditProfileModal";
 import { saveProfile } from "@/actions/profile";
 
-const mockUser = { name: "Alex Johnson", avatar: "/images/mock-avatar.png" };
 const mockEvents = [
   { id: "1", title: "Mum's Birthday", date: "2025-10-04", icon: <Gift className="h-4 w-4" /> },
   { id: "2", title: "Secret Santa Reveal", date: "2025-12-14", icon: <Sparkles className="h-4 w-4" /> },
@@ -40,27 +39,37 @@ function SectionHeader({ title, right }: { title: string; right?: React.ReactNod
   );
 }
 
-export default function AccountDashboard(props: { user?: { name: string; avatar?: string | null } }) {
-  const u = props.user ?? mockUser;
-  const events = mockEvents;
-  const lists = mockLists;
-  const priceWatch = mockPriceWatch;
-  const suggestions = mockSuggestions;
+export default function AccountDashboard(props: {
+  user: { name: string; avatar?: string | null };
+  initialProfile?: {
+    full_name: string | null;
+    dob: string | null;
+    dob_show_year: boolean | null;
+    notify_mobile: boolean | null;
+    notify_email: boolean | null;
+    unsubscribe_all: boolean | null;
+    preferred_currency: string | null;
+    avatar_url: string | null;
+    email: string | null;
+  };
+}) {
+  const { user, initialProfile } = props;
   const [eventsView, setEventsView] = useState<'list' | 'calendar'>('list');
-  const [calendarMonth] = useState<Date>(new Date()); // setter removed
   const [openEdit, setOpenEdit] = useState(false);
-  const monthLabel = useMemo(() => new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(calendarMonth), [calendarMonth]);
+
+  const initials = (user.name || 'U')
+    .split(' ').map(s => s[0]).slice(0,2).join('').toUpperCase();
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8 font-sans">
       <Card className="mb-6 overflow-hidden">
         <CardContent className="flex flex-col items-start gap-4 bg-gradient-to-r from-[var(--gh-gradient-from)] to-[var(--gh-gradient-to)] p-6 sm:flex-row sm:items-center">
           <Avatar className="h-16 w-16 ring-2 ring-white">
-            <AvatarImage src={u.avatar ?? undefined} alt={u.name} />
-            <AvatarFallback>{(u.name || 'U').split(' ').map(s => s[0]).slice(0,2).join('').toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="text-xl font-semibold">Welcome back, {u.name?.split(' ')[0] ?? 'Friend'}!</div>
+            <div className="text-xl font-semibold">Welcome back, {user.name?.split(' ')[0] ?? 'Friend'}!</div>
             <div className="text-sm text-muted-foreground">Here’s a snapshot of your gifting world.</div>
           </div>
           <Button variant="secondary" className="gap-2" onClick={() => setOpenEdit(true)}>
@@ -89,47 +98,29 @@ export default function AccountDashboard(props: { user?: { name: string; avatar?
             </div>
           }
         />
-        {events.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-              <div className="rounded-2xl p-3 shadow-sm bg-[var(--gh-primary-50)] text-[var(--gh-primary-700)]"><CalendarDays className="h-6 w-6" /></div>
-              <div className="text-base font-medium">No events yet</div>
-              <div className="text-sm text-muted-foreground">Add birthdays, anniversaries, and occasions to plan ahead.</div>
-              <Button className="mt-2"><Plus className="mr-2 h-4 w-4" />Add your first event</Button>
-            </CardContent>
-          </Card>
-        ) : eventsView === 'list' ? (
-          <div className="grid gap-3">
-            {events.map((e) => (
-              <Card key={e.id}>
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-muted p-2">{e.icon ?? <Gift className="h-4 w-4" />}</div>
-                    <div>
-                      <div className="font-medium">{e.title}</div>
-                      <div className="text-sm text-muted-foreground">{new Date(e.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                    </div>
+        <div className="grid gap-3">
+          {mockEvents.map((e) => (
+            <Card key={e.id}>
+              <CardContent className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-muted p-2">{e.icon ?? <Gift className="h-4 w-4" />}</div>
+                  <div>
+                    <div className="font-medium">{e.title}</div>
+                    <div className="text-sm text-muted-foreground">{new Date(e.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
                   </div>
-                  <Button variant="ghost" className="gap-2">View <ChevronRight className="h-4 w-4" /></Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardHeader className="pb-0"><CardTitle className="text-base">{monthLabel}</CardTitle></CardHeader>
-            <CardContent className="space-y-3 pt-4">
-              <div className="text-sm text-muted-foreground">Calendar view</div>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+                <Button variant="ghost" className="gap-2">View <ChevronRight className="h-4 w-4" /></Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </section>
 
       {/* My Lists */}
       <section className="mb-8">
         <SectionHeader title="My lists" right={<Input placeholder="Search lists…" className="h-9 w-48" />} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {lists.map((l) => (
+          {mockLists.map((l) => (
             <Card key={l.id} className="group">
               <CardContent className="p-4">
                 <div className="mb-1 flex items-center justify-between">
@@ -154,7 +145,7 @@ export default function AccountDashboard(props: { user?: { name: string; avatar?
               </tr>
             </thead>
             <tbody>
-              {priceWatch.map((p) => (
+              {mockPriceWatch.map((p) => (
                 <tr key={p.id} className="border-t">
                   <td className="py-3 pr-4">
                     <a href={p.url} className="flex items-center gap-3 hover:underline">
@@ -176,7 +167,7 @@ export default function AccountDashboard(props: { user?: { name: string; avatar?
       <section className="mb-10">
         <SectionHeader title="Suggestions for you" right={<Button variant="outline" size="sm">Refresh</Button>} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {suggestions.map((s) => (
+          {mockSuggestions.map((s) => (
             <Card key={s.id} className="overflow-hidden">
               <Image src={s.image} alt="" width={600} height={240} className="h-36 w-full object-cover" />
               <CardContent className="flex items-center justify-between p-4">
@@ -188,11 +179,11 @@ export default function AccountDashboard(props: { user?: { name: string; avatar?
         </div>
       </section>
 
-      {/* Modal */}
+      {/* Modal (prefilled with server data if available) */}
       <EditProfileModal
         open={openEdit}
         onOpenChange={setOpenEdit}
-        initial={{ display_name: u.name, avatar_url: u.avatar ?? null, preferred_currency: 'GBP', notify_email: true, notify_mobile: false, unsubscribe_all: false }}
+        initial={initialProfile ?? { full_name: user.name, avatar_url: user.avatar ?? null, preferred_currency: 'GBP', notify_email: true, notify_mobile: false, unsubscribe_all: false, dob: null, dob_show_year: true, email: null }}
         onSave={saveProfile}
       />
     </div>
