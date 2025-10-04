@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { supabase } from '@/lib/supabase/client';
 
-// helper to coerce potential values to string safely
 function toStr(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
   if (typeof v === 'number') return String(v);
@@ -15,15 +14,15 @@ function toStr(v: unknown): string | undefined {
 
 type ProfileData = {
   display_name?: string | null;
-  dob?: string | null; // YYYY-MM-DD
+  dob?: string | null;
   dob_show_year?: boolean | null;
-  // Notifications
   notify_mobile?: boolean | null;
   notify_email?: boolean | null;
   unsubscribe_all?: boolean | null;
-  // Preferences
   preferred_currency?: string | null;
 };
+
+type SaveResult = { ok?: boolean } | void;
 
 export function EditProfileModal({
   open,
@@ -34,7 +33,7 @@ export function EditProfileModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initial?: ProfileData & { email?: string | null; avatar_url?: string | null };
-  onSave?: (data: ProfileData) => Promise<void> | void;
+  onSave?: (data: ProfileData) => Promise<SaveResult> | SaveResult;
 }) {
   const [form, setForm] = React.useState<ProfileData>({
     display_name: initial?.display_name ?? '',
@@ -62,7 +61,6 @@ export function EditProfileModal({
     });
   }, [open, initial]);
 
-  // Load currency list from Supabase (fx_rates), handling schema variations
   React.useEffect(() => {
     let active = true;
     (async () => {
@@ -140,11 +138,17 @@ export function EditProfileModal({
   }
 
   async function handleSave() {
-    // Close the modal immediately on save click
     onOpenChange(false);
     try {
       setSaving(true);
-      await onSave?.(form);
+      const res = await onSave?.(form);
+      if (res && typeof res === 'object' && 'ok' in res && res.ok === false) {
+        throw new Error('Save failed');
+      }
+    } catch (err) {
+      console.error('Save profile failed', err);
+      alert('Sorry, we could not save your changes. Please try again.');
+      onOpenChange(true);
     } finally {
       setSaving(false);
     }
@@ -168,13 +172,11 @@ export function EditProfileModal({
 
       <ModalBody>
         <div className="flex flex-col items-center gap-3">
-          {/* Avatar preview only — no editable Avatar URL field */}
           <Avatar className="h-24 w-24 ring-2 ring-white shadow">
             <AvatarImage src={initial?.avatar_url ?? undefined} alt={form.display_name ?? ''} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
-          {/* All inputs stacked under picture (no avatar url input) */}
           <div className="w-full max-w-md grid gap-3">
             <div className="grid gap-1">
               <label htmlFor="display_name" className="text-sm font-medium">Display name</label>
@@ -206,7 +208,6 @@ export function EditProfileModal({
               </label>
             </div>
 
-            {/* Notifications */}
             <div className="grid gap-2 rounded-lg border p-3">
               <div className="text-sm font-medium">Notifications</div>
               <label className="inline-flex items-center gap-2 text-sm">
@@ -250,7 +251,6 @@ export function EditProfileModal({
               )}
             </div>
 
-            {/* Preferred currency */}
             <div className="grid gap-1">
               <label htmlFor="preferred_currency" className="text-sm font-medium">Preferred currency</label>
               <select
@@ -277,19 +277,18 @@ export function EditProfileModal({
         </div>
       </ModalBody>
 
-      {/* Footer updated to match login/logout button sizing/flow */}
       <ModalFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button
           variant="outline"
           size="lg"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto border rounded-md px-4 py-2"
           onClick={() => onOpenChange(false)}
         >
           Cancel
         </Button>
         <Button
           size="lg"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto rounded-md px-4 py-2"
           onClick={handleSave}
           disabled={saving}
         >

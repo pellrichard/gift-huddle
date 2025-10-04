@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
 type DB = Database;
-type Update = DB['public']['Tables']['profiles']['Update'];
+type Insert = DB['public']['Tables']['profiles']['Insert'];
 
 export async function saveProfile(data: {
   display_name?: string | null;
@@ -19,10 +19,12 @@ export async function saveProfile(data: {
   const supabase = createServerComponentClient();
   const db = supabase as unknown as SupabaseClient<DB>;
 
-  const { data: { user } } = await db.auth.getUser();
+  const { data: { user }, error: userErr } = await db.auth.getUser();
+  if (userErr) throw new Error(userErr.message);
   if (!user) throw new Error('Not authenticated');
 
-  const changes: Update = {
+  const upsertObj: Insert = {
+    id: user.id,
     display_name: data.display_name ?? null,
     dob: data.dob ?? null,
     dob_show_year: data.dob_show_year ?? null,
@@ -34,10 +36,10 @@ export async function saveProfile(data: {
 
   const { error } = await db
     .from('profiles')
-    .update(changes)
-    .eq('id', user.id);
+    .upsert(upsertObj, { onConflict: 'id' });
 
   if (error) throw new Error(error.message);
 
   revalidatePath('/account');
+  return { ok: true as const };
 }
