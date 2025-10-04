@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { createServerComponentClient } from "@/lib/supabase/server";
+import { createRouteHandlerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const supabase = createServerComponentClient();
+  const supabase = createRouteHandlerClient();
   try {
     await supabase.auth.signOut();
   } catch {
