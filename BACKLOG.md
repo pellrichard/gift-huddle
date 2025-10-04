@@ -1,6 +1,6 @@
-### 2025-10-04 – Use createRouteHandlerClient in /auth/callback
+### 2025-10-04 – Callback writes cookies to the **response**
 
-- Switched callback to `createRouteHandlerClient({ cookies })` from `@supabase/ssr`.
-- This is required so the **Supabase auth cookies are actually written** during `exchangeCodeForSession(...)`.
-- HAR shows: `/auth/v1/callback` -> `/auth/callback` -> `/account` (without Set-Cookie) -> `/login` loop.
-  This change resolves the missing Set-Cookie.
+- Replaced callback handler to use `createServerClient` with a custom cookies adapter that
+  **reads from** `next/headers` cookies and **writes to** `NextResponse.cookies`.
+- This ensures `exchangeCodeForSession(code)` sets the `sb-*` cookies on the redirect response,
+  fixing the post-login loop (`/account` → `/login`) caused by missing session cookies.

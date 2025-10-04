@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
 export const runtime = "nodejs";
 
@@ -10,16 +10,36 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
 
   const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
+  // Prepare the response we will return (and attach Set-Cookie headers to)
+  const response = NextResponse.redirect(new URL(next, url.origin), { status: 302 });
+
+  // Create a Supabase server client that reads from the incoming cookies and WRITES to the response cookies
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set({ name, value, ...(options ?? {}) });
+          }
+        },
+      },
+    }
+  );
 
   if (code) {
     try {
-      // IMPORTANT: use the Route Handler client so cookies are written to the response
+      // Exchange the OAuth code for a session and write sb-* cookies onto the response
       await supabase.auth.exchangeCodeForSession(code);
-    } catch (_e) {
+    } catch {
       return NextResponse.redirect(new URL("/login", url.origin), { status: 302 });
     }
   }
 
-  return NextResponse.redirect(new URL(next, url.origin), { status: 302 });
+  return response;
 }
