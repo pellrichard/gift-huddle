@@ -1,6 +1,8 @@
+import { createServerComponentClient } from "@/lib/supabase/server";
 import Link from "next/link";
-
+import { redirect } from "next/navigation";
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function GoogleG({ className = "h-4 w-4" }: { className?: string }) {
   // Official "G" proportions and colors
@@ -28,8 +30,12 @@ function FacebookF({ className = "h-4 w-4" }: { className?: string }) {
     </svg>
   );
 }
-
-export default function LoginPage() {
+export default async function LoginPage() {
+  const supabase = createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    redirect("/account");
+  }
   return (
     <section className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-semibold">Log in</h1>

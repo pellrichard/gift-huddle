@@ -31,3 +31,6 @@
 - PKCE + session cookies written via type-safe adapter.
 - Updated logos (header/footer) and login button provider icons (SVG).
 - Passed lint & build checks successfully.
+
+### 2025-10-04
+- Audit patch: (2) confirmed no `flowType` in OAuth; (3) removed unused `@ts-expect-error`; (5) enforced CookieMethodsServer adapter (`getAll`/`setAll`); (7) ensured `/login` and `/` redirect authed users to `/account` and homepage CTA → `/login`.
