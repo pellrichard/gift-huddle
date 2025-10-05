@@ -34,4 +34,5 @@
 
 ### 2025-10-04
 - Audit patch: (2) confirmed no `flowType` in OAuth; (3) removed unused `@ts-expect-error`; (5) enforced CookieMethodsServer adapter (`getAll`/`setAll`); (7) ensured `/login` and `/` redirect authed users to `/account` and homepage CTA → `/login`.\n\n### 2025-10-05
+- Patch: fix ESLint build errors (`no-empty` / unused var) in debug page and EditProfileModal.
 - EditProfileModal now invokes the `fx_updater` Supabase Edge Function on open **only in non-production** to refresh `fx_rates` during beta. Call is fire-and-forget and does not block the UI.

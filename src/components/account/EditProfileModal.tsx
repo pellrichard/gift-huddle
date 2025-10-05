@@ -84,6 +84,8 @@ export function EditProfileModal({
                             console.log('[fx_updater] result', { ok: true, data });
                           })
                           .catch(async (err) => {
+                            console.warn('[fx_updater] invoke fallback due to error', err);
+
                             try {
                               const r = await fetch(fnUrl, {
                                 method: 'POST',
