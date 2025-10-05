@@ -54,30 +54,61 @@ export function EditProfileModal({
   React.useEffect(() => {
     if (!open) return;
     setFxError(null);
+    setFxError(null);
     
 
     // DEV/BETA: Refresh fx rates by calling the edge function on modal open
     if (process.env.NEXT_PUBLIC_ENABLE_FX_AUTOUPDATE === "1" || process.env.NODE_ENV !== "production") {
       console.log('[fx_updater] invoking…');
+                                                const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+                        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+                        const fnUrl = `${baseUrl}/functions/v1/fx_updater`;
+                        const payload = { reason: 'EditProfileModal-open', ts: new Date().toISOString() };
+                        
                         supabase.functions
-              .invoke('fx_updater', {
-                body: { reason: 'EditProfileModal-open', ts: new Date().toISOString() },
-                headers: {
-                  Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-                  apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-                },
-              })
-              .then(({
-                data, error
-              }) => {
-                if (error) { setFxError(error.message || 'FX update failed'); } else { setFxError(null); }
-                console.log('[fx_updater] result', { ok: !error, error: error?.message, data });
-              })
-              .catch((err) => {
-                console.error('[fx_updater] failed', err);
-                setFxError(String(err));
-              });
-    }
+                          .invoke('fx_updater', {
+                            body: payload,
+                            headers: {
+                              Authorization: `Bearer ${anon}`,
+                              apikey: anon,
+                            },
+                          })
+                          .then(({
+                            data, error
+                          }) => {
+                            if (error) {
+                              console.warn('[fx_updater] invoke error (will fallback)', error);
+                              throw error;
+                            }
+                            setFxError(null);
+                            console.log('[fx_updater] result', { ok: true, data });
+                          })
+                          .catch(async (err) => {
+                            try {
+                              const r = await fetch(fnUrl, {
+                                method: 'POST',
+                                headers: {
+                                  'content-type': 'application/json',
+                                  Authorization: `Bearer ${anon}`,
+                                  apikey: anon,
+                                },
+                                body: JSON.stringify(payload),
+                              });
+                              const body = await r.json().catch(() => ({}));
+                              if (!r.ok || (typeof body?.ok !== 'undefined' && body.ok === false)) {
+                                const msg = (body as any)?.error || `HTTP ${r.status}`;
+                                setFxError(`FX update failed (fetch): ${msg}`);
+                                console.error('[fx_updater] fetch failed', r.status, body);
+                              } else {
+                                setFxError(null);
+                                console.log('[fx_updater] fetch result', body);
+                              }
+                              } catch (e) {
+                                console.error('[fx_updater] network error', e);
+                                setFxError(`FX update failed (network): ${String(e)}`);
+                              }
+                          });
+}
 
         setForm({
       full_name: initial?.full_name ?? initial?.display_name ?? '',
