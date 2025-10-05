@@ -1,24 +1,37 @@
 // eslint.config.mjs
 import js from '@eslint/js'
-import pluginNext from '@next/eslint-plugin-next'
+import * as tseslint from 'typescript-eslint'
+import nextPlugin from '@next/eslint-plugin-next'
+import globals from 'globals'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Ignore Deno edge functions so Node rules don't lint them
-  { ignores: ['supabase/functions/**'] },
+  // Ignore Deno/outputs
+  { ignores: ['supabase/functions/**', '.next/**', 'node_modules/**'] },
 
-  // Base JS/TS recommended rules
+  // Base JS rules
   js.configs.recommended,
 
-  // Next.js rules (core-web-vitals)
+  // TypeScript (fast, no type-check step)
+  ...tseslint.configs.recommended,
+
+  // TS/JSX + Next rules (converted to flat format)
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: { '@next/next': pluginNext },
-    rules: {
-      ...pluginNext.configs['core-web-vitals'].rules,
-    },
+    files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
-      parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+      parser: tseslint.parser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    plugins: {
+      '@next/next': nextPlugin,          // ✅ object map, not array
+    },
+    rules: {
+      ...nextPlugin.configs['core-web-vitals'].rules, // pull just the rules
     },
   },
 ]

@@ -96,7 +96,7 @@ export function EditProfileModal({
                               });
                               const body = await r.json().catch(() => ({}));
                               if (!r.ok || (typeof body?.ok !== 'undefined' && body.ok === false)) {
-                                const msg = (body as any)?.error || `HTTP ${r.status}`;
+                                const msg = (body as { error?: string })?.error || `HTTP ${r.status}`;
                                 setFxError(`FX update failed (fetch): ${msg}`);
                                 console.error('[fx_updater] fetch failed', r.status, body);
                               } else {
@@ -155,7 +155,7 @@ export function EditProfileModal({
             }
             return;
           }
-        } catch {} {
+        } catch { /* no-op */ } {
           // ignore and fallback to legacy fx_rates scan
         }
     
