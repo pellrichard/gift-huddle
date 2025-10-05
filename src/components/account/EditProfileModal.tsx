@@ -6,6 +6,64 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { supabase } from '@/lib/supabase/client';
 
+// Lightweight country → currency mapping for common locales
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  GB: 'GBP', IE: 'EUR', FR: 'EUR', DE: 'EUR', ES: 'EUR', PT: 'EUR', IT: 'EUR',
+  NL: 'EUR', BE: 'EUR', LU: 'EUR', AT: 'EUR', FI: 'EUR', GR: 'EUR', CY: 'EUR',
+  MT: 'EUR', SK: 'EUR', SI: 'EUR', LV: 'EUR', LT: 'EUR', EE: 'EUR',
+  US: 'USD', CA: 'CAD', AU: 'AUD', NZ: 'NZD',
+  CH: 'CHF', NO: 'NOK', SE: 'SEK', DK: 'DKK',
+  PL: 'PLN', CZ: 'CZK', HU: 'HUF',
+};
+
+function regionFromLocale(locale: string | undefined): string | null {
+  if (!locale) return null;
+  // Expect forms like en-GB, fr-FR, en_US; split by '-' or '_'
+  const m = locale.match(/[-_](\w{2})$/);
+  return m ? m[1].toUpperCase() : null;
+}
+
+function guessCurrencyFromLocale(): string | null {
+  try {
+    const locales = (typeof navigator !== 'undefined' && navigator.languages && navigator.languages.length > 0)
+      ? navigator.languages
+      : (typeof navigator !== 'undefined' ? [navigator.language] : []);
+    for (const loc of locales) {
+      const region = regionFromLocale(loc);
+      if (region && COUNTRY_TO_CURRENCY[region]) return COUNTRY_TO_CURRENCY[region];
+    }
+    // Fallback: try Intl
+    if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+      const loc = Intl.DateTimeFormat().resolvedOptions().locale;
+      const region = regionFromLocale(loc);
+      if (region && COUNTRY_TO_CURRENCY[region]) return COUNTRY_TO_CURRENCY[region];
+    }
+  } catch (e) { console.debug('[EditProfileModal] suppressed error', e); }
+  return null;
+}
+
+async function guessCurrencyFromGeo(): Promise<string | null> {
+  if (typeof window === 'undefined' || !('geolocation' in navigator)) return null;
+  const getPos = () => new Promise<GeolocationPosition>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, { maximumAge: 86400000, timeout: 5000 });
+  });
+  try {
+    const pos = await getPos();
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    // Free reverse-geocode endpoint (no key). Replace later if needed.
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&localityLanguage=en`;
+    const r = await fetch(url);
+    const data: unknown = await r.json().catch(() => ({}));
+    const countryCode = (data && typeof data === 'object' && 'countryCode' in data)
+      ? String((data as { countryCode?: unknown }).countryCode || '')
+      : '';
+    const cc = countryCode.toUpperCase();
+    if (COUNTRY_TO_CURRENCY[cc]) return COUNTRY_TO_CURRENCY[cc];
+  } catch (e) { console.debug('[EditProfileModal] suppressed error', e); }
+  return null;
+}
+
 function toStr(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
   if (typeof v === 'number') return String(v);
@@ -56,6 +114,21 @@ export function EditProfileModal({
     setFxError(null);
     setFxError(null);
     
+// Attempt to auto-detect currency for first-time users
+try {
+  const initialHasCurrency = !!(initial && initial.preferred_currency);
+  if (!initialHasCurrency) {
+    // First try locale, then (if permitted) geolocation
+    const byLocale = guessCurrencyFromLocale();
+    if (byLocale) {
+      setField('preferred_currency', byLocale);
+    } else {
+      guessCurrencyFromGeo().then((ccy) => {
+        if (ccy) setField('preferred_currency', ccy);
+      }).catch(() => {});
+    }
+  }
+} catch (e) { console.debug('[EditProfileModal] suppressed error', e); }
 
     // DEV/BETA: Refresh fx rates on modal open via server proxy to avoid CORS/verify_jwt issues
 if (process.env.NEXT_PUBLIC_ENABLE_FX_AUTOUPDATE === "1" || process.env.NODE_ENV !== "production") {
@@ -86,104 +159,103 @@ setForm({
       unsubscribe_all: initial?.unsubscribe_all ?? false,
       preferred_currency: initial?.preferred_currency ?? 'GBP',
     });
-  }, [open, initial]);
+  }, [open, initial]);// Load currency list from Supabase (fx_rates)
+React.useEffect(() => {
+  let active = true;
 
-  // Load currency list from Supabase (fx_rates)
-  React.useEffect(() => {
-    let active = true;
-    (async () => {
+  (async () => {
+    try {
+      // Prefer 'currency_rates' snapshot if present
       try {
-        const attempts: Array<ReadonlyArray<string>> = [
-          ['code','name'],
-          ['currency','name'],
-          ['ccy','name'],
-          ['code'],
-          ['currency'],
-          ['ccy'],
-          ['base'],
-          ['from_currency'],
-          ['currency_code']
-        ];
-        // First try the new snapshot table (currency_rates). If present, use it; else fallback.
-        try {
-          const { data: cr, error: crErr } = await supabase
-            .from('currency_rates')
-            .select('code,name,updated_at')
-            .limit(2000);
-          if (!crErr && cr && (cr as unknown[]).length > 0) {
-            const seen = new Set<string>();
-            const norm = (cr as Array<{ code: string; name: string | null }>)
-              .filter((c) => { if (!c?.code) return false; const up = c.code.toUpperCase(); if (seen.has(up)) return false; seen.add(up); return true; })
-              .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
-              .sort((a, b) => a.code.localeCompare(b.code));
-            if (active) {
-              setCurrencies(norm);
-              setLoadingCurrencies(false);
-            }
-            return;
-          }
-        } catch { /* no-op */ } {
-          // ignore and fallback to legacy fx_rates scan
-        }
-    
-        let got: Array<{ code: string; name: string | undefined }> = [];
-        for (const cols of attempts) {
-          const sel = cols.join(',');
-          const { data, error } = await supabase.from('fx_rates').select(sel).limit(2000);
-          if (error) continue;
-          if (data && (data as unknown[]).length > 0) {
-            const rows = data as Array<Record<string, unknown>>;
-            const list = rows
-              .map((row) => {
-                const code =
-                  toStr(row['code']) ??
-                  toStr(row['currency']) ??
-                  toStr(row['ccy']) ??
-                  toStr(row['base']) ??
-                  toStr(row['from_currency']) ??
-                  toStr(row['currency_code']);
-                const name = toStr(row['name']);
-                return code ? { code, name: name ?? undefined } : null;
-              })
-              .filter((x): x is { code: string; name: string | undefined } => Boolean(x));
-            if (list.length > 0) {
-              got = list;
-              break;
-            }
-          }
-        }
-        if (active) {
-          if (got.length === 0) {
-            setCurrencies([
-              { code: 'GBP', name: 'British Pound' },
-              { code: 'EUR', name: 'Euro' },
-              { code: 'USD', name: 'US Dollar' },
-            ]);
-          } else {
-            const seen = new Set<string>();
-            const norm = got
-              .filter((c) => { if (seen.has(c.code)) return false; seen.add(c.code); return true; })
-              .map((c) => ({ code: c.code, name: c.name ?? c.code }))
-              .sort((a, b) => a.code.localeCompare(b.code));
+        const { data: cr, error: crErr } = await supabase
+          .from('currency_rates')
+          .select('code,name')
+          .limit(2000);
+
+        if (!crErr && cr && (cr as unknown[]).length > 0) {
+          const seen = new Set<string>();
+          const norm = (cr as Array<{ code: string; name: string | null }>)
+            .filter((c) => !!c?.code)
+            .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
+            .filter((c) => { const up = c.code.toUpperCase(); if (seen.has(up)) return false; seen.add(up); return true; })
+            .sort((a, b) => a.code.localeCompare(b.code));
+
+          if (active) {
             setCurrencies(norm);
+            setLoadingCurrencies(false);
+          }
+          return;
+        }
+      } catch (e) {
+        console.debug('[EditProfileModal] currency_rates query failed', e);
+      }
+
+      // Fallback: scan legacy fx_rates for best-guess columns
+      const attempts: Array<ReadonlyArray<string>> = [
+        ['code','name'],
+        ['currency','name'],
+        ['ccy','name'],
+        ['code'],
+        ['currency'],
+        ['ccy'],
+        ['base'],
+        ['from_currency'],
+        ['currency_code']
+      ];
+
+      let got: Array<{ code: string; name: string | undefined }> = [];
+      for (const cols of attempts) {
+        const sel = cols.join(',');
+        const { data, error } = await supabase.from('fx_rates').select(sel).limit(2000);
+        if (error) continue;
+        if (data && (data as unknown[]).length > 0) {
+          const rows = data as Array<Record<string, unknown>>;
+          const list = rows
+            .map((row) => {
+              const code =
+                toStr(row['code']) ??
+                toStr(row['currency']) ??
+                toStr(row['ccy']) ??
+                toStr(row['base']) ??
+                toStr(row['from_currency']) ??
+                toStr(row['currency_code']);
+              const name = toStr(row['name']);
+              return code ? { code, name: name ?? undefined } : null;
+            })
+            .filter((x): x is { code: string; name: string | undefined } => Boolean(x));
+          if (list.length > 0) {
+            got = list;
+            break;
           }
         }
-      } catch {
-        if (active) {
+      }
+
+      if (active) {
+        if (got.length === 0) {
           setCurrencies([
             { code: 'GBP', name: 'British Pound' },
             { code: 'EUR', name: 'Euro' },
             { code: 'USD', name: 'US Dollar' },
           ]);
+        } else {
+          const seen = new Set<string>();
+          const norm = got
+            .filter((c) => { if (seen.has(c.code)) return false; seen.add(c.code); return true; })
+            .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
+            .sort((a, b) => a.code.localeCompare(b.code));
+          setCurrencies(norm);
         }
-      } finally {
-        if (active) setLoadingCurrencies(false);
       }
-    })();
-    return () => { active = false; };
-  }, []);
+    } catch (e) {
+      console.debug('[EditProfileModal] currencies loader failed', e);
+    } finally {
+      if (active) setLoadingCurrencies(false);
+    }
+  })();
 
-  function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
+  return () => { active = false; };
+}, []);
+function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
     setForm((f) => ({ ...f, [key]: val }));
   }
 

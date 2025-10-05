@@ -45,3 +45,11 @@
 - Fix typo in `EditProfileModal.tsx`: `etForm` → `setForm` (build blocker).
 
 - Harden `fx_updater` with fallback providers (exchangerate.host → frankfurter.app → open.er-api.com) and resilient symbols fetch.
+
+- Default currency: prefer GBP for UK launch. Auto-detect via locale/geolocation for first-time users in `EditProfileModal`. Server upsert fallback to 'GBP' if none.
+
+- Fix ESLint `no-empty` by adding debug logging in empty catch blocks in `EditProfileModal.tsx`.
+
+- Fix syntax error in `EditProfileModal.tsx` after catch block (removed stray comma and duplicated fallback items).
+
+- Rewrote currency-loading effect to clean try/catch/finally (fix mismatched braces causing Turbopack parse error).
