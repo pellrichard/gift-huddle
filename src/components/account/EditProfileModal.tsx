@@ -52,7 +52,16 @@ export function EditProfileModal({
 
   React.useEffect(() => {
     if (!open) return;
-    setForm({
+    
+
+    // DEV/BETA: Refresh fx rates by calling the edge function on modal open
+    if (process.env.NODE_ENV !== 'production') {
+      // Fire-and-forget; do not block the modal UI
+      void supabase.functions.invoke('fx_updater', {
+        body: { reason: 'EditProfileModal-open' }
+      }).catch(() => {});
+    }
+setForm({
       full_name: initial?.full_name ?? initial?.display_name ?? '',
       dob: initial?.dob ?? '',
       show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
