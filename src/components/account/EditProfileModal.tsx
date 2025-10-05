@@ -49,30 +49,37 @@ export function EditProfileModal({
   const [saving, setSaving] = React.useState(false);
   const [currencies, setCurrencies] = React.useState<Array<{ code: string; name: string }>>([]);
   const [loadingCurrencies, setLoadingCurrencies] = React.useState(true);
+  const [fxError, setFxError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
+    setFxError(null);
     
 
     // DEV/BETA: Refresh fx rates by calling the edge function on modal open
     if (process.env.NEXT_PUBLIC_ENABLE_FX_AUTOUPDATE === "1" || process.env.NODE_ENV !== "production") {
       console.log('[fx_updater] invoking…');
-      supabase.functions
-        .invoke('fx_updater', {
-          body: { reason: 'EditProfileModal-open', ts: new Date().toISOString() },
-        
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-          }
-})
-        .then(({ data, error }) => { console.log('[fx_updater] result', { ok: !error, error: error?.message, data }); })
-        .catch((err) => {
-          console.error('[fx_updater] failed', err);
-        });
+                        supabase.functions
+              .invoke('fx_updater', {
+                body: { reason: 'EditProfileModal-open', ts: new Date().toISOString() },
+                headers: {
+                  Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                  apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+                },
+              })
+              .then(({
+                data, error
+              }) => {
+                if (error) { setFxError(error.message || 'FX update failed'); } else { setFxError(null); }
+                console.log('[fx_updater] result', { ok: !error, error: error?.message, data });
+              })
+              .catch((err) => {
+                console.error('[fx_updater] failed', err);
+                setFxError(String(err));
+              });
     }
 
-    setForm({
+        setForm({
       full_name: initial?.full_name ?? initial?.display_name ?? '',
       dob: initial?.dob ?? '',
       show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
@@ -99,6 +106,28 @@ export function EditProfileModal({
           ['from_currency'],
           ['currency_code']
         ];
+        // First try the new snapshot table (currency_rates). If present, use it; else fallback.
+        try {
+          const { data: cr, error: crErr } = await supabase
+            .from('currency_rates')
+            .select('code,name,updated_at')
+            .limit(2000);
+          if (!crErr && cr && (cr as unknown[]).length > 0) {
+            const seen = new Set<string>();
+            const norm = (cr as Array<{ code: string; name: string | null }>)
+              .filter((c) => { if (!c?.code) return false; const up = c.code.toUpperCase(); if (seen.has(up)) return false; seen.add(up); return true; })
+              .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
+              .sort((a, b) => a.code.localeCompare(b.code));
+            if (active) {
+              setCurrencies(norm);
+              setLoadingCurrencies(false);
+            }
+            return;
+          }
+        } catch {} {
+          // ignore and fallback to legacy fx_rates scan
+        }
+    
         let got: Array<{ code: string; name: string | undefined }> = [];
         for (const cols of attempts) {
           const sel = cols.join(',');
@@ -197,6 +226,11 @@ export function EditProfileModal({
       </ModalHeader>
 
       <ModalBody>
+        {fxError && (
+          <div className="w-full max-w-md mx-auto mb-3 text-sm rounded-md border border-red-200 bg-red-50 text-red-700 p-2">
+            {fxError}
+          </div>
+        )}
         <div className="flex flex-col items-center gap-3">
           <Avatar className="h-24 w-24 ring-2 ring-white shadow">
             <AvatarImage src={initial?.avatar_url ?? undefined} alt={form.full_name ?? ''} />
