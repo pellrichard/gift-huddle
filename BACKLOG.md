@@ -43,3 +43,5 @@
 - Strictly typed `/api/fx/update` (removed `any` usages to satisfy eslint `@typescript-eslint/no-explicit-any`).
 
 - Fix typo in `EditProfileModal.tsx`: `etForm` → `setForm` (build blocker).
+
+- Harden `fx_updater` with fallback providers (exchangerate.host → frankfurter.app → open.er-api.com) and resilient symbols fetch.
