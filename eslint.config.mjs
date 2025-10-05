@@ -1,25 +1,24 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+// eslint.config.mjs
+import js from '@eslint/js'
+import pluginNext from '@next/eslint-plugin-next'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/** @type {import('eslint').Linter.FlatConfig[]} */
+export default [
+  // Ignore Deno edge functions so Node rules don't lint them
+  { ignores: ['supabase/functions/**'] },
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+  // Base JS/TS recommended rules
+  js.configs.recommended,
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // Next.js rules (core-web-vitals)
   {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-    ],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: { '@next/next': pluginNext },
+    rules: {
+      ...pluginNext.configs['core-web-vitals'].rules,
+    },
+    languageOptions: {
+      parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+    },
   },
-];
-
-export default eslintConfig;
+]
