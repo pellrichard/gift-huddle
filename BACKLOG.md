@@ -36,3 +36,10 @@
 - Audit patch: (2) confirmed no `flowType` in OAuth; (3) removed unused `@ts-expect-error`; (5) enforced CookieMethodsServer adapter (`getAll`/`setAll`); (7) ensured `/login` and `/` redirect authed users to `/account` and homepage CTA → `/login`.\n\n### 2025-10-05
 - Patch: fix ESLint build errors (`no-empty` / unused var) in debug page and EditProfileModal.
 - EditProfileModal now invokes the `fx_updater` Supabase Edge Function on open **only in non-production** to refresh `fx_rates` during beta. Call is fire-and-forget and does not block the UI.
+
+- Add `/api/fx/update` server proxy for Supabase Edge Function calls to avoid CORS/OPTIONS failures. Client now calls proxy first.
+  - Requires env var `SUPABASE_SERVICE_ROLE_KEY` (server-only) set in hosting env for best reliability; falls back to anon key.
+
+- Strictly typed `/api/fx/update` (removed `any` usages to satisfy eslint `@typescript-eslint/no-explicit-any`).
+
+- Fix typo in `EditProfileModal.tsx`: `etForm` → `setForm` (build blocker).
