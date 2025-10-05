@@ -60,7 +60,12 @@ export function EditProfileModal({
       supabase.functions
         .invoke('fx_updater', {
           body: { reason: 'EditProfileModal-open', ts: new Date().toISOString() },
-        })
+        
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+          }
+})
         .then(({ data, error }) => { console.log('[fx_updater] result', { ok: !error, error: error?.message, data }); })
         .catch((err) => {
           console.error('[fx_updater] failed', err);
