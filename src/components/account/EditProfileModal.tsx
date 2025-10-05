@@ -55,13 +55,19 @@ export function EditProfileModal({
     
 
     // DEV/BETA: Refresh fx rates by calling the edge function on modal open
-    if (process.env.NODE_ENV !== 'production') {
-      // Fire-and-forget; do not block the modal UI
-      void supabase.functions.invoke('fx_updater', {
-        body: { reason: 'EditProfileModal-open' }
-      }).catch(() => {});
+    if (process.env.NEXT_PUBLIC_ENABLE_FX_AUTOUPDATE === "1" || process.env.NODE_ENV !== "production") {
+      console.log('[fx_updater] invoking…');
+      supabase.functions
+        .invoke('fx_updater', {
+          body: { reason: 'EditProfileModal-open', ts: new Date().toISOString() },
+        })
+        .then(({ data, error }) => { console.log('[fx_updater] result', { ok: !error, error: error?.message, data }); })
+        .catch((err) => {
+          console.error('[fx_updater] failed', err);
+        });
     }
-setForm({
+
+    setForm({
       full_name: initial?.full_name ?? initial?.display_name ?? '',
       dob: initial?.dob ?? '',
       show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
@@ -305,7 +311,7 @@ setForm({
         </Button>
         <Button
           variant="outline" size="lg"
-          className="w-full sm:w-auto px-4 py-2 rounded-md"
+          className="border w-full sm:w-auto px-4 py-2 rounded-md"
           onClick={handleSave}
           disabled={saving}
         >
