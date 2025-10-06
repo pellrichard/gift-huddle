@@ -37,3 +37,11 @@
 - EditProfileModal now invokes the `fx_updater` Supabase Edge Function on open **only in non-production** to refresh `fx_rates` during beta. Call is fire-and-forget and does not block the UI.
 
 - Prevent first-login blank account: call `bootstrapProfileFromAuth()` on `/account` server render before fetching profile.
+
+- Fix OAuth page Google icon: replaced broken inline SVG with hosted official Google SVG from gstatic.
+
+- Fix Account dashboard toggle: render calendar view when 'Calendar' is selected, with a simple month grid.
+
+- Fix login Google icon syntax: replace broken inline SVG remnants with a clean <img> component.
+
+- Fix duplicate closing `);` in `app/login/page.tsx` causing Turbopack parse error.

@@ -30,6 +30,75 @@ const mockSuggestions = [
   { id: "s-3", title: "Wireless Meat Thermometer", tag: "Cooking", image: "/images/suggest/thermo.png" },
 ];
 
+
+function CalendarGrid({ events }: { events: Array<{ id: string; title: string; date: string; icon?: React.ReactNode }> }) {
+  // Build a simple current-month calendar (Mon–Sun) and mark days with events
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth(); // 0-based
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+
+  // Find ISO date strings for fast lookup
+  const byDate = new Map<string, Array<{ id: string; title: string; icon?: React.ReactNode }>>();
+  for (const e of events) {
+    // Expect 'YYYY-MM-DD'
+    const [y, m, d] = e.date.split('-').map(Number);
+    const key = `${y.toString().padStart(4,'0')}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key)!.push({ id: e.id, title: e.title, icon: e.icon });
+  }
+
+  // Calendar starts on Monday (UK format)
+  const startDay = (first.getDay() + 6) % 7; // 0=Mon .. 6=Sun
+  const daysInMonth = last.getDate();
+  const cells: Array<Date | null> = [];
+  for (let i = 0; i < startDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const monthName = today.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+
+  const keyFor = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  return (
+    <div>
+      <div className="mb-2 text-sm text-muted-foreground">{monthName}</div>
+      <div className="grid grid-cols-7 gap-2 text-xs font-medium text-muted-foreground">
+        {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d) => (
+          <div key={d} className="px-2 py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-2">
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} className="h-24 rounded-md border bg-muted/20" />;
+          const k = keyFor(d);
+          const dayEvents = byDate.get(k) ?? [];
+          const isToday = d.toDateString() === today.toDateString();
+          return (
+            <div key={i} className={`h-24 rounded-md border p-1 ${isToday ? 'ring-2 ring-primary' : ''}`}>
+              <div className="mb-1 text-xs font-semibold">{d.getDate()}</div>
+              <div className="space-y-0.5 overflow-hidden">
+                {dayEvents.slice(0, 2).map((e) => (
+                  <div key={e.id} className="truncate text-xs flex items-center gap-1">
+                    {e.icon ?? <Gift className="h-3 w-3" />}
+                    <span className="truncate">{e.title}</span>
+                  </div>
+                ))}
+                {dayEvents.length > 2 && (
+                  <div className="text-[10px] text-muted-foreground">+{dayEvents.length - 2} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
@@ -98,7 +167,8 @@ export default function AccountDashboard(props: {
             </div>
           }
         />
-        <div className="grid gap-3">
+        {eventsView === 'list' ? (
+  <div className="grid gap-3">
           {mockEvents.map((e) => (
             <Card key={e.id}>
               <CardContent className="flex items-center justify-between gap-4 p-4">
@@ -114,6 +184,10 @@ export default function AccountDashboard(props: {
             </Card>
           ))}
         </div>
+) : (
+  <CalendarGrid events={mockEvents} />
+)}
+
       </section>
 
       {/* My Lists */}

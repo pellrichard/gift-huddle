@@ -4,15 +4,16 @@ import { redirect } from "next/navigation";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function GoogleG({ className = "h-4 w-4" }: { className?: string }) {
-  // Official "G" proportions and colors
+function GoogleG({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#EA4335" d="M12 11.999v4.8h6.68c-.29 1.74-2.02 5.1-6.68 5.1-4.02 0-7.3-3.33-7.3-7.4s3.28-7.4 7.3-7.4c2.29 0 3.83.97 4.71 1.8l3.2-3.1C18.42 3.1 15.49 2 12 2 5.82 2 1 6.83 1 13s4.82 11 11 11c6.35 0 10.54-4.46 10.54-10.74 0-.72-.08-1.27-.18-1.82H12z"/>
-      <path fill="#34A853" d="M2.64 7.148l3.94 2.888C7.72 8.2 9.66 6.5 12 6.5c2.29 0 3.83.97 4.71 1.8l3.2-3.1C18.42 3.1 15.49 2 12 2 8.19 2 4.92 4.18 3.2 7.148z" opacity="0"/>
-      <path fill="#FBBC05" d="M12 24c3.49 0 6.42-1.1 8.59-3l-3.98-3.26c-1.07.74-2.49 1.26-4.61 1.26-3.66 0-6.77-2.48-7.89-5.84l-4.02 3.1C2.39 20.84 6.8 24 12 24z" opacity="0"/>
-      <path fill="#4285F4" d="M22.54 13.26c0-.72-.08-1.27-.18-1.82H12v4.8h6.68c-.29 1.74-2.02 5.1-6.68 5.1v4.1c6.35 0 10.54-4.46 10.54-10.74z" opacity="0"/>
-    </svg>
+    <img
+      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+      width={20}
+      height={20}
+      alt=""
+      className={className}
+      referrerPolicy="no-referrer"
+    />
   );
 }
 
