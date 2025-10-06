@@ -5,6 +5,37 @@ import { createServerComponentClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
+import { headers } from 'next/headers';
+
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  GB: 'GBP', IE: 'EUR', FR: 'EUR', DE: 'EUR', ES: 'EUR', PT: 'EUR', IT: 'EUR',
+  NL: 'EUR', BE: 'EUR', LU: 'EUR', AT: 'EUR', FI: 'EUR', GR: 'EUR', CY: 'EUR',
+  MT: 'EUR', SK: 'EUR', SI: 'EUR', LV: 'EUR', LT: 'EUR', EE: 'EUR',
+  US: 'USD', CA: 'CAD', AU: 'AUD', NZ: 'NZD',
+  CH: 'CHF', NO: 'NOK', SE: 'SEK', DK: 'DKK',
+  PL: 'PLN', CZ: 'CZK', HU: 'HUF',
+};
+function parseRegionFromAcceptLanguage(al?: string | null): string | null {
+  if (!al) return null;
+  const m = /[-_](\w{2})(?:[;,]|$)/i.exec(al);
+  return m ? m[1]!.toUpperCase() : null;
+}
+export function defaultCurrencyFromRequest(): string {
+  try {
+    const h = headers();
+    const vercelCountry = (h.get('x-vercel-ip-country') || h.get('x-country') || h.get('cf-ipcountry') || '').toUpperCase();
+    if (vercelCountry && COUNTRY_TO_CURRENCY[vercelCountry]) {
+      return vercelCountry === 'GB' ? 'GBP' : COUNTRY_TO_CURRENCY[vercelCountry];
+    }
+    const acceptLang = h.get('accept-language') || '';
+    const region = parseRegionFromAcceptLanguage(acceptLang);
+    if (region && COUNTRY_TO_CURRENCY[region]) {
+      return region === 'GB' ? 'GBP' : COUNTRY_TO_CURRENCY[region];
+    }
+  } catch {}
+  return 'GBP';
+}
+
 type DB = Database;
 type Insert = DB['public']['Tables']['profiles']['Insert'];
 
@@ -53,29 +84,54 @@ function deriveNameAndAvatar(user: { email: string | null; user_metadata: Record
 }
 
 /** Create/update the profiles row from the current auth user. */
+
 export async function bootstrapProfileFromAuth() {
   const supabase = createServerComponentClient() as unknown as SupabaseClient<DB>;
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) return { ok: false as const, error: authErr.message };
   if (!user) return { ok: false as const, error: 'Not authenticated' };
 
-  const { full_name, avatar_url } = deriveNameAndAvatar({ email: user.email ?? null, user_metadata: (user as unknown as { user_metadata: Record<string, unknown> }).user_metadata ?? {} });
-
-  const upsertObj = {
-    id: user.id,
-    full_name: full_name ?? null,
-    avatar_url: avatar_url ?? null,
-  } as unknown as Insert;
-
-  const { error } = await supabase
+  // Read minimal profile row
+  const { data: existing, error: selErr } = await supabase
     .from('profiles')
-    .upsert(upsertObj, { onConflict: 'id' })
-    .select('id')
-    .single();
+    .select('id, preferred_currency')
+    .eq('id', user.id)
+    .maybeSingle();
 
-  if (error) return { ok: false as const, error: error.message };
+  // Derive name/avatar from OAuth metadata
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const displayName = typeof meta['full_name'] === 'string' ? meta['full_name'] as string
+                    : typeof meta['name'] === 'string' ? meta['name'] as string
+                    : typeof meta['user_name'] === 'string' ? meta['user_name'] as string
+                    : user.email ?? null;
+  const avatarUrl = typeof meta['avatar_url'] === 'string' ? meta['avatar_url'] as string
+                  : typeof meta['picture'] === 'string' ? meta['picture'] as string
+                  : null;
+
+  const defCcy = defaultCurrencyFromRequest();
+
+  if (!existing) {
+    const insertRow: Insert = {
+      id: user.id,
+      full_name: displayName ?? null,
+      avatar_url: avatarUrl ?? null,
+      preferred_currency: defCcy,
+    };
+    const { error: insErr } = await supabase.from('profiles').upsert(insertRow, { onConflict: 'id' });
+    if (insErr) return { ok: false as const, error: insErr.message };
+    revalidatePath('/account');
+    return { ok: true as const };
+  }
+
+  // Ensure currency is set at least
+  if (!existing.preferred_currency) {
+    await supabase.from('profiles').update({ preferred_currency: defCcy }).eq('id', user.id);
+    revalidatePath('/account');
+  }
+
   return { ok: true as const };
 }
+
 
 /** Load profile for the edit modal (tolerant to show_dob_year vs historical dob_show_year in types). */
 export async function getProfileForEdit(): Promise<{ ok: true; data: ProfileForEdit } | { ok: false; error: string }> {
