@@ -20,9 +20,9 @@ function parseRegionFromAcceptLanguage(al?: string | null): string | null {
   const m = /[-_](\w{2})(?:[;,]|$)/i.exec(al);
   return m ? m[1]!.toUpperCase() : null;
 }
-export function defaultCurrencyFromRequest(): string {
+export async function defaultCurrencyFromRequest(): Promise<string> {
   try {
-    const h = headers();
+    const h = await headers();
     const vercelCountry = (h.get('x-vercel-ip-country') || h.get('x-country') || h.get('cf-ipcountry') || '').toUpperCase();
     if (vercelCountry && COUNTRY_TO_CURRENCY[vercelCountry]) {
       return vercelCountry === 'GB' ? 'GBP' : COUNTRY_TO_CURRENCY[vercelCountry];
@@ -32,7 +32,7 @@ export function defaultCurrencyFromRequest(): string {
     if (region && COUNTRY_TO_CURRENCY[region]) {
       return region === 'GB' ? 'GBP' : COUNTRY_TO_CURRENCY[region];
     }
-  } catch {}
+   } catch (e) { console.log('[profile] defaultCurrencyFromRequest error', e); }
   return 'GBP';
 }
 
@@ -97,6 +97,7 @@ export async function bootstrapProfileFromAuth() {
     .select('id, preferred_currency')
     .eq('id', user.id)
     .maybeSingle();
+  if (selErr) return { ok: false as const, error: selErr.message };
 
   // Derive name/avatar from OAuth metadata
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
@@ -108,12 +109,12 @@ export async function bootstrapProfileFromAuth() {
                   : typeof meta['picture'] === 'string' ? meta['picture'] as string
                   : null;
 
-  const defCcy = defaultCurrencyFromRequest();
+  const defCcy = await defaultCurrencyFromRequest();
 
   if (!existing) {
     const insertRow: Insert = {
       id: user.id,
-      full_name: displayName ?? null,
+      display_name: displayName ?? null,
       avatar_url: avatarUrl ?? null,
       preferred_currency: defCcy,
     };
