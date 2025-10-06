@@ -61,3 +61,11 @@
 - Fix order: define `form` before `requiredOk`; add client auto-detect currency (locale → geo) for fresh users.
 
 - Fix ESLint: replaced empty catch blocks with debug logs; removed `any` by narrowing JSON type in geolocation currency guess.
+
+- Switch FX updater to `/api/fx/update` server proxy only (removed direct client calls to Supabase Edge Function).
+
+- Remove stray leftover fetch/catch block after FX proxy IIFE causing syntax error.
+
+- Rewrote first useEffect in EditProfileModal to close properly and use `/api/fx/update` proxy; fixed Unexpected EOF.
+
+- Typing: replace `v: any` in `setField` with generic `<K extends keyof ProfileData>(k: K, v: ProfileData[K])` to satisfy no-explicit-any.
