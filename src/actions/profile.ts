@@ -170,7 +170,7 @@ export async function saveProfile(data: {
     notify_mobile: data.notify_mobile ?? null,
     notify_email: data.notify_email ?? null,
     unsubscribe_all: data.unsubscribe_all ?? null,
-    preferred_currency: (data.preferred_currency ?? 'GBP'),
+    preferred_currency: data.preferred_currency ?? null,
   } as unknown as Insert;
 
   const { error } = await supabase
