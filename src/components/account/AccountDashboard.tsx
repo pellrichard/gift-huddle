@@ -125,6 +125,11 @@ export default function AccountDashboard(props: {
   const { user, initialProfile } = props;
   const [eventsView, setEventsView] = useState<'list' | 'calendar'>('list');
   const [openEdit, setOpenEdit] = useState(false);
+  React.useEffect(() => {
+    const needs = !initialProfile?.dob || !initialProfile?.preferred_currency;
+    if (needs) setOpenEdit(true);
+  }, [initialProfile?.dob, initialProfile?.preferred_currency]);
+
 
   const initials = (user.name || 'U')
     .split(' ').map(s => s[0]).slice(0,2).join('').toUpperCase();

@@ -45,3 +45,19 @@
 - Fix login Google icon syntax: replace broken inline SVG remnants with a clean <img> component.
 
 - Fix duplicate closing `);` in `app/login/page.tsx` causing Turbopack parse error.
+
+- Make DOB and Preferred Currency mandatory: disable save until present; auto-open edit modal on login if missing.
+
+- Fix lint: reference 'err' in catch block in EditProfileModal.tsx (added console.warn).
+
+- Ensure 'err' is used in EditProfileModal .catch by adding console.warn immediately after the catch line.
+
+- Define `requiredOk` in EditProfileModal to fix TS compile error when disabling Save button.
+
+- Prevent closing EditProfileModal until required fields present; show banner and guard onOpenChange.
+
+- Fix placement of `handleModalOpenChange` before JSX return; banner now gated by `showRequiredBanner` to avoid unused state and only show after a close attempt.
+
+- Fix order: define `form` before `requiredOk`; add client auto-detect currency (locale → geo) for fresh users.
+
+- Fix ESLint: replaced empty catch blocks with debug logs; removed `any` by narrowing JSON type in geolocation currency guess.

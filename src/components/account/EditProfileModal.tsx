@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { supabase } from '@/lib/supabase/client';
 
-// Lightweight country → currency mapping for common locales
+// --- currency auto-detect helpers ---
 const COUNTRY_TO_CURRENCY: Record<string, string> = {
   GB: 'GBP', IE: 'EUR', FR: 'EUR', DE: 'EUR', ES: 'EUR', PT: 'EUR', IT: 'EUR',
   NL: 'EUR', BE: 'EUR', LU: 'EUR', AT: 'EUR', FI: 'EUR', GR: 'EUR', CY: 'EUR',
@@ -15,33 +15,28 @@ const COUNTRY_TO_CURRENCY: Record<string, string> = {
   CH: 'CHF', NO: 'NOK', SE: 'SEK', DK: 'DKK',
   PL: 'PLN', CZ: 'CZK', HU: 'HUF',
 };
-
-function regionFromLocale(locale: string | undefined): string | null {
+function regionFromLocale(locale?: string | null): string | null {
   if (!locale) return null;
-  // Expect forms like en-GB, fr-FR, en_US; split by '-' or '_'
   const m = locale.match(/[-_](\w{2})$/);
   return m ? m[1].toUpperCase() : null;
 }
-
 function guessCurrencyFromLocale(): string | null {
   try {
-    const locales = (typeof navigator !== 'undefined' && navigator.languages && navigator.languages.length > 0)
+    const locales = Array.isArray(navigator.languages) && navigator.languages.length > 0
       ? navigator.languages
-      : (typeof navigator !== 'undefined' ? [navigator.language] : []);
+      : (navigator.language ? [navigator.language] : []);
     for (const loc of locales) {
       const region = regionFromLocale(loc);
       if (region && COUNTRY_TO_CURRENCY[region]) return COUNTRY_TO_CURRENCY[region];
     }
-    // Fallback: try Intl
-    if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+    if (Intl?.DateTimeFormat) {
       const loc = Intl.DateTimeFormat().resolvedOptions().locale;
       const region = regionFromLocale(loc);
       if (region && COUNTRY_TO_CURRENCY[region]) return COUNTRY_TO_CURRENCY[region];
     }
-  } catch (e) { console.debug('[EditProfileModal] suppressed error', e); }
+  } catch (e) { console.debug('[EditProfileModal] currency detect error', e); }
   return null;
 }
-
 async function guessCurrencyFromGeo(): Promise<string | null> {
   if (typeof window === 'undefined' || !('geolocation' in navigator)) return null;
   const getPos = () => new Promise<GeolocationPosition>((resolve, reject) => {
@@ -49,18 +44,13 @@ async function guessCurrencyFromGeo(): Promise<string | null> {
   });
   try {
     const pos = await getPos();
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-    // Free reverse-geocode endpoint (no key). Replace later if needed.
-    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&localityLanguage=en`;
+    const { latitude, longitude } = pos.coords;
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&localityLanguage=en`;
     const r = await fetch(url);
-    const data: unknown = await r.json().catch(() => ({}));
-    const countryCode = (data && typeof data === 'object' && 'countryCode' in data)
-      ? String((data as { countryCode?: unknown }).countryCode || '')
-      : '';
-    const cc = countryCode.toUpperCase();
+    const data = await r.json().catch(() => ({} as unknown));
+    const cc = (typeof data === 'object' && data !== null && 'countryCode' in data ? String((data as { countryCode?: unknown }).countryCode ?? '') : '').toUpperCase();
     if (COUNTRY_TO_CURRENCY[cc]) return COUNTRY_TO_CURRENCY[cc];
-  } catch (e) { console.debug('[EditProfileModal] suppressed error', e); }
+  } catch (e) { console.debug('[EditProfileModal] currency detect error', e); }
   return null;
 }
 
@@ -95,8 +85,8 @@ export function EditProfileModal({
   initial?: ProfileData & { display_name?: string | null; dob_show_year?: boolean | null; email?: string | null; avatar_url?: string | null };
   onSave?: (data: ProfileData) => Promise<SaveResult> | SaveResult;
 }) {
-  const [form, setForm] = React.useState<ProfileData>({
-    full_name: initial?.full_name ?? initial?.display_name ?? '',
+const [form, setForm] = React.useState<ProfileData>({
+full_name: initial?.full_name ?? initial?.display_name ?? '',
     dob: initial?.dob ?? '',
     show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
     notify_mobile: initial?.notify_mobile ?? false,
@@ -106,6 +96,9 @@ export function EditProfileModal({
   });
   const [saving, setSaving] = React.useState(false);
   const [currencies, setCurrencies] = React.useState<Array<{ code: string; name: string }>>([]);
+  const requiredOk = Boolean(form?.dob && form?.preferred_currency);
+  const [showRequiredBanner, setShowRequiredBanner] = React.useState(false);
+
   const [loadingCurrencies, setLoadingCurrencies] = React.useState(true);
   const [fxError, setFxError] = React.useState<string | null>(null);
 
@@ -114,43 +107,63 @@ export function EditProfileModal({
     setFxError(null);
     setFxError(null);
     
-// Attempt to auto-detect currency for first-time users
-try {
-  const initialHasCurrency = !!(initial && initial.preferred_currency);
-  if (!initialHasCurrency) {
-    // First try locale, then (if permitted) geolocation
-    const byLocale = guessCurrencyFromLocale();
-    if (byLocale) {
-      setField('preferred_currency', byLocale);
-    } else {
-      guessCurrencyFromGeo().then((ccy) => {
-        if (ccy) setField('preferred_currency', ccy);
-      }).catch(() => {});
-    }
-  }
-} catch (e) { console.debug('[EditProfileModal] suppressed error', e); }
 
-    // DEV/BETA: Refresh fx rates on modal open via server proxy to avoid CORS/verify_jwt issues
-if (process.env.NEXT_PUBLIC_ENABLE_FX_AUTOUPDATE === "1" || process.env.NODE_ENV !== "production") {
-  (async () => {
-    try {
-      const r = await fetch("/api/fx/update", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reason: "EditProfileModal-open" }) });
-      const body = await r.json().catch(() => ({}));
-      if (!r.ok || body?.ok === false) {
-        const msg = (body as { error?: string })?.error || `HTTP ${r.status}`;
-        setFxError(`FX update failed (server): ${msg}`);
-        console.error("[fx_updater] server proxy failed", r.status, body);
-      } else {
-        setFxError(null);
-        console.log("[fx_updater] server proxy result", body);
-      }
-    } catch (e) {
-      console.error("[fx_updater] server proxy network error", e);
-      setFxError(`FX update failed (server network): ${String(e)}`);
-    }
-  })();
+    // DEV/BETA: Refresh fx rates by calling the edge function on modal open
+    if (process.env.NEXT_PUBLIC_ENABLE_FX_AUTOUPDATE === "1" || process.env.NODE_ENV !== "production") {
+      console.log('[fx_updater] invoking…');
+                                                const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+                        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+                        const fnUrl = `${baseUrl}/functions/v1/fx_updater`;
+                        const payload = { reason: 'EditProfileModal-open', ts: new Date().toISOString() };
+                        
+                        supabase.functions
+                          .invoke('fx_updater', {
+                            body: payload,
+                            headers: {
+                              Authorization: `Bearer ${anon}`,
+                              apikey: anon,
+                            },
+                          })
+                          .then(({
+                            data, error
+                          }) => {
+                            if (error) {
+                              console.warn('[fx_updater] invoke error (will fallback)', error);
+                              throw error;
+                            }
+                            setFxError(null);
+                            console.log('[fx_updater] result', { ok: true, data });
+                          })
+                          .catch(async (err) => {
+                            console.warn('[fx_updater] invoke fallback due to error', err);
+                            console.warn('[fx_updater] invoke fallback due to error', err);
+                            try {
+                              const r = await fetch(fnUrl, {
+                                method: 'POST',
+                                headers: {
+                                  'content-type': 'application/json',
+                                  Authorization: `Bearer ${anon}`,
+                                  apikey: anon,
+                                },
+                                body: JSON.stringify(payload),
+                              });
+                              const body = await r.json().catch(() => ({}));
+                              if (!r.ok || (typeof body?.ok !== 'undefined' && body.ok === false)) {
+                                const msg = (body as { error?: string })?.error || `HTTP ${r.status}`;
+                                setFxError(`FX update failed (fetch): ${msg}`);
+                                console.error('[fx_updater] fetch failed', r.status, body);
+                              } else {
+                                setFxError(null);
+                                console.log('[fx_updater] fetch result', body);
+                              }
+                              } catch (e) {
+                                console.error('[fx_updater] network error', e);
+                                setFxError(`FX update failed (network): ${String(e)}`);
+                              }
+                          });
 }
-setForm({
+
+        setForm({
       full_name: initial?.full_name ?? initial?.display_name ?? '',
       dob: initial?.dob ?? '',
       show_dob_year: initial?.show_dob_year ?? initial?.dob_show_year ?? true,
@@ -159,103 +172,104 @@ setForm({
       unsubscribe_all: initial?.unsubscribe_all ?? false,
       preferred_currency: initial?.preferred_currency ?? 'GBP',
     });
-  }, [open, initial]);// Load currency list from Supabase (fx_rates)
-React.useEffect(() => {
-  let active = true;
+  }, [open, initial]);
 
-  (async () => {
-    try {
-      // Prefer 'currency_rates' snapshot if present
+  // Load currency list from Supabase (fx_rates)
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
       try {
-        const { data: cr, error: crErr } = await supabase
-          .from('currency_rates')
-          .select('code,name')
-          .limit(2000);
-
-        if (!crErr && cr && (cr as unknown[]).length > 0) {
-          const seen = new Set<string>();
-          const norm = (cr as Array<{ code: string; name: string | null }>)
-            .filter((c) => !!c?.code)
-            .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
-            .filter((c) => { const up = c.code.toUpperCase(); if (seen.has(up)) return false; seen.add(up); return true; })
-            .sort((a, b) => a.code.localeCompare(b.code));
-
-          if (active) {
+        const attempts: Array<ReadonlyArray<string>> = [
+          ['code','name'],
+          ['currency','name'],
+          ['ccy','name'],
+          ['code'],
+          ['currency'],
+          ['ccy'],
+          ['base'],
+          ['from_currency'],
+          ['currency_code']
+        ];
+        // First try the new snapshot table (currency_rates). If present, use it; else fallback.
+        try {
+          const { data: cr, error: crErr } = await supabase
+            .from('currency_rates')
+            .select('code,name,updated_at')
+            .limit(2000);
+          if (!crErr && cr && (cr as unknown[]).length > 0) {
+            const seen = new Set<string>();
+            const norm = (cr as Array<{ code: string; name: string | null }>)
+              .filter((c) => { if (!c?.code) return false; const up = c.code.toUpperCase(); if (seen.has(up)) return false; seen.add(up); return true; })
+              .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
+              .sort((a, b) => a.code.localeCompare(b.code));
+            if (active) {
+              setCurrencies(norm);
+              setLoadingCurrencies(false);
+            }
+            return;
+          }
+        } catch { /* no-op */ } {
+          // ignore and fallback to legacy fx_rates scan
+        }
+    
+        let got: Array<{ code: string; name: string | undefined }> = [];
+        for (const cols of attempts) {
+          const sel = cols.join(',');
+          const { data, error } = await supabase.from('fx_rates').select(sel).limit(2000);
+          if (error) continue;
+          if (data && (data as unknown[]).length > 0) {
+            const rows = data as Array<Record<string, unknown>>;
+            const list = rows
+              .map((row) => {
+                const code =
+                  toStr(row['code']) ??
+                  toStr(row['currency']) ??
+                  toStr(row['ccy']) ??
+                  toStr(row['base']) ??
+                  toStr(row['from_currency']) ??
+                  toStr(row['currency_code']);
+                const name = toStr(row['name']);
+                return code ? { code, name: name ?? undefined } : null;
+              })
+              .filter((x): x is { code: string; name: string | undefined } => Boolean(x));
+            if (list.length > 0) {
+              got = list;
+              break;
+            }
+          }
+        }
+        if (active) {
+          if (got.length === 0) {
+            setCurrencies([
+              { code: 'GBP', name: 'British Pound' },
+              { code: 'EUR', name: 'Euro' },
+              { code: 'USD', name: 'US Dollar' },
+            ]);
+          } else {
+            const seen = new Set<string>();
+            const norm = got
+              .filter((c) => { if (seen.has(c.code)) return false; seen.add(c.code); return true; })
+              .map((c) => ({ code: c.code, name: c.name ?? c.code }))
+              .sort((a, b) => a.code.localeCompare(b.code));
             setCurrencies(norm);
-            setLoadingCurrencies(false);
-          }
-          return;
-        }
-      } catch (e) {
-        console.debug('[EditProfileModal] currency_rates query failed', e);
-      }
-
-      // Fallback: scan legacy fx_rates for best-guess columns
-      const attempts: Array<ReadonlyArray<string>> = [
-        ['code','name'],
-        ['currency','name'],
-        ['ccy','name'],
-        ['code'],
-        ['currency'],
-        ['ccy'],
-        ['base'],
-        ['from_currency'],
-        ['currency_code']
-      ];
-
-      let got: Array<{ code: string; name: string | undefined }> = [];
-      for (const cols of attempts) {
-        const sel = cols.join(',');
-        const { data, error } = await supabase.from('fx_rates').select(sel).limit(2000);
-        if (error) continue;
-        if (data && (data as unknown[]).length > 0) {
-          const rows = data as Array<Record<string, unknown>>;
-          const list = rows
-            .map((row) => {
-              const code =
-                toStr(row['code']) ??
-                toStr(row['currency']) ??
-                toStr(row['ccy']) ??
-                toStr(row['base']) ??
-                toStr(row['from_currency']) ??
-                toStr(row['currency_code']);
-              const name = toStr(row['name']);
-              return code ? { code, name: name ?? undefined } : null;
-            })
-            .filter((x): x is { code: string; name: string | undefined } => Boolean(x));
-          if (list.length > 0) {
-            got = list;
-            break;
           }
         }
-      }
-
-      if (active) {
-        if (got.length === 0) {
+      } catch {
+        if (active) {
           setCurrencies([
             { code: 'GBP', name: 'British Pound' },
             { code: 'EUR', name: 'Euro' },
             { code: 'USD', name: 'US Dollar' },
           ]);
-        } else {
-          const seen = new Set<string>();
-          const norm = got
-            .filter((c) => { if (seen.has(c.code)) return false; seen.add(c.code); return true; })
-            .map((c) => ({ code: c.code.toUpperCase(), name: c.name ?? c.code.toUpperCase() }))
-            .sort((a, b) => a.code.localeCompare(b.code));
-          setCurrencies(norm);
         }
+      } finally {
+        if (active) setLoadingCurrencies(false);
       }
-    } catch (e) {
-      console.debug('[EditProfileModal] currencies loader failed', e);
-    } finally {
-      if (active) setLoadingCurrencies(false);
-    }
-  })();
+    })();
+    return () => { active = false; };
+  }, []);
 
-  return () => { active = false; };
-}, []);
-function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
+  function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
     setForm((f) => ({ ...f, [key]: val }));
   }
 
@@ -272,7 +286,7 @@ function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
           ? res.error
           : 'Save failed';
       alert(message);
-    } catch (err) {
+    } catch (err) { console.warn('[EditProfileModal] currencies loader error', err); 
       alert(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
@@ -288,14 +302,43 @@ function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
 
   const disabledNotifs = !!form.unsubscribe_all;
 
+const handleModalOpenChange = React.useCallback((nextOpen: boolean) => {
+  if (!nextOpen && !requiredOk) {
+    setShowRequiredBanner(true);
+    return; // block close
+  }
+  onOpenChange(nextOpen);
+}, [requiredOk, onOpenChange]);
+
+
+/* auto-detect currency */
+React.useEffect(() => {
+  if (!form?.preferred_currency) {
+    const byLocale = guessCurrencyFromLocale();
+    if (byLocale) {
+      setForm((f) => ({ ...f, preferred_currency: byLocale }));
+    } else {
+      // Non-blocking attempt; if allowed we'll fill it
+      guessCurrencyFromGeo().then((ccy) => {
+        if (ccy) setForm((f) => ({ ...f, preferred_currency: ccy }));
+      }).catch(() => {});
+    }
+  }
+}, []);
+
   return (
-    <Modal open={open} onOpenChange={onOpenChange}>
+<Modal open={open} onOpenChange={handleModalOpenChange}>
       <ModalHeader>
         <ModalTitle>Edit profile</ModalTitle>
         <ModalDescription>Update your details and preferences.</ModalDescription>
       </ModalHeader>
 
       <ModalBody>
+        {!requiredOk && showRequiredBanner && (
+          <div data-testid="required-banner" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            Please complete the required fields: <strong>Date of birth</strong> and <strong>Preferred currency</strong>.
+          </div>
+        )}
         {fxError && (
           <div className="w-full max-w-md mx-auto mb-3 text-sm rounded-md border border-red-200 bg-red-50 text-red-700 p-2">
             {fxError}
@@ -414,7 +457,7 @@ function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
           variant="outline"
           size="lg"
           className="w-full sm:w-auto border px-4 py-2 rounded-md"
-          onClick={() => onOpenChange(false)}
+          onClick={() => handleModalOpenChange(false)}
         >
           Cancel
         </Button>
@@ -422,7 +465,7 @@ function setField<K extends keyof ProfileData>(key: K, val: ProfileData[K]) {
           variant="outline" size="lg"
           className="border w-full sm:w-auto px-4 py-2 rounded-md"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !requiredOk}
         >
           {saving ? 'Saving…' : 'Save changes'}
         </Button>
