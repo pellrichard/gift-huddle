@@ -410,4 +410,14 @@ export function EditProfileModal({
       </ModalFooter>
     </Modal>
   );
+
+  /* enforce GBP for UK tz after currencies load */
+  React.useEffect(() => {
+    if (!open) return;
+    if (!currencies || currencies.length === 0) return;
+    const chosen = choosePreferredCurrency({ list: currencies, initial: form.preferred_currency });
+    if (chosen && chosen !== form.preferred_currency) {
+      setForm((f) => ({ ...f, preferred_currency: chosen }));
+    }
+  }, [open, currencies, form.preferred_currency]);
 }
