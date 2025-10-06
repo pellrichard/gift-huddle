@@ -57,7 +57,7 @@ function guessCurrencyFromLocale(): string | null {
       if (region && COUNTRY_TO_CURRENCY[region]) return COUNTRY_TO_CURRENCY[region];
     }
   } catch (e) {
-    console.debug('[EditProfileModal] currency detect error', e);
+    console.log('[EditProfileModal] currency detect error', e);
   }
   return null;
 }
@@ -65,7 +65,7 @@ function guessCurrencyFromLocale(): string | null {
 function choosePreferredCurrency(opts: { list: Array<{code: string; name: string | null}>, initial: string | null | undefined }): string {
   // 1) If we already have a value (e.g., from profile), keep it
   if (opts.initial && typeof opts.initial === 'string' && opts.initial.trim().length > 0) {
-    console.debug('[currency-detect] using initial value', opts.initial);
+    console.log('[currency-detect] using initial value', opts.initial);
     return opts.initial.toUpperCase();
   }
 
@@ -73,10 +73,10 @@ function choosePreferredCurrency(opts: { list: Array<{code: string; name: string
   try {
     const tz = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || '';
     if (typeof tz === 'string' && tz.toLowerCase().includes('europe/london')) {
-      console.debug('[currency-detect] timeZone Europe/London -> GBP');
+      console.log('[currency-detect] timeZone Europe/London -> GBP');
       return 'GBP';
     }
-  } catch (e) { console.debug('[currency-detect] timezone detection error', e); }
+  } catch (e) { console.log('[currency-detect] timezone detection error', e); }
 
   // 3) Try locales in priority order (navigator.languages then Intl locale)
   try {
@@ -98,16 +98,16 @@ function choosePreferredCurrency(opts: { list: Array<{code: string; name: string
     for (const region of candidates) {
       const code = COUNTRY_TO_CURRENCY[region];
       if (code && opts.list.some((c) => c.code === code)) {
-        console.debug('[currency-detect] locale region ->', region, '=>', code);
+        console.log('[currency-detect] locale region ->', region, '=>', code);
         return code;
       }
     }
   } catch (e) {
-    console.debug('[currency-detect] locale detection error', e);
+    console.log('[currency-detect] locale detection error', e);
   }
 
   // 4) Final fallback
-  console.debug('[currency-detect] fallback -> GBP');
+  console.log('[currency-detect] fallback -> GBP');
   return 'GBP';
 }
 
