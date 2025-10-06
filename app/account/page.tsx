@@ -1,7 +1,9 @@
-import { getProfileForEdit } from '@/actions/profile';
+import { getProfileForEdit, bootstrapProfileFromAuth } from '@/actions/profile';
 import AccountDashboard from '@/components/account/AccountDashboard';
 
 export default async function AccountPage() {
+  // Ensure profile row exists on first hit (no flash of empty state)
+  await bootstrapProfileFromAuth();
   const result = await getProfileForEdit();
   const initialProfile = result.ok ? result.data : undefined;
 
