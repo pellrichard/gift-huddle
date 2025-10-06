@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { supabase } from '@/lib/supabase/client';
 
 type ProfileData = {
   full_name?: string | null;
@@ -61,6 +62,8 @@ function guessCurrencyFromLocale(): string | null {
   return null;
 }
 
+type CurrencyItem = { code: string; name: string | null };
+
 export function EditProfileModal({
   open,
   onOpenChange,
@@ -84,7 +87,9 @@ export function EditProfileModal({
     avatar_url: initial?.avatar_url ?? null,
   });
   const [saving, setSaving] = React.useState(false);
-  const requiredOk = Boolean(form?.dob && form?.preferred_currency);
+  const [currencies, setCurrencies] = React.useState<CurrencyItem[]>([]);
+  const [loadingCurrencies, setLoadingCurrencies] = React.useState(false);
+  const requiredOk = Boolean((form?.full_name ?? '').trim() && (form?.dob ?? '').trim() && (form?.preferred_currency ?? '').trim());
   const [showRequiredBanner, setShowRequiredBanner] = React.useState(false);
   const [fxError, setFxError] = React.useState<string | null>(null);
 
@@ -104,7 +109,7 @@ export function EditProfileModal({
       avatar_url: initial?.avatar_url ?? prev.avatar_url ?? null,
     }));
 
-    // Kick off server-side FX update (no CORS/JWT issues)
+    // Kick off server-side FX update (same-origin)
     (async () => {
       try {
         const r = await fetch('/api/fx/update', {
@@ -124,9 +129,70 @@ export function EditProfileModal({
         setFxError(`FX update failed (server network): ${String(e)}`);
       }
     })();
-  }, [open, initial]);
 
-  // Prefill currency for fresh users if missing
+    // Load currency list from Supabase snapshot
+    (async () => {
+      setLoadingCurrencies(true);
+      try {
+        const { data, error } = await supabase
+          .from('currency_rates')
+          .select('code,name')
+          .limit(2000);
+        if (!error && data) {
+          const rowsUnknown: unknown = data;
+          let list: CurrencyItem[] = [];
+          if (Array.isArray(rowsUnknown)) {
+            const uniq = new Set<string>();
+            list = rowsUnknown
+              .filter((row: unknown): row is Record<string, unknown> => typeof row === 'object' && row !== null)
+              .map((row) => {
+                const code = (row as Record<string, unknown>)['code'];
+                const name = (row as Record<string, unknown>)['name'];
+                return {
+                  code: typeof code === 'string' ? code.toUpperCase() : '',
+                  name: typeof name === 'string' ? name : null,
+                };
+              })
+              .filter((r) => r.code.length === 3 && !uniq.has(r.code) && (uniq.add(r.code) || true))
+              .sort((a, b) => a.code.localeCompare(b.code));
+          }
+          if (list.length > 0) {
+            setCurrencies(list);
+            // If user is fresh and preferred_currency is still empty, default from list/locale
+            if (!form.preferred_currency) {
+              const byLocale = guessCurrencyFromLocale();
+              const fallback = (byLocale && list.some(l => l.code === byLocale)) ? byLocale : 'GBP';
+              setForm((f) => ({ ...f, preferred_currency: fallback }));
+            }
+          } else {
+            // Fallback small list
+            setCurrencies([
+              { code: 'GBP', name: 'British Pound' },
+              { code: 'EUR', name: 'Euro' },
+              { code: 'USD', name: 'US Dollar' },
+            ]);
+          }
+        } else {
+          setCurrencies([
+            { code: 'GBP', name: 'British Pound' },
+            { code: 'EUR', name: 'Euro' },
+            { code: 'USD', name: 'US Dollar' },
+          ]);
+        }
+      } catch (e) {
+        console.warn('[EditProfileModal] currency_rates load failed', e);
+        setCurrencies([
+          { code: 'GBP', name: 'British Pound' },
+          { code: 'EUR', name: 'Euro' },
+          { code: 'USD', name: 'US Dollar' },
+        ]);
+      } finally {
+        setLoadingCurrencies(false);
+      }
+    })();
+  }, [open, initial]);  
+
+  // Prefill currency for fresh users if missing (locale)
   React.useEffect(() => {
     if (!form?.preferred_currency) {
       const byLocale = guessCurrencyFromLocale();
@@ -170,6 +236,11 @@ export function EditProfileModal({
 
   const initials = initialsFrom(form.full_name ?? initial?.display_name ?? initial?.email ?? null);
 
+  const missing: string[] = [];
+  if (!(form?.full_name ?? '').trim()) missing.push('Full name');
+  if (!(form?.dob ?? '').trim()) missing.push('Date of birth');
+  if (!(form?.preferred_currency ?? '').trim()) missing.push('Preferred currency');
+
   return (
     <Modal open={open} onOpenChange={handleModalOpenChange}>
       <ModalHeader>
@@ -179,7 +250,7 @@ export function EditProfileModal({
       <ModalBody>
         {!requiredOk && showRequiredBanner && (
           <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            Please complete the required fields: <strong>Date of birth</strong> and <strong>Preferred currency</strong>.
+            Please complete the required fields: <strong>{missing.join(', ')}</strong>.
           </div>
         )}
         {fxError && (
@@ -193,45 +264,92 @@ export function EditProfileModal({
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="grid gap-1 w-full">
-            <label htmlFor="full_name" className="text-sm font-medium">Full name</label>
+            <label htmlFor="full_name" className="text-sm font-medium">Full name<span className="text-red-600">*</span></label>
             <Input
               id="full_name"
               placeholder="Your name"
               value={form.full_name ?? ''}
               onChange={(e) => setField('full_name', e.target.value)}
+              required
+              aria-invalid={!((form?.full_name ?? '').trim())}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 items-center gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-1">
-            <label htmlFor="dob" className="text-sm font-medium">Date of birth</label>
+            <label htmlFor="dob" className="text-sm font-medium">Date of birth<span className="text-red-600">*</span></label>
             <Input
               id="dob"
               type="date"
               value={form.dob ?? ''}
               onChange={(e) => setField('dob', e.target.value)}
               required
-              aria-invalid={!form?.dob}
+              aria-invalid={!((form?.dob ?? '').trim())}
             />
+            <label className="mt-2 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={Boolean(form.show_dob_year)}
+                onChange={(e) => setField('show_dob_year', e.target.checked)}
+              />
+              Show my birth year to friends
+            </label>
           </div>
 
           <div className="grid gap-1">
-            <label htmlFor="preferred_currency" className="text-sm font-medium">Preferred currency</label>
+            <label htmlFor="preferred_currency" className="text-sm font-medium">Preferred currency<span className="text-red-600">*</span></label>
             <select
               id="preferred_currency"
               className="h-10 rounded-md border px-3"
               value={form.preferred_currency ?? ''}
               onChange={(e) => setField('preferred_currency', e.target.value || null)}
               required
-              aria-invalid={!form?.preferred_currency}
+              aria-invalid={!((form?.preferred_currency ?? '').trim())}
+              disabled={loadingCurrencies}
             >
-              <option value="" disabled>Select currency…</option>
-              <option value="GBP">GBP — British Pound</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="USD">USD — US Dollar</option>
+              <option value="" disabled>{loadingCurrencies ? 'Loading currencies…' : 'Select currency…'}</option>
+              {currencies.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code}{c.name ? ` — ${c.name}` : ''}
+                </option>
+              ))}
             </select>
+
+            {!loadingCurrencies && currencies.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">No currency list available.</p>
+            )}
           </div>
+        </div>
+
+        <div className="mt-6 grid gap-2">
+          <div className="text-sm font-medium">Notifications</div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={Boolean(form.notify_email)}
+              onChange={(e) => setField('notify_email', e.target.checked)}
+              disabled={Boolean(form.unsubscribe_all)}
+            />
+            Email notifications
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={Boolean(form.notify_mobile)}
+              onChange={(e) => setField('notify_mobile', e.target.checked)}
+              disabled={Boolean(form.unsubscribe_all)}
+            />
+            Mobile notifications
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={Boolean(form.unsubscribe_all)}
+              onChange={(e) => setField('unsubscribe_all', e.target.checked)}
+            />
+            Unsubscribe from all notifications
+          </label>
         </div>
       </ModalBody>
       <ModalFooter>
