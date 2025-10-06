@@ -62,6 +62,57 @@ function guessCurrencyFromLocale(): string | null {
   return null;
 }
 
+function choosePreferredCurrency(opts: { list: Array<{code: string; name: string | null}>, initial: string | null | undefined }): string {
+  // 1) If we already have a value (e.g., from profile), keep it
+  if (opts.initial && typeof opts.initial === 'string' && opts.initial.trim().length > 0) {
+    console.debug('[currency-detect] using initial value', opts.initial);
+    return opts.initial.toUpperCase();
+  }
+
+  // 2) If the user's timezone is Europe/London, prefer GBP (UK launch requirement)
+  try {
+    const tz = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || '';
+    if (typeof tz === 'string' && tz.toLowerCase().includes('europe/london')) {
+      console.debug('[currency-detect] timeZone Europe/London -> GBP');
+      return 'GBP';
+    }
+  } catch (e) { console.debug('[currency-detect] timezone detection error', e); }
+
+  // 3) Try locales in priority order (navigator.languages then Intl locale)
+  try {
+    const locales = (Array.isArray(navigator.languages) && navigator.languages.length > 0)
+      ? navigator.languages
+      : (navigator.language ? [navigator.language] : []);
+
+    const candidates: string[] = [];
+    for (const loc of locales) {
+      const region = regionFromLocale(loc);
+      if (region) candidates.push(region);
+    }
+    if (Intl?.DateTimeFormat) {
+      const loc = Intl.DateTimeFormat().resolvedOptions().locale;
+      const region = regionFromLocale(loc);
+      if (region) candidates.push(region);
+    }
+
+    for (const region of candidates) {
+      const code = COUNTRY_TO_CURRENCY[region];
+      if (code && opts.list.some((c) => c.code === code)) {
+        console.debug('[currency-detect] locale region ->', region, '=>', code);
+        return code;
+      }
+    }
+  } catch (e) {
+    console.debug('[currency-detect] locale detection error', e);
+  }
+
+  // 4) Final fallback
+  console.debug('[currency-detect] fallback -> GBP');
+  return 'GBP';
+}
+
+
+
 type CurrencyItem = { code: string; name: string | null };
 
 export function EditProfileModal({
@@ -158,13 +209,10 @@ export function EditProfileModal({
           }
           if (list.length > 0) {
             setCurrencies(list);
-            // If user is fresh and preferred_currency is still empty, default from list/locale
-            if (!form.preferred_currency) {
-              const byLocale = guessCurrencyFromLocale();
-              const fallback = (byLocale && list.some(l => l.code === byLocale)) ? byLocale : 'GBP';
-              setForm((f) => ({ ...f, preferred_currency: fallback }));
+            const chosen = choosePreferredCurrency({ list, initial: form.preferred_currency });
+              setForm((f) => ({ ...f, preferred_currency: chosen }));
             }
-          } else {
+          else {
             // Fallback small list
             setCurrencies([
               { code: 'GBP', name: 'British Pound' },
@@ -172,7 +220,7 @@ export function EditProfileModal({
               { code: 'USD', name: 'US Dollar' },
             ]);
           }
-        } else {
+          } else {
           setCurrencies([
             { code: 'GBP', name: 'British Pound' },
             { code: 'EUR', name: 'Euro' },
