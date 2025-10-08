@@ -30,6 +30,9 @@ export async function GET(request: Request) {
       "cache-control": "no-store",
     },
   });
+  response.cookies.set("gh-debug", "1", { path: "/", maxAge: 120 });
+  response.headers.set("x-auth-callback", "1");
+
 
   try {
     const supabase = createServerClient<Database>(
