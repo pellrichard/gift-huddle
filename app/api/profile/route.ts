@@ -1,13 +1,9 @@
 ﻿import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/types";
 
 /** Ensure a profile exists for the signed-in user (with explicit client cast). */
 export async function GET() {
-  // Force the correct generic so table types aren't `never` in strict builds
-  const base = createRouteHandlerClient();
-  const supabase = base as unknown as SupabaseClient<Database, "public">;
+  const supabase = createRouteHandlerClient();
 
   const { data: { user }, error: userErr } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +16,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("profiles")
     .upsert(
-      { id: user.id, display_name: displayName, socials: {} },
+      { id: user.id, full_name: displayName, socials: {} },
       { onConflict: "id" }
     )
     .select("*")
@@ -32,17 +28,16 @@ export async function GET() {
 
 /** Update profile fields (partial) â€” explicit client cast for safety. */
 export async function POST(req: Request) {
-  const base = createRouteHandlerClient();
-  const supabase = base as unknown as SupabaseClient<Database, "public">;
+  const supabase = createRouteHandlerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const payload = {
-    display_name: typeof body.display_name === "string" ? body.display_name : null,
+    full_name: typeof body.full_name === "string" ? body.full_name : null,
     dob: typeof body.dob === "string" ? body.dob : null,
-    dob_show_year: typeof body.dob_show_year === "boolean" ? body.dob_show_year : null,
+    show_dob_year: typeof body.show_dob_year === "boolean" ? body.show_dob_year : null,
     categories: Array.isArray(body.categories) ? body.categories.slice(0, 50).map(String) : null,
     preferred_shops: Array.isArray(body.preferred_shops) ? body.preferred_shops.slice(0, 50).map(String) : null,
     socials: body.socials && typeof body.socials === "object" ? body.socials : null,

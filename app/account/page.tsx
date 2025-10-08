@@ -12,12 +12,12 @@ export default async function AccountPage() {
 
   type ProfileRow = {
     id?: string;
-    display_name?: string | null;
+    
     full_name?: string | null;
     avatar_url?: string | null;
     preferred_currency?: string | null;
     dob?: string | null;
-    dob_show_year?: boolean | null;
+    
     show_dob_year?: boolean | null;
     notify_mobile?: boolean | null;
     notify_email?: boolean | null;
@@ -40,7 +40,7 @@ export default async function AccountPage() {
   }
 
   const name =
-    (initialProfile?.display_name ?? initialProfile?.full_name) ?? 'Friend';
+    (initialProfile?.full_name ?? initialProfile?.full_name) ?? 'Friend';
   const avatar = initialProfile?.avatar_url ?? null;
 
   type DashboardProfile = {
@@ -56,9 +56,9 @@ export default async function AccountPage() {
   };
 
   const dashboardProfile: DashboardProfile | undefined = initialProfile ? {
-    full_name: (initialProfile.full_name as string | null) ?? (initialProfile.display_name as string | null) ?? null,
+    full_name: (initialProfile.full_name as string | null) ?? (initialProfile.full_name as string | null) ?? null,
     dob: (initialProfile.dob as string | null) ?? null,
-    show_dob_year: (initialProfile.show_dob_year as boolean | null) ?? (initialProfile.dob_show_year as boolean | null) ?? null,
+    show_dob_year: (initialProfile.show_dob_year as boolean | null) ?? (initialProfile.show_dob_year as boolean | null) ?? null,
     notify_mobile: (initialProfile.notify_mobile as boolean | null) ?? null,
     notify_email: (initialProfile.notify_email as boolean | null) ?? null,
     unsubscribe_all: (initialProfile.unsubscribe_all as boolean | null) ?? null,

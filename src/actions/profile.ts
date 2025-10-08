@@ -23,11 +23,11 @@ export type SaveProfileInput = {
 // What we read/write on the 'profiles' table
 type ProfilesRow = {
   id: string;
-  display_name: string | null;
+  full_name: string | null;
   avatar_url: string | null;
   preferred_currency: string | null;
   dob?: string | null;
-  dob_show_year?: boolean | null;
+  show_dob_year?: boolean | null;
   notify_mobile?: boolean | null;
   notify_email?: boolean | null;
   unsubscribe_all?: boolean | null;
@@ -126,7 +126,7 @@ export async function bootstrapProfileFromAuth() {
 
   const { data: existing, error: selErr } = await supabase
     .from('profiles')
-    .select('id, display_name, avatar_url, preferred_currency, dob')
+    .select('id, full_name, avatar_url, preferred_currency, dob')
     .eq('id', user.id)
     .maybeSingle();
   if (selErr) return { ok: false as const, error: selErr.message };
@@ -149,7 +149,7 @@ export async function bootstrapProfileFromAuth() {
   if (!existing) {
     const insertRow: ProfilesRow = {
       id: user.id,
-      display_name: displayName ?? null,
+      full_name: displayName ?? null,
       avatar_url: avatarUrl ?? null,
       preferred_currency: defCcy,
     };
@@ -162,7 +162,7 @@ export async function bootstrapProfileFromAuth() {
   }
 
   const patch: Partial<ProfilesRow> = {};
-  if (!existing.display_name && displayName) patch.display_name = displayName;
+  if (!existing.full_name && displayName) patch.full_name = displayName;
   if (!existing.avatar_url && avatarUrl) patch.avatar_url = avatarUrl;
   if (!existing.preferred_currency) patch.preferred_currency = defCcy;
 
@@ -199,7 +199,7 @@ export async function getProfileForEdit() {
     null;
 
   return row
-    ? { ...row, display_name: row.display_name ?? (fallbackName as string | null), avatar_url: row.avatar_url ?? (fallbackAvatar as string | null) }
+    ? { ...row, full_name: row.full_name ?? (fallbackName as string | null), avatar_url: row.avatar_url ?? (fallbackAvatar as string | null) }
     : null;
 }
 
@@ -210,9 +210,9 @@ export async function saveProfile(input: SaveProfileInput) {
   if (!user) return { ok: false as const, error: 'Not authenticated' };
 
   const updates: Partial<ProfilesRow> = {
-    display_name: (input.full_name ?? null) as string | null,
+    full_name: (input.full_name ?? null) as string | null,
     dob: (input.dob ?? null) as string | null,
-    dob_show_year: (input.show_dob_year ?? null) as boolean | null,
+    show_dob_year: (input.show_dob_year ?? null) as boolean | null,
     notify_mobile: (input.notify_mobile ?? null) as boolean | null,
     notify_email: (input.notify_email ?? null) as boolean | null,
     unsubscribe_all: (input.unsubscribe_all ?? null) as boolean | null,
@@ -221,7 +221,7 @@ export async function saveProfile(input: SaveProfileInput) {
     email: (input.email ?? null) as string | null,
   };
 
-  const nameOk = typeof updates.display_name === 'string' && (updates.display_name as string).trim().length > 0;
+  const nameOk = typeof updates.full_name === 'string' && (updates.full_name as string).trim().length > 0;
   if (!nameOk || !updates.dob || !updates.preferred_currency) {
     return { ok: false as const, error: 'Please complete full name, date of birth and preferred currency.' };
   }

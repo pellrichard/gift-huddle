@@ -2,9 +2,9 @@
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
-  display_name text,
+  full_name text,
   dob date,
-  dob_show_year boolean default false,
+  show_dob_year boolean default false,
   categories text[] default '{}',
   preferred_shops text[] default '{}',
   socials jsonb default '{}'::jsonb,

@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 
 type Profile = {
   id: string;
-  display_name: string;
+  full_name: string;
   dob: string | null;        // ISO date (YYYY-MM-DD)
-  dob_show_year: boolean;
+  show_dob_year: boolean;
   categories: string[];
   preferred_shops: string[];
   socials: Record<string, string>;
@@ -29,9 +29,9 @@ export default function ProfileForm() {
         const data = await res.json();
         setProfile({
           id: data.id,
-          display_name: data.display_name ?? "",
+          full_name: data.full_name ?? "",
           dob: data.dob ?? null,
-          dob_show_year: !!data.dob_show_year,
+          show_dob_year: !!data.show_dob_year,
           categories: data.categories ?? [],
           preferred_shops: data.preferred_shops ?? [],
           socials: data.socials ?? {},
@@ -50,9 +50,9 @@ export default function ProfileForm() {
 
   useEffect(() => {
     if (!profile) return;
-    setDisplayName(profile.display_name || "");
+    setDisplayName(profile.full_name || "");
     setDob(profile.dob);
-    setDobShowYear(!!profile.dob_show_year);
+    setDobShowYear(!!profile.show_dob_year);
     setCategories(profile.categories || []);
     setShops(profile.preferred_shops || []);
     setSocials(profile.socials || {});
@@ -70,9 +70,9 @@ export default function ProfileForm() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        display_name: displayName,
+        full_name: displayName,
         dob,
-        dob_show_year: dobShowYear,
+        show_dob_year: dobShowYear,
         categories,
         preferred_shops: shops,
         socials,

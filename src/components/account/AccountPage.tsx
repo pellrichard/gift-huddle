@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 
 type Profile = {
   id: string;
-  display_name: string | null;
+  full_name: string | null;
   avatar_url: string | null;
   banner_url: string | null;
   categories?: string[] | null;
@@ -78,13 +78,13 @@ export default function AccountPage() {
       <div className="flex items-center gap-4">
         <Image
           src={profile.avatar_url ?? "/avatars/default.webp"}
-          alt={profile.display_name ?? ""}
+          alt={profile.full_name ?? ""}
           width={96}
           height={96}
           className="h-24 w-24 rounded-full object-cover ring-4 ring-white"
         />
         <div>
-          <h1 className="text-xl font-semibold">{profile.display_name ?? "Your Name"}</h1>
+          <h1 className="text-xl font-semibold">{profile.full_name ?? "Your Name"}</h1>
           {profile.categories && profile.categories.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-2">
               {profile.categories.map((c) => (

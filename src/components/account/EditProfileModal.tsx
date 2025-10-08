@@ -123,11 +123,11 @@ export function EditProfileModal({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initial?: ProfileData & { display_name?: string | null };
+  initial?: ProfileData & { full_name?: string | null };
   onSave?: (data: ProfileData) => Promise<SaveResult> | SaveResult;
 }) {
   const [form, setForm] = React.useState<ProfileData>({
-    full_name: initial?.full_name ?? initial?.display_name ?? '',
+    full_name: initial?.full_name ?? '',
     dob: initial?.dob ?? '',
     show_dob_year: initial?.show_dob_year ?? true,
     notify_mobile: initial?.notify_mobile ?? false,
@@ -149,7 +149,7 @@ export function EditProfileModal({
     // Mirror latest props when opened
     setForm((prev) => ({
       ...prev,
-      full_name: initial?.full_name ?? initial?.display_name ?? prev.full_name ?? '',
+      full_name: initial?.full_name ?? prev.full_name ?? '',
       dob: initial?.dob ?? prev.dob ?? '',
       show_dob_year: initial?.show_dob_year ?? prev.show_dob_year ?? true,
       notify_mobile: initial?.notify_mobile ?? prev.notify_mobile ?? false,
@@ -282,7 +282,7 @@ export function EditProfileModal({
     }
   }
 
-  const initials = initialsFrom(form.full_name ?? initial?.display_name ?? initial?.email ?? null);
+  const initials = initialsFrom(form.full_name ?? initial?.email ?? null);
 
   const missing: string[] = [];
   if (!(form?.full_name ?? '').trim()) missing.push('Full name');

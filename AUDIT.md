@@ -52,3 +52,25 @@ _Generated: 2025-10-01T20:43:40.648420Z_
 ## TODO/FIXME trail (first 50)
 - src/components/account/ProfileBanner.tsx:19 — TODO —     try { ⏎       // TODO: upload file to storage, update profile.banner_url ⏎       await new Promise((r) => setTimeout(r, 300));
 - src/components/account/ProfileBanner.tsx:31 — TODO —     try { ⏎       // TODO: upload file to storage, update profile.avatar_url ⏎       await new Promise((r) => setTimeout(r, 300));
+---
+## OAuth → Profile audit (2025-10-08)
+**Problem:** Profiles were created with empty data (only `id`).  
+**Root causes:**
+- DB trigger `handle_new_user` was inserting only `id`.
+- App code upserted **display_name** / **dob_show_year** which do not exist in the canonical schema (`full_name` / `show_dob_year`).
+- Mixed column names across UI and actions caused updates to silently fail.
+
+**Fixes in this patch:**
+- Normalize to `full_name` and `show_dob_year` across server actions, API route, UI form, and types.
+- Add safe SQL migration (`sql/2025-10-08_profiles_safe_align.sql`) to rename columns if your DB still uses legacy names.
+- Add trigger migration (`sql/2025-10-08_profiles_bootstrap_trigger.sql`) to populate `email`, `full_name`, `avatar_url` from `auth.users.raw_user_meta_data` on first sign-in.
+- Ensure Account dashboard auto-opens Edit Profile when **full_name**, **dob**, or **preferred_currency** are missing (this already existed and remains).
+
+**Mandatory check flow (now canonical):**
+1) OAuth callback sets session.
+2) First load of `/account` calls `bootstrapProfileFromAuth()` (server) to ensure profile exists and is hydrated from OAuth metadata.
+3) UI auto-opens Edit Profile if any of: `full_name`, `dob`, `preferred_currency` are missing.
+
+**Next steps:**
+- Run the two SQL files under `/sql` in Supabase SQL editor.
+- Redeploy. Test Google & Facebook logins and confirm profile auto-populates name/avatar/email.

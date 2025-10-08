@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 type EventsInsert = Database["public"]["Tables"]["events"]["Insert"];
 
 // POST: create new event
 export async function POST(req: NextRequest) {
-  const base = await createRouteHandlerClient();
-  // Force the correct generic so table types aren't `never`
-  const supabase = base as unknown as SupabaseClient<Database, "public">;
+  const supabase = createRouteHandlerClient();
 
   const payload = (await req.json()) as EventsInsert;
 
@@ -29,8 +26,7 @@ export async function POST(req: NextRequest) {
 
 // GET: list events for current user (optional date window)
 export async function GET(req: NextRequest) {
-  const base = await createRouteHandlerClient();
-  const supabase = base as unknown as SupabaseClient<Database, "public">;
+  const supabase = createRouteHandlerClient();
 
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from");
