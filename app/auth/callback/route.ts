@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   if (code) {
     try {
-      await supabase.auth.exchangeCodeForSession(code);
+      await supabase.auth.exchangeCodeForSession(request.url);
     } catch {
       return NextResponse.redirect(new URL("/login", url.origin), { status: 302 });
     }
