@@ -1,10 +1,13 @@
+
 'use server';
 
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { createServerComponentClient } from '@/lib/supabase/server';
 
-// Local input type for saving the profile
+// ---------- Minimal types (no external DB generics, no `any`) ----------
+
+// Input shape from the Edit Profile UI
 export type SaveProfileInput = {
   full_name?: string | null;
   dob?: string | null;
@@ -17,7 +20,7 @@ export type SaveProfileInput = {
   email?: string | null;
 };
 
-// Minimal row shape we touch in code (add/remove fields to match your table if needed)
+// What we read/write on the 'profiles' table
 type ProfilesRow = {
   id: string;
   display_name: string | null;
@@ -31,25 +34,33 @@ type ProfilesRow = {
   email?: string | null;
 };
 
-// Tiny client facade for just the 'profiles' table to avoid 'any' and external DB types
-type ProfilesClient = {
-  from(table: 'profiles'): {
-    select(columns: string): {
-      eq(column: 'id', value: string): {
-        maybeSingle(): Promise<{ data: ProfilesRow | null; error: { message: string } | null }>
-      }
-    },
-    upsert(values: ProfilesRow | ProfilesRow[], options?: {
-      onConflict?: string;
-      ignoreDuplicates?: boolean;
-      count?: 'exact' | 'planned' | 'estimated';
-      defaultToNull?: boolean;
-    }): Promise<{ data?: unknown; error: { message: string } | null }>,
-    update(values: Partial<ProfilesRow>): {
-      eq(column: 'id', value: string): Promise<{ data?: unknown; error: { message: string } | null }>
-    },
-  }
+// Narrow facade for the parts of the Supabase client we use
+type AuthUser = { id: string; email?: string | null; user_metadata?: Record<string, unknown> };
+type AuthModule = {
+  getUser(): Promise<{ data: { user: AuthUser | null }; error: { message: string } | null }>;
 };
+type ProfilesFrom = {
+  select(columns: string): {
+    eq(column: 'id', value: string): {
+      maybeSingle(): Promise<{ data: ProfilesRow | null; error: { message: string } | null }>
+    }
+  },
+  upsert(values: ProfilesRow | ProfilesRow[], options?: {
+    onConflict?: string;
+    ignoreDuplicates?: boolean;
+    count?: 'exact' | 'planned' | 'estimated';
+    defaultToNull?: boolean;
+  }): Promise<{ data?: unknown; error: { message: string } | null }>,
+  update(values: Partial<ProfilesRow>): {
+    eq(column: 'id', value: string): Promise<{ data?: unknown; error: { message: string } | null }>
+  },
+};
+type ProfilesClient = {
+  from(table: 'profiles'): ProfilesFrom;
+  auth: AuthModule;
+};
+
+// ---------- Currency helpers ----------
 
 const COUNTRY_TO_CURRENCY: Record<string, string> = {
   GB: 'GBP', IE: 'EUR', FR: 'EUR', DE: 'EUR', ES: 'EUR', PT: 'EUR', IT: 'EUR',
@@ -68,6 +79,7 @@ function parseRegionFromAcceptLanguage(al?: string | null): string | null {
 
 export async function defaultCurrencyFromRequest(): Promise<string> {
   try {
+    // headers() typing can differ; handle both sync and async returns
     const maybe = headers() as unknown;
     let h: Headers;
     if (typeof (maybe as Headers).get === 'function') {
@@ -95,12 +107,20 @@ export async function defaultCurrencyFromRequest(): Promise<string> {
   } catch (e) {
     console.log('[profile] defaultCurrencyFromRequest error', e);
   }
+  // UK launch default
   return 'GBP';
 }
 
+// ---------- Core actions ----------
+
+function supabaseClient(): ProfilesClient {
+  // Cast once to our narrow facade (no `any` is used)
+  return createServerComponentClient() as unknown as ProfilesClient;
+}
+
 export async function bootstrapProfileFromAuth() {
-  const supabase = createServerComponentClient() as unknown as ProfilesClient;
-  const { data: { user }, error: authErr } = await (createServerComponentClient() as any).auth.getUser();
+  const supabase = supabaseClient();
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) return { ok: false as const, error: authErr.message };
   if (!user) return { ok: false as const, error: 'Not authenticated' };
 
@@ -156,8 +176,8 @@ export async function bootstrapProfileFromAuth() {
 }
 
 export async function getProfileForEdit() {
-  const supabase = createServerComponentClient() as unknown as ProfilesClient;
-  const { data: { user } } = await (createServerComponentClient() as any).auth.getUser();
+  const supabase = supabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
   const { data: row } = await supabase
@@ -184,8 +204,8 @@ export async function getProfileForEdit() {
 }
 
 export async function saveProfile(input: SaveProfileInput) {
-  const supabase = createServerComponentClient() as unknown as ProfilesClient;
-  const { data: { user }, error: authErr } = await (createServerComponentClient() as any).auth.getUser();
+  const supabase = supabaseClient();
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) return { ok: false as const, error: authErr.message };
   if (!user) return { ok: false as const, error: 'Not authenticated' };
 
@@ -198,6 +218,7 @@ export async function saveProfile(input: SaveProfileInput) {
     unsubscribe_all: (input.unsubscribe_all ?? null) as boolean | null,
     preferred_currency: (input.preferred_currency ?? null) as string | null,
     avatar_url: (input.avatar_url ?? null) as string | null,
+    email: (input.email ?? null) as string | null,
   };
 
   const nameOk = typeof updates.display_name === 'string' && (updates.display_name as string).trim().length > 0;
