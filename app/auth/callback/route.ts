@@ -11,10 +11,25 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const next = url.searchParams.get("next") || "/account";
 
-  // Prepare redirect where we'll attach Supabase session cookies
-  const response = NextResponse.redirect(new URL(next, url.origin), { status: 302 });
-  // Debug marker cookie to verify the response can set cookies at all
-  response.cookies.set("gh-debug", "1", { path: "/", maxAge: 120 });
+  // We'll return a 200 HTML page so any Set-Cookie headers are preserved by proxies/CDNs.
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${next}">
+<title>Signing you in…</title>
+<meta name="robots" content="noindex">
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;padding:24px}</style>
+</head><body>
+  <p>Signing you in…</p>
+  <script>location.replace(${JSON.stringify(next)});</script>
+  <noscript><a href="${next}">Continue</a></noscript>
+</body></html>`;
+
+  const response = new NextResponse(html, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
 
   try {
     const supabase = createServerClient<Database>(
@@ -23,8 +38,10 @@ export async function GET(request: Request) {
       { cookies: buildCookieAdapter(request.headers.get("cookie"), response) }
     );
 
+    // Complete the OAuth flow and set cookies on *this* 200 response
     await supabase.auth.exchangeCodeForSession(request.url);
 
+    // Best-effort bootstrap of the user's profile
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const full_name =
@@ -45,12 +62,13 @@ export async function GET(request: Request) {
         avatar_url,
         socials: ({} as Json),
       };
+
       await supabase.from("profiles").upsert(insert, { onConflict: "id" });
     }
   } catch (e) {
     const code = newErrorId("E7");
     // eslint-disable-next-line no-console
-    console.error(`[${code}] /auth/callback failed:`, e);
+    console.error(`[${code}] /auth/callback (200) failed:`, e);
     response.headers.set("x-error-id", code);
   }
 
