@@ -1,3 +1,4 @@
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -5,10 +6,8 @@ import { getProfileForEdit, bootstrapProfileFromAuth } from '@/actions/profile';
 import AccountDashboard from '@/components/account/AccountDashboard';
 
 export default async function AccountPage() {
-  // Ensure the profile is created/upserted from OAuth before rendering
+  // Ensure the profile exists/upserts from OAuth before rendering the dashboard
   await bootstrapProfileFromAuth();
-
-  // Fetch profile (could be a row or a wrapped { ok, data } structure)
   const resultUnknown: unknown = await getProfileForEdit();
 
   type ProfileRow = {
@@ -35,20 +34,15 @@ export default async function AccountPage() {
 
   let initialProfile: ProfileRow | null = null;
   if (isWrappedProfile(resultUnknown)) {
-    initialProfile = (resultUnknown.ok ? (resultUnknown.data as ProfileRow | null) : null) ?? null;
+    initialProfile = (resultUnknown.ok ? (resultUnknown as { ok: boolean; data?: ProfileRow | null }).data ?? null : null);
   } else if (resultUnknown === null || typeof resultUnknown === 'object') {
     initialProfile = resultUnknown as ProfileRow | null;
-  } else {
-    initialProfile = null;
   }
 
   const name =
-    (initialProfile?.display_name ?? initialProfile?.full_name) ??
-    'Friend';
-
+    (initialProfile?.display_name ?? initialProfile?.full_name) ?? 'Friend';
   const avatar = initialProfile?.avatar_url ?? null;
 
-  // Adapt to AccountDashboard expected shape (or undefined)
   type DashboardProfile = {
     full_name: string | null;
     dob: string | null;
