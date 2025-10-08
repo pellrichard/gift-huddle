@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       socials: ({} as Json),
     };
 
-    // Upsert so repeated logins don't error; RLS allows insert for own id per your schema
+    // Upsert so repeated logins don't error; RLS allows insert for own id
     await supabase.from("profiles").upsert(insert, { onConflict: "id" });
   }
 

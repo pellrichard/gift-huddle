@@ -5,7 +5,6 @@ export function newErrorId(prefix = "E7"): string {
 }
 export function logWithId(ctx: string, err: unknown, code?: string): string {
   const id = code ?? newErrorId();
-  // eslint-disable-next-line no-console
-  console.error(`[${id}] ${ctx}:`, err);
+    console.error(`[${id}] ${ctx}:`, err);
   return id;
 }
