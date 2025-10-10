@@ -3,16 +3,15 @@ import { logWithId } from "@/lib/error-id";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 
-/** Ensure a profile exists for the signed-in user. */
 export async function GET() {
   try {
     const supabase = createRouteHandlerClient();
-
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const displayName =
       (user.user_metadata?.full_name as string | undefined) ??
+      (user.user_metadata?.name as string | undefined) ??
       user.email?.split("@")[0] ??
       "";
 
@@ -41,11 +40,9 @@ export async function GET() {
   }
 }
 
-/** Update profile fields (partial). */
 export async function POST(req: NextRequest) {
   try {
     const supabase = createRouteHandlerClient();
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

@@ -1,62 +1,40 @@
-import { NextResponse } from "next/server";
+import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
-export type Cookie = { name: string; value: string };
+// Build a cookies adapter that works for @supabase/ssr createServerClient in route handlers.
+export function buildCookieAdapter(requestCookieHeader: string | null, response: Response) {
+  // Parse request cookies into a map
+  const reqCookieMap = new Map<string, string>();
+  if (requestCookieHeader) {
+    for (const part of requestCookieHeader.split(/;\s*/)) {
+      const [k, v] = part.split("=");
+      if (k) reqCookieMap.set(k, v ?? "");
+    }
+  }
 
-// Align with Next.js ResponseCookie expectations (expires: number | Date)
-export type CookieOptions = {
-  domain?: string;
-  path?: string;
-  maxAge?: number;
-  expires?: number | Date;
-  httpOnly?: boolean;
-  secure?: boolean;
-  sameSite?: "lax" | "strict" | "none";
-};
+  function setAll(cookies: { name: string; value: string; options?: Partial<ResponseCookie> }[]) {
+    // Append Set-Cookie to the Response headers (supports multiple cookies)
+    const headers: Headers = (response as Response).headers;
+    for (const c of cookies) {
+      const chunks: string[] = [];
+      chunks.push(`${c.name}=${c.value}`);
+      const opt = c.options ?? {};
+      if (opt.maxAge !== undefined) chunks.push(`Max-Age=${opt.maxAge}`);
+      if (opt.expires) chunks.push(`Expires=${new Date(opt.expires).toUTCString()}`);
+      if (opt.path) chunks.push(`Path=${opt.path}`);
+      if (opt.domain) chunks.push(`Domain=${opt.domain}`);
+      if (opt.httpOnly) chunks.push("HttpOnly");
+      if (opt.secure) chunks.push("Secure");
+      if (opt.sameSite) chunks.push(`SameSite=${typeof opt.sameSite === "string" ? opt.sameSite : (opt.sameSite === true ? "Strict" : "Lax")}`);
+      headers.append("Set-Cookie", chunks.join("; "));
+    }
+  }
 
-export function parseCookieHeader(header: string | null | undefined): Cookie[] {
-  if (!header) return [];
-  return header.split(/;\s*/).map((part) => {
-    const idx = part.indexOf("=");
-    if (idx === -1) return { name: part, value: "" };
-    return { name: part.slice(0, idx), value: part.slice(idx + 1) };
-  });
-}
-
-function normalizeOptions(options?: CookieOptions): CookieOptions {
-  const o: CookieOptions = { path: "/", ...(options ?? {}) };
-  // no string here; already typed as number | Date
-  return o;
-}
-
-export function buildCookieAdapter(requestCookieHeader: string | null | undefined, response: NextResponse) {
-  const parsed = parseCookieHeader(requestCookieHeader);
-
-  const write = (name: string, value: string, options?: CookieOptions) => {
-    const finalOptions = normalizeOptions(options);
-    response.cookies.set(name, value, finalOptions);
-  };
-
-  const remove = (name: string, options?: CookieOptions) => {
-    write(name, "", { ...(options ?? {}), maxAge: 0, path: "/" });
-  };
+  function getAll() {
+    return Array.from(reqCookieMap.entries()).map(([name, value]) => ({ name, value }));
+  }
 
   return {
-    // Newer API
-    getAll(): Cookie[] {
-      return parsed;
-    },
-    setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]): void {
-      for (const { name, value, options } of cookiesToSet) write(name, value, options);
-    },
-    // Legacy API
-    get(name: string): string | undefined {
-      return parsed.find((c) => c.name === name)?.value ?? undefined;
-    },
-    set(name: string, value: string, options?: CookieOptions): void {
-      write(name, value, options);
-    },
-    remove(name: string, options?: CookieOptions): void {
-      remove(name, options);
-    },
+    getAll,
+    setAll,
   };
 }

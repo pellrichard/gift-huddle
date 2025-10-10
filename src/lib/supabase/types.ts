@@ -1,4 +1,4 @@
-// Generated minimal types for Gift Huddle (updated 2025-10-08T22:26:55.271330Z)
+// Minimal Supabase Database types — regenerated 2025-10-10T00:27:58.972616Z
 export type Json =
   | string
   | number
@@ -14,12 +14,12 @@ export type Database = {
         Row: {
           id: string;
           full_name: string | null;
-          dob: string | null; // ISO date
+          dob: string | null;
           show_dob_year: boolean | null;
           avatar_url: string | null;
           created_at: string | null;
           email: string | null;
-          hide_birth_year: boolean | null; // kept for compatibility if present in DB
+          hide_birth_year: boolean | null;
           fb_picture_url: string | null;
           fb_id: string | null;
           fb_last_sync: string | null;
@@ -27,8 +27,8 @@ export type Database = {
           interests: string[] | null;
           preferred_shops: string[] | null;
           banner_url: string | null;
-          preferred_currency: string | null; // public.currency_code
-          notify_channel: string | null; // public.notify_channel
+          preferred_currency: string | null;
+          notify_channel: string | null;
           categories: string[] | null;
           updated_at: string | null;
           notify_mobile: boolean | null;
@@ -44,7 +44,7 @@ export type Database = {
           avatar_url?: string | null;
           created_at?: string | null;
           email?: string | null;
-          hide_birth_year?: boolean | null;
+          hide_birth_year?: string | null;
           fb_picture_url?: string | null;
           fb_id?: string | null;
           fb_last_sync?: string | null;
@@ -69,7 +69,7 @@ export type Database = {
           avatar_url?: string | null;
           created_at?: string | null;
           email?: string | null;
-          hide_birth_year?: boolean | null;
+          hide_birth_year?: string | null;
           fb_picture_url?: string | null;
           fb_id?: string | null;
           fb_last_sync?: string | null;
@@ -87,13 +87,12 @@ export type Database = {
           socials?: Json | null;
         };
       },
-
       events: {
         Row: {
           id: string;
           title: string | null;
           description: string | null;
-          event_date: string; // ISO date
+          event_date: string;
           location: string | null;
           is_shared: boolean | null;
           owner_id: string | null;
@@ -127,8 +126,8 @@ export type Database = {
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
-      currency_code: 'GBP' | 'USD' | 'EUR' | string;
-      notify_channel: 'email' | 'sms' | 'push' | string;
+      currency_code: "GBP" | "USD" | "EUR" | string;
+      notify_channel: "email" | "sms" | "push" | string;
     };
   };
 };

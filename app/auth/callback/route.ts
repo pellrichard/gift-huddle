@@ -7,7 +7,6 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const next = url.searchParams.get("next") || "/account";
 
-  // We render a small HTML that calls /api/auth/finalize (which writes cookies), then redirects to `next`.
   const html = `<!doctype html>
 <html><head><meta charset="utf-8">
 <title>Finishing sign-in…</title>
@@ -20,8 +19,8 @@ export async function GET(request: Request) {
       try {
         const full = window.location.href;
         await fetch('/api/auth/finalize?full=' + encodeURIComponent(full), { credentials: 'include' });
-      } catch (e) {}
-      location.replace(${JSON.stringify(next)});
+      } catch (e) { }
+      location.replace("/account" || "/account");
     })();
   </script>
   <noscript><a href="${next}">Continue</a></noscript>

@@ -5,7 +5,6 @@ import type { Database } from "@/lib/supabase/types";
 
 type EventsInsert = Database["public"]["Tables"]["events"]["Insert"];
 
-// POST: create new event
 export async function POST(req: NextRequest) {
   try {
     const supabase = createRouteHandlerClient();
@@ -25,11 +24,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET: list events for current user (optional date window)
 export async function GET(req: NextRequest) {
   try {
     const supabase = createRouteHandlerClient();
-
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from");
     const to = searchParams.get("to");

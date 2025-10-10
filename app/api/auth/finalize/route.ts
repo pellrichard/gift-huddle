@@ -23,7 +23,6 @@ export async function GET(request: Request) {
     );
 
     await supabase.auth.exchangeCodeForSession(full);
-    // If we got here without throw, cookies were written to `res`.
     return res;
   } catch (e) {
     const code = newErrorId("E7");
