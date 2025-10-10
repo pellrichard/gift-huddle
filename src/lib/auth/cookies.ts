@@ -1,8 +1,6 @@
 import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
-// Build a cookies adapter that works for @supabase/ssr createServerClient in route handlers.
 export function buildCookieAdapter(requestCookieHeader: string | null, response: Response) {
-  // Parse request cookies into a map
   const reqCookieMap = new Map<string, string>();
   if (requestCookieHeader) {
     for (const part of requestCookieHeader.split(/;\s*/)) {
@@ -11,30 +9,28 @@ export function buildCookieAdapter(requestCookieHeader: string | null, response:
     }
   }
 
-  function setAll(cookies: { name: string; value: string; options?: Partial<ResponseCookie> }[]) {
-    // Append Set-Cookie to the Response headers (supports multiple cookies)
-    const headers: Headers = (response as Response).headers;
-    for (const c of cookies) {
-      const chunks: string[] = [];
-      chunks.push(`${c.name}=${c.value}`);
-      const opt = c.options ?? {};
-      if (opt.maxAge !== undefined) chunks.push(`Max-Age=${opt.maxAge}`);
-      if (opt.expires) chunks.push(`Expires=${new Date(opt.expires).toUTCString()}`);
-      if (opt.path) chunks.push(`Path=${opt.path}`);
-      if (opt.domain) chunks.push(`Domain=${opt.domain}`);
-      if (opt.httpOnly) chunks.push("HttpOnly");
-      if (opt.secure) chunks.push("Secure");
-      if (opt.sameSite) chunks.push(`SameSite=${typeof opt.sameSite === "string" ? opt.sameSite : (opt.sameSite === true ? "Strict" : "Lax")}`);
-      headers.append("Set-Cookie", chunks.join("; "));
-    }
-  }
-
   function getAll() {
     return Array.from(reqCookieMap.entries()).map(([name, value]) => ({ name, value }));
   }
 
-  return {
-    getAll,
-    setAll,
-  };
+  function setAll(cookies: { name: string; value: string; options?: Partial<ResponseCookie> }[]) {
+    const headers: Headers = (response as Response).headers;
+    for (const c of cookies) {
+      const out: string[] = [];
+      out.push(`${c.name}=${c.value}`);
+      const opt = c.options ?? {};
+      if (opt.maxAge !== undefined) out.push(`Max-Age=${opt.maxAge}`);
+      if (opt.expires) out.push(`Expires=${new Date(opt.expires).toUTCString()}`);
+      if (opt.path) out.push(`Path=${opt.path}`);
+      if (opt.domain) out.push(`Domain=${opt.domain}`);
+      if (opt.httpOnly) out.push("HttpOnly");
+      if (opt.secure) out.push("Secure");
+      if (opt.sameSite) out.push(
+        `SameSite=${typeof opt.sameSite === "string" ? opt.sameSite : (opt.sameSite === true ? "Strict" : "Lax")}`
+      );
+      headers.append("Set-Cookie", out.join("; "));
+    }
+  }
+
+  return { getAll, setAll };
 }
