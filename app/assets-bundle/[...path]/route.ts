@@ -3,6 +3,7 @@ import { resolve } from "path";
 import { promises as fs } from "fs";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const BASE = resolve(process.cwd(), "assets-bundle");
 

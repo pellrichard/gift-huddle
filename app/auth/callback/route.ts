@@ -14,18 +14,25 @@ export async function GET(request: Request) {
   const res = NextResponse.redirect(new URL(next, url.origin), { status: 302 });
 
 function pickCurrency(country: string | null, acceptLanguage: string | null): Database["public"]["Enums"]["currency_code"] {
-  const c = (country || "").toUpperCase();
-  if (c === "GB" || c === "UK") return "GBP";
-  const euro = new Set(["AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"]);
-  if (euro.has(c)) return "EUR";
-  const al = (acceptLanguage || "").toLowerCase();
-  if (al.includes("en-gb")) return "GBP";
-  if (al.includes("en-ie") || al.includes("ga-ie") || al.includes("fr-fr") || al.includes("de-de")) return "EUR";
+  const cc = (country || "").toUpperCase();
+  const raw = (acceptLanguage || "").toLowerCase();
+
+  // Quick EU set
+  const EU_CC = new Set(["FR","DE","ES","IT","NL","IE","BE","PT","AT","FI","GR","LU","MT","SI","SK","EE","LV","LT","CY","HR","BG","RO","CZ","HU","DK","SE","PL"]);
+  if (cc === "GB" || raw.includes("en-gb")) return "GBP";
+  if (EU_CC.has(cc)) return "EUR";
+
+  // Parse accept-language like: "en-GB,en;q=0.9,de;q=0.8"
+  const langs = raw.split(",").map(s => s.split(";")[0].trim());
+  const eurLangTags = new Set(["de","fr","es","it","nl","pt","fi","el","sv","pl","cs","hu","da","sk","sl","hr","ro","bg","et","lv","lt"]);
+  for (const tag of langs) {
+    const base = tag.split("-")[0];
+    if (tag === "en-gb" || base === "en" && tag.endsWith("-gb")) return "GBP";
+    if (eurLangTags.has(base)) return "EUR";
+  }
   return "USD";
 }
-
-
-  // Supabase SSR client wired to read existing cookies and append Set-Cookie to 'res'
+// Supabase SSR client wired to read existing cookies and append Set-Cookie to 'res'
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
