@@ -7,7 +7,7 @@ import { createServerComponentClient } from "@/lib/supabase/server";
 export default async function Header() {
   let isAuthed = false;
   try {
-    const supabase = createServerComponentClient();
+    const supabase = await createServerComponentClient();
     const { data: { session } } = await supabase.auth.getSession();
     isAuthed = !!session;
   } catch {

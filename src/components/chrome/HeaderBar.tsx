@@ -9,7 +9,7 @@ export default async function HeaderBar() {
   let userId: string | null = null;
 
   try {
-    const supabase = createServerComponentClient();
+    const supabase = await createServerComponentClient();
     const { data: { user } } = await supabase.auth.getUser();
     userId = user?.id ?? null;
   } catch {
@@ -20,8 +20,7 @@ export default async function HeaderBar() {
     <header className="w-full border-b bg-white/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
         <Link href="/" className="inline-flex items-center gap-2" aria-label="Gift Huddle Home">
-          <Image src="/assets-bundle/svg/Gift-Huddle.svg" width={28} height={28} alt="Gift Huddle" priority />
-          <span className="font-semibold text-lg tracking-tight">Gift Huddle</span>
+          <Image src="/logo.svg" width={140} height={40} alt="Gift Huddle" priority />
         </Link>
 
         <nav className="text-sm flex items-center gap-5">

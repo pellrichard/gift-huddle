@@ -32,7 +32,7 @@ function FacebookF({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 export default async function LoginPage() {
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
     redirect("/account");

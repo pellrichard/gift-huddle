@@ -4,7 +4,7 @@ import { createRouteHandlerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 export async function POST() {
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   try {
     const { data, error } = await supabase.auth.refreshSession();
 

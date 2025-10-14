@@ -4,7 +4,7 @@ import { createServerComponentClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
   try {
     await supabase.auth.signOut();
   } catch {

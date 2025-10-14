@@ -5,7 +5,7 @@ import Link from "next/link";
 export const runtime = "nodejs";
 
 export default async function HomePage() {
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {

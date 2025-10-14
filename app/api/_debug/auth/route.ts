@@ -7,7 +7,7 @@ import { createServerComponentClient } from "@/lib/supabase/server";
 export async function GET(req: NextRequest) {
   if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
 
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
   const { data: { session }, error } = await supabase.auth.getSession();
 
   const cookieEntries = Array.from(req.cookies.getAll()).map(c => ({

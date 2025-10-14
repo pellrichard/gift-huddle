@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export async function GET() {
   if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
 
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   const [{ data: userData, error: userErr }, { data: sessData, error: sessErr }] = await Promise.all([
     supabase.auth.getUser(),
     supabase.auth.getSession()

@@ -17,7 +17,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 export async function POST(req: NextRequest) {
   const requestId = rid();
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
 
   try {
     const {
