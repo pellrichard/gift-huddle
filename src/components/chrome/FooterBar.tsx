@@ -33,7 +33,7 @@ export default function FooterBar() {
       <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-gray-700 flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-2" aria-label="Gift Huddle Home">
-            <Image src="/assets-bundle/Gift-Huddle-icon.svg" alt="Gift Huddle" width={140} height={40} />
+            <Image src="/assets-bundle/svg/Gift-Huddle-icon.svg" alt="Gift Huddle" width={140} height={40} />
           </Link>
           <div className="flex items-center gap-3">
             <SocialIcon label="Connect on LinkedIn" href="https://www.linkedin.com/company/gift-huddle" path={ICONS.linkedin} />

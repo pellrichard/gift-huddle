@@ -29,7 +29,7 @@ export default function Navbar() {
         {/* Left: Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/assets-bundle/Gift-Huddle-icon.svg"
+            src="/assets-bundle/svg/Gift-Huddle-icon.svg"
             width={28}
             height={28}
             alt="Gift Huddle logo"

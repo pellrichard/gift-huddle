@@ -20,7 +20,7 @@ export default async function HeaderBar() {
     <header className="w-full border-b bg-white/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
         <Link href="/" className="inline-flex items-center gap-2" aria-label="Gift Huddle Home">
-          <Image src="/assets-bundle/Gift-Huddle-icon.svg" width={140} height={40} alt="Gift Huddle" priority />
+          <Image src="/assets-bundle/svg/Gift-Huddle-icon.svg" width={140} height={40} alt="Gift Huddle" priority />
         </Link>
 
         <nav className="text-sm flex items-center gap-5">

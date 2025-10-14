@@ -20,7 +20,7 @@ export default async function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/assets-bundle/Gift-Huddle-icon.svg"
+            src="/assets-bundle/svg/Gift-Huddle-icon.svg"
             alt="Gift Huddle"
             width={32}
             height={32}
