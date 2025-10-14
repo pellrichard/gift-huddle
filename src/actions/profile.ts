@@ -113,13 +113,12 @@ export async function defaultCurrencyFromRequest(): Promise<string> {
 
 // ---------- Core actions ----------
 
-function supabaseClient(): ProfilesClient {
-  // Cast once to our narrow facade (no `any` is used)
-  return createServerComponentClient() as unknown as ProfilesClient;
+async function supabaseClient(): Promise<ProfilesClient> {
+  return await createServerComponentClient() as unknown as ProfilesClient;
 }
 
 export async function bootstrapProfileFromAuth() {
-  const supabase = supabaseClient();
+  const supabase = await supabaseClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) return { ok: false as const, error: authErr.message };
   if (!user) return { ok: false as const, error: 'Not authenticated' };
@@ -176,7 +175,7 @@ export async function bootstrapProfileFromAuth() {
 }
 
 export async function getProfileForEdit() {
-  const supabase = supabaseClient();
+  const supabase = await supabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
@@ -204,7 +203,7 @@ export async function getProfileForEdit() {
 }
 
 export async function saveProfile(input: SaveProfileInput) {
-  const supabase = supabaseClient();
+  const supabase = await supabaseClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) return { ok: false as const, error: authErr.message };
   if (!user) return { ok: false as const, error: 'Not authenticated' };

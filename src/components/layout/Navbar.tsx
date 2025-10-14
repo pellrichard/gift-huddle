@@ -29,15 +29,12 @@ export default function Navbar() {
         {/* Left: Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/logo.svg"
+            src="/assets-bundle/Gift-Huddle-icon.svg"
             width={28}
             height={28}
             alt="Gift Huddle logo"
             priority
           />
-          <span className="text-base font-semibold tracking-tight text-gray-900">
-            Gift Huddle
-          </span>
         </Link>
 
         {/* Desktop nav */}

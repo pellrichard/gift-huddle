@@ -20,13 +20,12 @@ export default async function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logo.svg"
+            src="/assets-bundle/Gift-Huddle-icon.svg"
             alt="Gift Huddle"
             width={32}
             height={32}
             priority
           />
-          <span className="font-semibold">Gift Huddle</span>
         </Link>
 
         <nav className="flex items-center gap-4 text-sm text-gray-700">

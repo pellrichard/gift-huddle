@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Image
-              src="/logo.svg"
+              src="/assets-bundle/Gift-Huddle-icon.svg"
               alt="Gift Huddle"
               width={128}
               height={32}
