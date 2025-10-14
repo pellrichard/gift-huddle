@@ -13,7 +13,7 @@ const { data: { user } } = await supabase.auth.getUser();
   const avatar_url = (formData.get('avatar_url') || '').toString().trim() || null;
 
   type ProfilesUpdate = import('@/lib/supabase/types').Database['public']['Tables']['profiles']['Update'];
-const changes: ProfilesUpdate = { full_name, avatar_url };
+const changes = { full_name, avatar_url } satisfies ProfilesUpdate;
 
 const { error } = await supabase
     .from('profiles')

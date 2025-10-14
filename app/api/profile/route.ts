@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logWithId } from "@/lib/error-id";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
-import type { Json } from "@/lib/supabase/types";
+import type { Database } from "@/supabase/types";
 
 export async function GET() {
   try {
@@ -23,8 +23,7 @@ export async function GET() {
         (user.user_metadata?.avatar_url as string | undefined) ??
         (user.user_metadata?.picture as string | undefined) ??
         null,
-      socials: ({} as Json),
-    };
+    } satisfies Database["public"]["Tables"]["profiles"]["Insert"];
 
     const { data, error } = await supabase
       .from("profiles")
@@ -47,7 +46,8 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const payload: Partial<import("@/lib/supabase/types").Database["public"]["Tables"]["profiles"]["Update"]> = {
+
+    const payload = {
       full_name: typeof body.full_name === "string" ? body.full_name : undefined,
       dob: typeof body.dob === "string" ? body.dob : undefined,
       show_dob_year: typeof body.show_dob_year === "boolean" ? body.show_dob_year : undefined,
@@ -57,11 +57,9 @@ export async function POST(req: NextRequest) {
       interests: Array.isArray(body.interests) ? body.interests.map(String) : undefined,
       preferred_shops: Array.isArray(body.preferred_shops) ? body.preferred_shops.map(String) : undefined,
       categories: Array.isArray(body.categories) ? body.categories.map(String) : undefined,
-      notify_mobile: typeof body.notify_mobile === "boolean" ? body.notify_mobile : undefined,
-      notify_email: typeof body.notify_email === "boolean" ? body.notify_email : undefined,
-      unsubscribe_all: typeof body.unsubscribe_all === "boolean" ? body.unsubscribe_all : undefined,
-      socials: body.socials && typeof body.socials === "object" ? (body.socials as Json) : undefined,
-    };
+      // Only include when boolean; never send null
+      hide_birth_year: typeof body.hide_birth_year === "boolean" ? body.hide_birth_year : undefined,
+    } satisfies Database["public"]["Tables"]["profiles"]["Update"];
 
     const { data, error } = await supabase
       .from("profiles")

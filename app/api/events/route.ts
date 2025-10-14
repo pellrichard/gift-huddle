@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logWithId } from "@/lib/error-id";
 import { createRouteHandlerClient } from "@/lib/supabase/server";
-import type { Database } from "@/lib/supabase/types";
+import type { Database } from "@/supabase/types";
 
 type EventsInsert = Database["public"]["Tables"]["events"]["Insert"];
 

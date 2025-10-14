@@ -68,4 +68,5 @@
 
 - Rewrote first useEffect in EditProfileModal to close properly and use `/api/fx/update` proxy; fixed Unexpected EOF.
 
-- Typing: replace `v: any` in `setField` with generic `<K extends keyof ProfileData>(k: K, v: ProfileData[K])` to satisfy no-explicit-any.
+- Typing: replace `v: any` in `setField` with generic `<K extends keyof ProfileData>(k: K, v: ProfileData[K])` to satisfy no-explicit-any.\n\n### 2025-10-14
+- Force-overwrite `app/auth/callback/route.ts` with a minimal generated-types-only implementation and explicit `upsert<ProfilesInsert>` generic to avoid `never` payload typing.

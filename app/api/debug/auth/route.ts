@@ -1,46 +1,47 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
-type SupaCookieOptions = {
-  domain?: string;
-  path?: string;
-  expires?: Date;
-  maxAge?: number;
-  httpOnly?: boolean;
-  secure?: boolean;
-  sameSite?: 'lax' | 'strict' | 'none';
-};
-
-// Cookie adapter expected by `@supabase/ssr` (CookieMethodsServer)
-function cookieMethods(cookieStore: Awaited<ReturnType<typeof import('next/headers').cookies>>) {
+// Minimal read-only cookie adapter (deprecated shape) built from the raw Cookie header.
+function cookieMethodsDeprecatedFromHeader(cookieHeader: string | null) {
+  const map = new Map<string, string>();
+  if (cookieHeader) {
+    for (const part of cookieHeader.split(/;\s*/)) {
+      const [k, v] = part.split('=');
+      if (k) map.set(k, v ?? '');
+    }
+  }
   return {
-    getAll() {
-      return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
+    get(name: string) {
+      return map.get(name);
     },
-    setAll(cookies: { name: string; value: string; options: SupaCookieOptions }[]) {
-      cookies.forEach(({ name, value, options }) => {
-        cookieStore.set({ name, value, ...options });
-      });
-    },
-  };
+    set() {},
+    remove() {},
+  } as const;
 }
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
+export async function GET(request: Request) {
+  const cookieHeader = request.headers.get('cookie');
 
-  const store = await cookies();
-  const names = ['sb-access-token', 'sb-refresh-token', 'sb-provider'];
-  const presentSet = new Set(store.getAll().map(c => c.name));
-  const present = Object.fromEntries(names.map(n => [n, presentSet.has(n)]));
+  // Presence check for common Supabase cookies
+  const names = ['sb-access-token','sb-refresh-token','sb-csrf','sb-pkce-code-verifier'];
+  const presentMap = new Map<string, boolean>();
+  const have = new Set<string>();
+  if (cookieHeader) {
+    for (const part of cookieHeader.split(/;\s*/)) {
+      const [k] = part.split('=');
+      if (k) have.add(k);
+    }
+  }
+  for (const n of names) presentMap.set(n, have.has(n));
+  const present = Object.fromEntries(presentMap.entries());
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: cookieMethods(store),
-    }
+    { cookies: cookieMethodsDeprecatedFromHeader(cookieHeader) }
   );
 
   const { data: { user }, error } = await supabase.auth.getUser();
