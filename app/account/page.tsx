@@ -2,10 +2,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import AccountDashboard from '@/components/account/AccountDashboard';
-import { getProfileForEdit } from '@/actions/profile';
+import { getProfileForEdit, bootstrapProfileFromAuth, listCurrenciesForUiDetailed } from '@/actions/profile';
 
 export default async function AccountPage() {
+  // Ensure the profile exists/upserts from OAuth before rendering the dashboard
+  await bootstrapProfileFromAuth();
+
   const prof = await getProfileForEdit();
+  const currencyOptionsDetailed = await listCurrenciesForUiDetailed();
+  const currencyOptions = currencyOptionsDetailed.map(c => c.code);
 
   const name = (prof?.full_name as string | null) ?? 'Guest';
   const avatar = (prof?.avatar_url as string | null) ?? null;
@@ -22,5 +27,10 @@ export default async function AccountPage() {
     email: prof.email ?? null,
   } : undefined;
 
-  return <AccountDashboard user={{ name, avatar }} initialProfile={initialProfile} />;
+  return <AccountDashboard
+    user={{ name, avatar }}
+    initialProfile={initialProfile}
+    currencyOptions={currencyOptions}
+    currencyOptionsDetailed={currencyOptionsDetailed}
+  />;
 }

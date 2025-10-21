@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { supabase } from '@/lib/supabase/client';
 
+type CurrencyUi = { code: string; label: string };
+
 type ProfileData = {
   full_name?: string | null;
   dob?: string | null;
@@ -116,18 +118,18 @@ function choosePreferredCurrency(opts: { list: Array<{code: string; name: string
 type CurrencyItem = { code: string; name: string | null };
 
 export function EditProfileModal({
-  open,
+  currencyOptions, currencyOptionsDetailed, open,
   onOpenChange,
   initial,
   onSave,
 }: {
-  open: boolean;
+  currencyOptions?: string[]; currencyOptionsDetailed?: Array<{ code: string; label: string }>; open: boolean;
   onOpenChange: (open: boolean) => void;
   initial?: ProfileData & { full_name?: string | null };
   onSave?: (data: ProfileData) => Promise<SaveResult> | SaveResult;
 }) {
   const [form, setForm] = React.useState<ProfileData>({
-    full_name: initial?.full_name ?? '',
+full_name: initial?.full_name ?? '',
     dob: initial?.dob ?? '',
     show_dob_year: initial?.show_dob_year ?? true,
     notify_mobile: initial?.notify_mobile ?? false,
@@ -137,12 +139,25 @@ export function EditProfileModal({
     email: initial?.email ?? null,
     avatar_url: initial?.avatar_url ?? null,
   });
+  const [fxError, setFxError] = React.useState<string | null>(null);
+
   const [saving, setSaving] = React.useState(false);
-  const [currencies, setCurrencies] = React.useState<CurrencyItem[]>([]);
+  const [currencies, setCurrencies] = React.useState<CurrencyUi[]>([]);
   const [loadingCurrencies, setLoadingCurrencies] = React.useState(false);
   const requiredOk = Boolean((form?.full_name ?? '').trim() && (form?.dob ?? '').trim() && (form?.preferred_currency ?? '').trim());
   const [showRequiredBanner, setShowRequiredBanner] = React.useState(false);
-  const [fxError, setFxError] = React.useState<string | null>(null);
+    // Use provided currency options when available; otherwise fallback to client fetch
+  React.useEffect(() => {
+    if (currencyOptionsDetailed && currencyOptionsDetailed.length > 0) {
+      setCurrencies(currencyOptionsDetailed);
+      return;
+    }
+    if (currencyOptions && currencyOptions.length > 0) {
+      setCurrencies(currencyOptions.map(c => ({ code: c, label: c })));
+      return;
+    }
+  }, [currencyOptionsDetailed, currencyOptions]);
+
 
   React.useEffect(() => {
     if (!open) return;
@@ -208,31 +223,36 @@ export function EditProfileModal({
               .sort((a, b) => a.code.localeCompare(b.code));
           }
           if (list.length > 0) {
-            setCurrencies(list);
+            setCurrencies(list.map((i) => {
+  const code = typeof i === 'string' ? i : (i?.code ?? '');
+  const name = typeof i === 'string' ? i : (i?.name ?? i?.code ?? '');
+  const label = name && code && name !== code ? `${name} (${code})` : (name || code);
+  return { code: String(code), label: String(label) };
+}));
             const chosen = choosePreferredCurrency({ list, initial: form.preferred_currency });
               setForm((f) => ({ ...f, preferred_currency: chosen }));
             }
           else {
             // Fallback small list
             setCurrencies([
-              { code: 'GBP', name: 'British Pound' },
-              { code: 'EUR', name: 'Euro' },
-              { code: 'USD', name: 'US Dollar' },
+              { code: 'GBP', label:  'British Pound' },
+              { code: 'EUR', label:  'Euro' },
+              { code: 'USD', label:  'US Dollar' },
             ]);
           }
           } else {
           setCurrencies([
-            { code: 'GBP', name: 'British Pound' },
-            { code: 'EUR', name: 'Euro' },
-            { code: 'USD', name: 'US Dollar' },
+            { code: 'GBP', label:  'British Pound' },
+            { code: 'EUR', label:  'Euro' },
+            { code: 'USD', label:  'US Dollar' },
           ]);
         }
       } catch (e) {
         console.warn('[EditProfileModal] currency_rates load failed', e);
         setCurrencies([
-          { code: 'GBP', name: 'British Pound' },
-          { code: 'EUR', name: 'Euro' },
-          { code: 'USD', name: 'US Dollar' },
+          { code: 'GBP', label:  'British Pound' },
+          { code: 'EUR', label:  'Euro' },
+          { code: 'USD', label:  'US Dollar' },
         ]);
       } finally {
         setLoadingCurrencies(false);
@@ -359,7 +379,7 @@ export function EditProfileModal({
               <option value="" disabled>{loadingCurrencies ? 'Loading currencies…' : 'Select currency…'}</option>
               {currencies.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.code}{c.name ? ` — ${c.name}` : ''}
+                  {c.code} — {c.label}
                 </option>
               ))}
             </select>
@@ -415,7 +435,7 @@ export function EditProfileModal({
   React.useEffect(() => {
     if (!open) return;
     if (!currencies || currencies.length === 0) return;
-    const chosen = choosePreferredCurrency({ list: currencies, initial: form.preferred_currency });
+    const chosen = choosePreferredCurrency({ list: currencies.map((c: { code: string; label?: string }) => ({ code: c.code, name: c.label ?? null })), initial: form.preferred_currency });
     if (chosen && chosen !== form.preferred_currency) {
       setForm((f) => ({ ...f, preferred_currency: chosen }));
     }

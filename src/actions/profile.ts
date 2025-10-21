@@ -35,6 +35,80 @@ async function getServerClient() {
   );
 }
 
+async function getAllowedCurrencies(supabase: any): Promise<Set<string>> {
+  const { data, error } = await supabase.from('fx_rates').select('*').limit(1000);
+  if (error) return new Set(['GBP','EUR','USD']);
+  const codes = new Set<string>();
+  const candidates = ['code','currency','ccy','symbol','id','base','from','quote'];
+  for (const row of data || []) {
+    for (const key of candidates) {
+      const v = (row as any)[key];
+      if (typeof v === 'string' && /^[A-Z]{3}$/.test(v)) codes.add(v.toUpperCase());
+    }
+  }
+  if (codes.size === 0) { codes.add('GBP'); codes.add('EUR'); codes.add('USD'); }
+  return codes;
+}
+
+function chooseAllowedCurrency(preferred: string | null | undefined, allowed: Set<string>): string {
+  const pick = (preferred || '').toUpperCase();
+  if (pick && allowed.has(pick)) return pick;
+  if (allowed.has('GBP')) return 'GBP';
+  if (allowed.has('EUR')) return 'EUR';
+  if (allowed.has('USD')) return 'USD';
+  const first = Array.from(allowed)[0];
+  return typeof first === 'string' && first ? first : 'GBP';
+}
+
+const ISO_CURRENCY_NAMES: Record<string, string> = {
+  GBP: 'British Pound',
+  EUR: 'Euro',
+  USD: 'US Dollar',
+  CAD: 'Canadian Dollar',
+  AUD: 'Australian Dollar',
+  NZD: 'New Zealand Dollar',
+  SGD: 'Singapore Dollar',
+  HKD: 'Hong Kong Dollar',
+  JPY: 'Japanese Yen',
+  CNY: 'Chinese Yuan',
+  KRW: 'South Korean Won',
+  INR: 'Indian Rupee',
+  CHF: 'Swiss Franc',
+  NOK: 'Norwegian Krone',
+  SEK: 'Swedish Krona',
+  DKK: 'Danish Krone',
+  ISK: 'Icelandic Króna',
+  ZAR: 'South African Rand',
+  BRL: 'Brazilian Real',
+  MXN: 'Mexican Peso',
+  ARS: 'Argentine Peso'
+};
+function codeToLabel(code: string): string {
+  return ISO_CURRENCY_NAMES[code] ? `${ISO_CURRENCY_NAMES[code]} (${code})` : code;
+}
+
+/** Detailed currency list for UI with labels, constrained by fx_rates */
+export async function listCurrenciesForUiDetailed(): Promise<Array<{ code: string; label: string }>> {
+  const supabase = await getServerClient();
+  const allowed = await getAllowedCurrencies(supabase);
+  const arr = Array.from(allowed).map(code => ({ code, label: codeToLabel(code) }));
+  arr.sort((a,b) => a.label.localeCompare(b.label));
+  return arr;
+}
+
+/** Code-only list for UI (sorted), constrained by fx_rates */
+export async function listCurrenciesForUi(): Promise<string[]> {
+  const det = await listCurrenciesForUiDetailed();
+  return det.map(d => d.code);
+}
+
+/**
+ * OAuth callback upsert:
+ * - Upserts profiles (full_name, email, avatar_url, preferred_currency)
+ * - Defaults notify_mobile/notify_email = true (insert or when missing)
+ * - Upserts profiles_public (id, full_name, email, avatar_url)
+ * - Returns needsOnboarding = true if dob is missing.
+ */
 export async function upsertProfileFromAuth() {
   const supabase = await getServerClient();
   const { data: { user }, error: userErr } = await supabase.auth.getUser();
@@ -42,7 +116,9 @@ export async function upsertProfileFromAuth() {
 
   const h = await headers();
   const acceptLang = h.get('accept-language');
-  const preferred_currency = defaultCurrencyFromAcceptLanguage(acceptLang);
+  const inferred = defaultCurrencyFromAcceptLanguage(acceptLang);
+  const allowed = await getAllowedCurrencies(supabase);
+  const preferred_currency = chooseAllowedCurrency(inferred, allowed);
 
   const full_name =
     (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
@@ -66,7 +142,7 @@ export async function upsertProfileFromAuth() {
     preferred_currency
   };
 
-  let patch: Record<string, any> = { ...base, updated_at: new Date().toISOString() };
+  const patch: Record<string, any> = { ...base, updated_at: new Date().toISOString() };
 
   if (!existing) {
     patch.notify_mobile = true;
@@ -102,10 +178,11 @@ export async function upsertProfileFromAuth() {
   return { ok: true, needsOnboarding };
 }
 
-export async function ensureProfileForRequest() {
-  return upsertProfileFromAuth();
-}
+/** Back-compat aliases */
+export async function ensureProfileForRequest() { return upsertProfileFromAuth(); }
+export async function bootstrapProfileFromAuth() { return upsertProfileFromAuth(); }
 
+/** Fetch profile for account page */
 export async function getProfileForEdit() {
   const supabase = await getServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -118,6 +195,7 @@ export async function getProfileForEdit() {
   return data ?? null;
 }
 
+/** Save profile updates (server action); validates currency via fx_rates */
 export async function saveProfile(input: FormData | Record<string, any>) {
   const supabase = await getServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -147,17 +225,16 @@ export async function saveProfile(input: FormData | Record<string, any>) {
     };
   }
 
-  if (!patch.preferred_currency) {
+  // Normalize currency to allowed set
+  {
     const h = await headers();
-    patch.preferred_currency = defaultCurrencyFromAcceptLanguage(h.get('accept-language'));
+    const inferred = defaultCurrencyFromAcceptLanguage(h.get('accept-language'));
+    const allowed = await getAllowedCurrencies(supabase);
+    patch.preferred_currency = chooseAllowedCurrency(patch.preferred_currency ?? inferred, allowed);
   }
 
   patch.updated_at = new Date().toISOString();
   const { error } = await supabase.from('profiles').update(patch).eq('id', user.id);
   if (error) return { ok: false, reason: 'update-error', error: error.message };
   return { ok: true };
-}
-
-export async function bootstrapProfileFromAuth() {
-  return upsertProfileFromAuth();
 }
