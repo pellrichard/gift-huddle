@@ -1,12 +1,19 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
 
 export default function AuthCallbackClient() {
   const router = useRouter();
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
     const query = new URLSearchParams(window.location.search);
     const code = query.get('code');
     const storedVerifier = localStorage.getItem('sb-code-verifier');
@@ -30,7 +37,7 @@ export default function AuthCallbackClient() {
         router.replace('/account');
       }
     });
-  }, [router]);
+  }, [hydrated, router]);
 
-  return <p>Verifying login via PKCE... check console for details.</p>;
+  return <p>Verifying login via PKCE... (waiting for hydration)</p>;
 }
