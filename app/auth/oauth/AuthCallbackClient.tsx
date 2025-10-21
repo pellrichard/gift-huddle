@@ -9,24 +9,28 @@ export default function AuthCallbackClient() {
 
   useEffect(() => {
     const code = searchParams.get('code');
-    console.log('[AuthDebug] OAuth code:', code);
+    const storedVerifier = localStorage.getItem('sb-code-verifier');
+
+    console.log('[PKCE] Returned OAuth code:', code);
+    console.log('[PKCE] LocalStorage code_verifier:', storedVerifier);
+    console.log('[PKCE] document.cookie:', document.cookie);
 
     if (!code) {
-      console.error('[AuthDebug] Missing code param');
+      console.error('[PKCE] Missing OAuth code');
       router.replace('/login?error=missing_code');
       return;
     }
 
     supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
       if (error) {
-        console.error('[AuthDebug] exchangeCodeForSession error:', error.message);
+        console.error('[PKCE] exchangeCodeForSession error:', error.message);
         router.replace('/login?error=auth');
       } else {
-        console.log('[AuthDebug] Session established:', data);
+        console.log('[PKCE] Session successfully exchanged:', data);
         router.replace('/account');
       }
     });
   }, [searchParams, router]);
 
-  return <p>Debugging login... check the console.</p>;
+  return <p>[PKCE] Verifying login, see browser console...</p>;
 }
