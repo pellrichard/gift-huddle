@@ -1,7 +1,9 @@
 export default function Head() {
   return (
     <>
-      <script defer data-domain="gift-huddle.com" src="https://plausible.io/js/script.js"></script>
+      <title>Gift Huddle</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="referrer" content="origin-when-cross-origin" />
     </>
   );
 }
