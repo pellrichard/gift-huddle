@@ -1,9 +1,6 @@
-"use client";
-// Back-compat browser client (if any imports reference this file)
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from '@supabase/supabase-js';
 
-export const supabase = createBrowserClient(
+export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { cookieEncoding: "base64url" }
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
