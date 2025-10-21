@@ -2,11 +2,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import AccountDashboard from '@/components/account/AccountDashboard';
-import { ensureProfileForRequest, bootstrapProfileFromAuth, getProfileForEdit } from '@/actions/profile';
+import { getProfileForEdit } from '@/actions/profile';
 
 export default async function AccountPage() {
-  await ensureProfileForRequest();
-  await bootstrapProfileFromAuth();
   const prof = await getProfileForEdit();
 
   const name = (prof?.full_name as string | null) ?? 'Guest';

@@ -3,10 +3,20 @@
 
 import { cookies, headers } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import type { User } from '@supabase/supabase-js';
 import { defaultCurrencyFromAcceptLanguage } from '@/lib/locale';
 
-/** Build a server-side Supabase client wired to Next.js cookies */
+type Profile = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  dob?: string | null;
+  notify_mobile?: boolean | null;
+  notify_email?: boolean | null;
+  unsubscribe_all?: boolean | null;
+  preferred_currency?: string | null;
+};
+
 async function getServerClient() {
   const cookieStore = await cookies();
   return createServerClient(
@@ -17,32 +27,21 @@ async function getServerClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set({ name, value, ...options })
-            );
-          } catch { /* ignore */ }
+        setAll(toSet) {
+          try { toSet.forEach(({ name, value, options }) => cookieStore.set({ name, value, ...options })); } catch {}
         },
       },
     }
   );
 }
 
-/**
- * Ensure a profile row exists for the current authenticated user.
- * - Creates on first login (idempotent)
- * - Backfills missing full_name, email, avatar_url
- * - Defaults preferred_currency using Accept-Language (fallback GBP)
- */
-export async function ensureProfileForRequest() {
+export async function upsertProfileFromAuth() {
   const supabase = await getServerClient();
   const { data: { user }, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !user) {
-    return { ok: false, reason: 'no-user', error: userErr?.message };
-  }
+  if (userErr || !user) return { ok: false, reason: 'no-user', needsOnboarding: false };
 
-  const acceptLang = (await headers()).get('accept-language');
+  const h = await headers();
+  const acceptLang = h.get('accept-language');
   const preferred_currency = defaultCurrencyFromAcceptLanguage(acceptLang);
 
   const full_name =
@@ -53,50 +52,64 @@ export async function ensureProfileForRequest() {
     (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) ||
     null;
 
-  const { data: existing, error: selErr } = await supabase
+  const { data: existing } = await supabase
     .from('profiles')
-    .select('id, full_name, email, preferred_currency, avatar_url')
+    .select('id, dob, full_name, email, avatar_url, preferred_currency, notify_mobile, notify_email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (selErr && selErr.code !== 'PGRST116') {
-    return { ok: false, reason: 'select-error', error: selErr.message };
-  }
+  const base: Profile = {
+    id: user.id,
+    full_name,
+    email: user.email ?? null,
+    avatar_url,
+    preferred_currency
+  };
+
+  let patch: Record<string, any> = { ...base, updated_at: new Date().toISOString() };
 
   if (!existing) {
-    const insert = {
-      id: user.id,
-      full_name,
-      email: user.email,
-      preferred_currency,
-      avatar_url,
-      updated_at: new Date().toISOString(),
-    };
-    const { error: insErr } = await supabase.from('profiles').insert(insert);
-    if (insErr) return { ok: false, reason: 'insert-error', error: insErr.message };
-    return { ok: true, created: true };
+    patch.notify_mobile = true;
+    patch.notify_email = true;
+  } else {
+    if (existing.notify_mobile == null) patch.notify_mobile = true;
+    if (existing.notify_email == null) patch.notify_email = true;
+    if (!existing.preferred_currency && preferred_currency) patch.preferred_currency = preferred_currency;
+    if (!existing.full_name && full_name) patch.full_name = full_name;
+    if (!existing.email && user.email) patch.email = user.email;
+    if (!existing.avatar_url && avatar_url) patch.avatar_url = avatar_url;
   }
 
-  const patch: Record<string, unknown> = {};
-  if (!existing.full_name && full_name) patch.full_name = full_name;
-  if (!existing.email && user.email) patch.email = user.email;
-  if (!existing.preferred_currency && preferred_currency) patch.preferred_currency = preferred_currency;
-  if (!existing.avatar_url && avatar_url) patch.avatar_url = avatar_url;
+  const { error: upErr } = await supabase.from('profiles').upsert(patch, { onConflict: 'id' });
+  if (upErr) return { ok: false, reason: 'profiles-upsert', error: upErr.message, needsOnboarding: false };
 
-  if (Object.keys(patch).length === 0) return { ok: true, created: false, updated: false };
+  const publicRow = {
+    id: user.id,
+    full_name: patch.full_name ?? full_name,
+    email: patch.email ?? user.email ?? null,
+    avatar_url: patch.avatar_url ?? avatar_url,
+    updated_at: new Date().toISOString(),
+  };
+  await supabase.from('profiles_public').upsert(publicRow, { onConflict: 'id' });
 
-  patch.updated_at = new Date().toISOString();
-  const { error: updErr } = await supabase.from('profiles').update(patch).eq('id', user.id);
-  if (updErr) return { ok: false, reason: 'update-error', error: updErr.message };
-  return { ok: true, created: false, updated: true };
+  const { data: after } = await supabase
+    .from('profiles')
+    .select('dob')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const needsOnboarding = !after || !after.dob;
+  return { ok: true, needsOnboarding };
 }
 
-/** Ensure profile exists and return the profile row for editing */
+export async function ensureProfileForRequest() {
+  return upsertProfileFromAuth();
+}
+
 export async function getProfileForEdit() {
   const supabase = await getServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  await ensureProfileForRequest();
   const { data } = await supabase
     .from('profiles')
     .select('full_name, dob, show_dob_year, notify_mobile, notify_email, unsubscribe_all, preferred_currency, avatar_url, email')
@@ -105,25 +118,7 @@ export async function getProfileForEdit() {
   return data ?? null;
 }
 
-/** Bootstrap hook: simply ensure the profile exists */
-export async function bootstrapProfileFromAuth() {
-  return ensureProfileForRequest();
-}
-
-/**
- * Server Action to update the user's profile from a form or object.
- * Can be called from Client Components.
- */
-export async function saveProfile(input: FormData | {
-  full_name?: string | null;
-  dob?: string | null;
-  show_dob_year?: boolean | null;
-  notify_mobile?: boolean | null;
-  notify_email?: boolean | null;
-  unsubscribe_all?: boolean | null;
-  preferred_currency?: string | null;
-  avatar_url?: string | null;
-}) {
+export async function saveProfile(input: FormData | Record<string, any>) {
   const supabase = await getServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, reason: 'no-user' };
@@ -152,13 +147,17 @@ export async function saveProfile(input: FormData | {
     };
   }
 
-  // If preferred_currency missing, infer from Accept-Language (fallback GBP)
   if (!patch.preferred_currency) {
-    patch.preferred_currency = defaultCurrencyFromAcceptLanguage((await headers()).get('accept-language'));
+    const h = await headers();
+    patch.preferred_currency = defaultCurrencyFromAcceptLanguage(h.get('accept-language'));
   }
 
   patch.updated_at = new Date().toISOString();
   const { error } = await supabase.from('profiles').update(patch).eq('id', user.id);
   if (error) return { ok: false, reason: 'update-error', error: error.message };
   return { ok: true };
+}
+
+export async function bootstrapProfileFromAuth() {
+  return upsertProfileFromAuth();
 }
