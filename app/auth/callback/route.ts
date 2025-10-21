@@ -1,3 +1,4 @@
+import { ensureProfileForRequest } from '@/actions/profile'
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { buildCookieAdapter } from "@/lib/auth/cookies";
@@ -7,7 +8,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
+  
+  try { await ensureProfileForRequest(); } catch { /* ignore ensure errors */ }
+const url = new URL(request.url);
   const next = url.searchParams.get("next") || "/account";
 
   // Prepare the redirect we'll attach cookies to

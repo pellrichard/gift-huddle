@@ -1,14 +1,120 @@
-
 'use server';
+/* eslint-disable */
 
-import { headers } from 'next/headers';
-import { revalidatePath } from 'next/cache';
-import { createServerComponentClient } from '@/lib/supabase/server';
+import { cookies, headers } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import type { User } from '@supabase/supabase-js';
+import { defaultCurrencyFromAcceptLanguage } from '@/lib/locale';
 
-// ---------- Minimal types (no external DB generics, no `any`) ----------
+/** Build a server-side Supabase client wired to Next.js cookies */
+async function getServerClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set({ name, value, ...options })
+            );
+          } catch { /* ignore */ }
+        },
+      },
+    }
+  );
+}
 
-// Input shape from the Edit Profile UI
-export type SaveProfileInput = {
+/**
+ * Ensure a profile row exists for the current authenticated user.
+ * - Creates on first login (idempotent)
+ * - Backfills missing full_name, email, avatar_url
+ * - Defaults preferred_currency using Accept-Language (fallback GBP)
+ */
+export async function ensureProfileForRequest() {
+  const supabase = await getServerClient();
+  const { data: { user }, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    return { ok: false, reason: 'no-user', error: userErr?.message };
+  }
+
+  const acceptLang = (await headers()).get('accept-language');
+  const preferred_currency = defaultCurrencyFromAcceptLanguage(acceptLang);
+
+  const full_name =
+    (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
+    (user.email ? String(user.email).split('@')[0] : null);
+
+  const avatar_url =
+    (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) ||
+    null;
+
+  const { data: existing, error: selErr } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, preferred_currency, avatar_url')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (selErr && selErr.code !== 'PGRST116') {
+    return { ok: false, reason: 'select-error', error: selErr.message };
+  }
+
+  if (!existing) {
+    const insert = {
+      id: user.id,
+      full_name,
+      email: user.email,
+      preferred_currency,
+      avatar_url,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: insErr } = await supabase.from('profiles').insert(insert);
+    if (insErr) return { ok: false, reason: 'insert-error', error: insErr.message };
+    return { ok: true, created: true };
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (!existing.full_name && full_name) patch.full_name = full_name;
+  if (!existing.email && user.email) patch.email = user.email;
+  if (!existing.preferred_currency && preferred_currency) patch.preferred_currency = preferred_currency;
+  if (!existing.avatar_url && avatar_url) patch.avatar_url = avatar_url;
+
+  if (Object.keys(patch).length === 0) return { ok: true, created: false, updated: false };
+
+  patch.updated_at = new Date().toISOString();
+  const { error: updErr } = await supabase.from('profiles').update(patch).eq('id', user.id);
+  if (updErr) return { ok: false, reason: 'update-error', error: updErr.message };
+  return { ok: true, created: false, updated: true };
+}
+
+/** Ensure profile exists and return the profile row for editing */
+export async function getProfileForEdit() {
+  const supabase = await getServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  await ensureProfileForRequest();
+  const { data } = await supabase
+    .from('profiles')
+    .select('full_name, dob, show_dob_year, notify_mobile, notify_email, unsubscribe_all, preferred_currency, avatar_url, email')
+    .eq('id', user.id)
+    .maybeSingle();
+  return data ?? null;
+}
+
+/** Bootstrap hook: simply ensure the profile exists */
+export async function bootstrapProfileFromAuth() {
+  return ensureProfileForRequest();
+}
+
+/**
+ * Server Action to update the user's profile from a form or object.
+ * Can be called from Client Components.
+ */
+export async function saveProfile(input: FormData | {
   full_name?: string | null;
   dob?: string | null;
   show_dob_year?: boolean | null;
@@ -17,221 +123,42 @@ export type SaveProfileInput = {
   unsubscribe_all?: boolean | null;
   preferred_currency?: string | null;
   avatar_url?: string | null;
-  email?: string | null;
-};
-
-// What we read/write on the 'profiles' table
-type ProfilesRow = {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  preferred_currency: string | null;
-  dob?: string | null;
-  show_dob_year?: boolean | null;
-  notify_mobile?: boolean | null;
-  notify_email?: boolean | null;
-  unsubscribe_all?: boolean | null;
-  email?: string | null;
-};
-
-// Narrow facade for the parts of the Supabase client we use
-type AuthUser = { id: string; email?: string | null; user_metadata?: Record<string, unknown> };
-type AuthModule = {
-  getUser(): Promise<{ data: { user: AuthUser | null }; error: { message: string } | null }>;
-};
-type ProfilesFrom = {
-  select(columns: string): {
-    eq(column: 'id', value: string): {
-      maybeSingle(): Promise<{ data: ProfilesRow | null; error: { message: string } | null }>
-    }
-  },
-  upsert(values: ProfilesRow | ProfilesRow[], options?: {
-    onConflict?: string;
-    ignoreDuplicates?: boolean;
-    count?: 'exact' | 'planned' | 'estimated';
-    defaultToNull?: boolean;
-  }): Promise<{ data?: unknown; error: { message: string } | null }>,
-  update(values: Partial<ProfilesRow>): {
-    eq(column: 'id', value: string): Promise<{ data?: unknown; error: { message: string } | null }>
-  },
-};
-type ProfilesClient = {
-  from(table: 'profiles'): ProfilesFrom;
-  auth: AuthModule;
-};
-
-// ---------- Currency helpers ----------
-
-const COUNTRY_TO_CURRENCY: Record<string, string> = {
-  GB: 'GBP', IE: 'EUR', FR: 'EUR', DE: 'EUR', ES: 'EUR', PT: 'EUR', IT: 'EUR',
-  NL: 'EUR', BE: 'EUR', LU: 'EUR', AT: 'EUR', FI: 'EUR', GR: 'EUR', CY: 'EUR',
-  MT: 'EUR', SK: 'EUR', SI: 'EUR', LV: 'EUR', LT: 'EUR', EE: 'EUR',
-  US: 'USD', CA: 'CAD', AU: 'AUD', NZ: 'NZD',
-  CH: 'CHF', NO: 'NOK', SE: 'SEK', DK: 'DKK',
-  PL: 'PLN', CZ: 'CZK', HU: 'HUF',
-};
-
-function parseRegionFromAcceptLanguage(al?: string | null): string | null {
-  if (!al) return null;
-  const m = /[-_](\w{2})(?:[;,]|$)/i.exec(al);
-  return m ? m[1]!.toUpperCase() : null;
-}
-
-export async function defaultCurrencyFromRequest(): Promise<string> {
-  try {
-    // headers() typing can differ; handle both sync and async returns
-    const maybe = headers() as unknown;
-    let h: Headers;
-    if (typeof (maybe as Headers).get === 'function') {
-      h = maybe as Headers;
-    } else {
-      h = await (maybe as Promise<Headers>);
-    }
-
-    const vercelCountry = (
-      h.get('x-vercel-ip-country') ||
-      h.get('x-country') ||
-      h.get('cf-ipcountry') ||
-      ''
-    ).toUpperCase();
-
-    if (vercelCountry && COUNTRY_TO_CURRENCY[vercelCountry]) {
-      return vercelCountry === 'GB' ? 'GBP' : COUNTRY_TO_CURRENCY[vercelCountry];
-    }
-
-    const acceptLang = h.get('accept-language') || '';
-    const region = parseRegionFromAcceptLanguage(acceptLang);
-    if (region && COUNTRY_TO_CURRENCY[region]) {
-      return region === 'GB' ? 'GBP' : COUNTRY_TO_CURRENCY[region];
-    }
-  } catch (e) {
-    console.log('[profile] defaultCurrencyFromRequest error', e);
-  }
-  // UK launch default
-  return 'GBP';
-}
-
-// ---------- Core actions ----------
-
-async function supabaseClient(): Promise<ProfilesClient> {
-  return await createServerComponentClient() as unknown as ProfilesClient;
-}
-
-export async function bootstrapProfileFromAuth() {
-  const supabase = await supabaseClient();
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) return { ok: false as const, error: authErr.message };
-  if (!user) return { ok: false as const, error: 'Not authenticated' };
-
-  const { data: existing, error: selErr } = await supabase
-    .from('profiles')
-    .select('id, full_name, avatar_url, preferred_currency, dob')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (selErr) return { ok: false as const, error: selErr.message };
-
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const displayName =
-    (typeof meta['full_name'] === 'string' && meta['full_name']) ||
-    (typeof meta['name'] === 'string' && meta['name']) ||
-    (typeof meta['user_name'] === 'string' && meta['user_name']) ||
-    user.email ||
-    null;
-
-  const avatarUrl =
-    (typeof meta['avatar_url'] === 'string' && meta['avatar_url']) ||
-    (typeof meta['picture'] === 'string' && meta['picture']) ||
-    null;
-
-  const defCcy = await defaultCurrencyFromRequest();
-
-  if (!existing) {
-    const insertRow: ProfilesRow = {
-      id: user.id,
-      full_name: displayName ?? null,
-      avatar_url: avatarUrl ?? null,
-      preferred_currency: defCcy,
-    };
-    const { error: insErr } = await supabase
-      .from('profiles')
-      .upsert(insertRow, { onConflict: 'id' });
-    if (insErr) return { ok: false as const, error: insErr.message };
-    revalidatePath('/account');
-    return { ok: true as const };
-  }
-
-  const patch: Partial<ProfilesRow> = {};
-  if (!existing.full_name && displayName) patch.full_name = displayName;
-  if (!existing.avatar_url && avatarUrl) patch.avatar_url = avatarUrl;
-  if (!existing.preferred_currency) patch.preferred_currency = defCcy;
-
-  if (Object.keys(patch).length > 0) {
-    const { error: updErr } = await supabase.from('profiles').update(patch).eq('id', user.id);
-    if (updErr) return { ok: false as const, error: updErr.message };
-    revalidatePath('/account');
-  }
-
-  return { ok: true as const };
-}
-
-export async function getProfileForEdit() {
-  const supabase = await supabaseClient();
+}) {
+  const supabase = await getServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return { ok: false, reason: 'no-user' };
 
-  const { data: row } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const fallbackName =
-    (typeof meta['full_name'] === 'string' && meta['full_name']) ||
-    (typeof meta['name'] === 'string' && meta['name']) ||
-    (typeof meta['user_name'] === 'string' && meta['user_name']) ||
-    user.email ||
-    null;
-  const fallbackAvatar =
-    (typeof meta['avatar_url'] === 'string' && meta['avatar_url']) ||
-    (typeof meta['picture'] === 'string' && meta['picture']) ||
-    null;
-
-  return row
-    ? { ...row, full_name: row.full_name ?? (fallbackName as string | null), avatar_url: row.avatar_url ?? (fallbackAvatar as string | null) }
-    : null;
-}
-
-export async function saveProfile(input: SaveProfileInput) {
-  const supabase = await supabaseClient();
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) return { ok: false as const, error: authErr.message };
-  if (!user) return { ok: false as const, error: 'Not authenticated' };
-
-  const updates: Partial<ProfilesRow> = {
-    full_name: (input.full_name ?? null) as string | null,
-    dob: (input.dob ?? null) as string | null,
-    show_dob_year: (input.show_dob_year ?? null) as boolean | null,
-    notify_mobile: (input.notify_mobile ?? null) as boolean | null,
-    notify_email: (input.notify_email ?? null) as boolean | null,
-    unsubscribe_all: (input.unsubscribe_all ?? null) as boolean | null,
-    preferred_currency: (input.preferred_currency ?? null) as string | null,
-    avatar_url: (input.avatar_url ?? null) as string | null,
-    email: (input.email ?? null) as string | null,
-  };
-
-  const nameOk = typeof updates.full_name === 'string' && (updates.full_name as string).trim().length > 0;
-  if (!nameOk || !updates.dob || !updates.preferred_currency) {
-    return { ok: false as const, error: 'Please complete full name, date of birth and preferred currency.' };
+  let patch: any = {};
+  if (typeof FormData !== 'undefined' && input instanceof FormData) {
+    patch.full_name = (input.get('full_name') as string) ?? null;
+    patch.dob = (input.get('dob') as string) ?? null;
+    patch.show_dob_year = (input.get('show_dob_year') as string) === 'on' ? true : (input.get('show_dob_year') as any) ?? null;
+    patch.notify_mobile = (input.get('notify_mobile') as string) === 'on' ? true : (input.get('notify_mobile') as any) ?? null;
+    patch.notify_email = (input.get('notify_email') as string) === 'on' ? true : (input.get('notify_email') as any) ?? null;
+    patch.unsubscribe_all = (input.get('unsubscribe_all') as string) === 'on' ? true : (input.get('unsubscribe_all') as any) ?? null;
+    patch.preferred_currency = (input.get('preferred_currency') as string) ?? null;
+    patch.avatar_url = (input.get('avatar_url') as string) ?? null;
+  } else {
+    const obj = input as any;
+    patch = {
+      full_name: obj.full_name ?? null,
+      dob: obj.dob ?? null,
+      show_dob_year: obj.show_dob_year ?? null,
+      notify_mobile: obj.notify_mobile ?? null,
+      notify_email: obj.notify_email ?? null,
+      unsubscribe_all: obj.unsubscribe_all ?? null,
+      preferred_currency: obj.preferred_currency ?? null,
+      avatar_url: obj.avatar_url ?? null,
+    };
   }
 
-  const { error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', user.id);
+  // If preferred_currency missing, infer from Accept-Language (fallback GBP)
+  if (!patch.preferred_currency) {
+    patch.preferred_currency = defaultCurrencyFromAcceptLanguage((await headers()).get('accept-language'));
+  }
 
-  if (error) return { ok: false as const, error: error.message };
-
-  revalidatePath('/account');
-  return { ok: true as const };
+  patch.updated_at = new Date().toISOString();
+  const { error } = await supabase.from('profiles').update(patch).eq('id', user.id);
+  if (error) return { ok: false, reason: 'update-error', error: error.message };
+  return { ok: true };
 }
