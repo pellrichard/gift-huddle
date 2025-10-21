@@ -9,20 +9,24 @@ export default function AuthCallbackClient() {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    console.log('[AuthDebug] OAuth code:', code);
+
     if (!code) {
+      console.error('[AuthDebug] Missing code param');
       router.replace('/login?error=missing_code');
       return;
     }
 
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+    supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
       if (error) {
-        console.error('OAuth session error:', error.message);
+        console.error('[AuthDebug] exchangeCodeForSession error:', error.message);
         router.replace('/login?error=auth');
       } else {
+        console.log('[AuthDebug] Session established:', data);
         router.replace('/account');
       }
     });
   }, [searchParams, router]);
 
-  return <p>Completing login, please wait...</p>;
+  return <p>Debugging login... check the console.</p>;
 }
