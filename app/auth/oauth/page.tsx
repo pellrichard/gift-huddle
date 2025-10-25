@@ -26,18 +26,35 @@ export default function OAuthCallback() {
     })
     .then(res => res.json())
     .then(async data => {
-      if (data.access_token) {
-        await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        });
+      if (!data.access_token) {
+        console.error('[OAuth] Token exchange failed:', data);
+        router.replace('/login?error=exchange_failed');
+        return;
+      }
+
+      console.log('[OAuth] Token exchange success. Setting session...');
+      const { error: setError } = await supabase.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token
+      });
+
+      if (setError) {
+        console.error('[OAuth] setSession failed:', setError.message);
+        router.replace('/login?error=session_set_failed');
+        return;
+      }
+
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      console.log('[OAuth] Session after setSession:', sessionCheck.session);
+
+      if (sessionCheck.session) {
         router.replace('/account');
       } else {
-        console.error('[OAuth] Token exchange failed:', data);
-        router.replace('/login?error=auth_fail');
+        console.warn('[OAuth] Session still missing after setSession');
+        router.replace('/login?error=session_missing_after_set');
       }
     });
   }, [router]);
 
-  return <p>Finalizing secure login...</p>;
+  return <p>Finalizing login…</p>;
 }
