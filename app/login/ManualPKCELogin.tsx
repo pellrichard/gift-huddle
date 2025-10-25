@@ -15,12 +15,12 @@ export default function ManualPKCELogin() {
 
     const authorizeUrl = `https://${projectRef}.supabase.co/auth/v1/authorize?provider=google&redirect_to=${redirectTo}&response_type=code&code_challenge=${challenge}&code_challenge_method=S256`;
 
-    // Ensure storage is flushed before redirecting
-    setTimeout(() => {
+    // Use requestIdleCallback to ensure storage is flushed before redirect
+    requestIdleCallback(() => {
       console.log('[PKCE] Redirecting to authorize URL:', authorizeUrl);
       window.location.href = authorizeUrl;
-    }, 150);
+    }, { timeout: 500 });
   }, []);
 
-  return <button onClick={login}>Login via Stable PKCE</button>;
+  return <button onClick={login}>Login via Stable PKCE (Idle-safe)</button>;
 }
