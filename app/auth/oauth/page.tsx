@@ -8,7 +8,7 @@ export default function OAuthCallback() {
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('code');
-    const verifier = localStorage.getItem('sb-code-verifier');
+    const verifier = sessionStorage.getItem('sb-code-verifier');
 
     if (!code || !verifier) {
       console.error('[OAuth] Missing code or verifier');
@@ -33,7 +33,7 @@ export default function OAuthCallback() {
         });
         router.replace('/account');
       } else {
-        console.error('[OAuth] Failed to retrieve access token', data);
+        console.error('[OAuth] Token exchange failed:', data);
         router.replace('/login?error=auth_fail');
       }
     });

@@ -7,7 +7,7 @@ export default function ManualPKCELogin() {
   const login = useCallback(async () => {
     const { verifier, challenge } = await createPKCEVerifierChallengePair();
 
-    localStorage.setItem('sb-code-verifier', verifier);
+    sessionStorage.setItem('sb-code-verifier', verifier);
 
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('.')[0].replace('https://', '');
     const redirectTo = encodeURIComponent('https://www.gift-huddle.com/auth/oauth');
@@ -17,5 +17,5 @@ export default function ManualPKCELogin() {
     window.location.href = authorizeUrl;
   }, []);
 
-  return <button onClick={login}>Login via Manual PKCE</button>;
+  return <button onClick={login}>Login via Secure PKCE</button>;
 }
