@@ -11,18 +11,31 @@ export default function AuthCallback() {
     const code = query.get('code');
 
     if (!code) {
+      console.error('[OAuth] Missing code in query.');
       router.replace('/login?error=missing_code');
       return;
     }
 
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+    console.log('[OAuth] Found code:', code);
+
+    supabase.auth.exchangeCodeForSession(code).then(async ({ error }) => {
       if (error) {
-        router.replace('/login?error=auth');
+        console.error('[OAuth] exchangeCodeForSession failed:', error.message);
+        router.replace('/login?error=auth_exchange');
       } else {
-        router.replace('/account');
+        console.log('[OAuth] Exchange succeeded. Checking session...');
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        if (sessionData?.session) {
+          console.log('[OAuth] Session active. Redirecting to /account.');
+          router.replace('/account');
+        } else {
+          console.warn('[OAuth] Session missing after exchange. Redirecting to login.');
+          router.replace('/login?error=session_missing');
+        }
       }
     });
   }, [router]);
 
-  return <p>Signing you in...</p>;
+  return <p>Finishing sign-in... please wait</p>;
 }
