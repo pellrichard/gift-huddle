@@ -1,18 +1,38 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-// If you already have more complex logic, merge these early returns.
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
 
-  // Never block or rewrite auth or API routes
-  if (pathname.startsWith("/auth/") || pathname.startsWith("/api/")) {
-    return NextResponse.next();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return req.cookies.get(name)?.value;
+        },
+        set() {
+          // no-op in middleware
+        },
+        remove() {
+          // no-op in middleware
+        }
+      }
+    }
+  );
+
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session && req.nextUrl.pathname.startsWith('/account')) {
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  return NextResponse.next();
+  return res;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ['/account']
 };
