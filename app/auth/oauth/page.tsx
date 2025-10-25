@@ -8,7 +8,12 @@ export default function OAuthCallback() {
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('code');
-    const verifier = sessionStorage.getItem('sb-code-verifier');
+    const verifier =
+      sessionStorage.getItem('sb-code-verifier') ||
+      localStorage.getItem('sb-code-verifier');
+
+    console.log('[OAuth] Code from URL:', code);
+    console.log('[OAuth] Verifier from sessionStorage/localStorage:', verifier);
 
     if (!code || !verifier) {
       console.error('[OAuth] Missing code or verifier');
@@ -56,5 +61,5 @@ export default function OAuthCallback() {
     });
   }, [router]);
 
-  return <p>Finalizing login…</p>;
+  return <p>Finalizing secure login...</p>;
 }
