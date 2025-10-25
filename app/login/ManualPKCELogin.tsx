@@ -8,14 +8,19 @@ export default function ManualPKCELogin() {
     const { verifier, challenge } = await createPKCEVerifierChallengePair();
 
     sessionStorage.setItem('sb-code-verifier', verifier);
+    console.log('[PKCE] Stored verifier in sessionStorage:', verifier);
 
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('.')[0].replace('https://', '');
     const redirectTo = encodeURIComponent('https://www.gift-huddle.com/auth/oauth');
 
     const authorizeUrl = `https://${projectRef}.supabase.co/auth/v1/authorize?provider=google&redirect_to=${redirectTo}&response_type=code&code_challenge=${challenge}&code_challenge_method=S256`;
 
-    window.location.href = authorizeUrl;
+    // Ensure storage is flushed before redirecting
+    setTimeout(() => {
+      console.log('[PKCE] Redirecting to authorize URL:', authorizeUrl);
+      window.location.href = authorizeUrl;
+    }, 150);
   }, []);
 
-  return <button onClick={login}>Login via Secure PKCE</button>;
+  return <button onClick={login}>Login via Stable PKCE</button>;
 }
