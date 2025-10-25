@@ -1,21 +1,31 @@
-'use client'
-import { supabase } from '@/lib/supabaseClient'
-import type { Provider } from '@supabase/supabase-js'
+'use client';
+import { supabase } from '@/lib/supabase/browser';
+import type { Provider } from '@supabase/supabase-js';
 
 export default function LoginProviderButtons({ providers, next }: { providers: Provider[]; next?: string }) {
-  async function signInWith(provider: Provider) {
-    const n = next && typeof next === 'string' ? next : '/account'
-    const redirectTo = `${window.location.origin}/auth/callback${n ? `?next=${encodeURIComponent(n)}` : ''}`
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })
-    if (error) alert(error.message)
-  }
+  const login = async (provider: Provider) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: next ?? 'https://www.gift-huddle.com/auth/oauth',
+        ...( { flowType: 'pkce' } as { flowType: 'pkce' } )
+      }
+    });
+
+    if (error) {
+      console.error('OAuth login error:', error.message);
+    } else if (data?.url) {
+      window.location.href = data.url;
+    }
+  };
+
   return (
-    <div className="grid gap-3 w-full max-w-sm">
-      {providers.map((p) => (
-        <button key={p} onClick={() => signInWith(p)} className="btn-accent capitalize">
-          Continue with {p}
+    <div>
+      {providers.map((provider) => (
+        <button key={provider} onClick={() => login(provider)}>
+          Sign in with {provider}
         </button>
       ))}
     </div>
-  )
+  );
 }

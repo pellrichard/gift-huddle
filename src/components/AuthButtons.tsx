@@ -1,26 +1,36 @@
-'use client'
-import { supabase } from '@/lib/supabaseClient'
+'use client';
+import { supabase } from '@/lib/supabase/browser';
 
-type Provider = 'google' | 'apple' | 'facebook'
+type Provider = 'google' | 'apple' | 'facebook';
 const providers: { id: Provider; label: string }[] = [
-  { id: 'google', label: 'Continue with Google' },
-  { id: 'apple', label: 'Continue with Apple' },
-  { id: 'facebook', label: 'Continue with Facebook' },
-]
+  { id: 'google', label: 'Google' },
+  { id: 'facebook', label: 'Facebook' }
+];
 
 export default function AuthButtons() {
-  async function signInWith(provider: Provider) {
-    const redirectTo = `${window.location.origin}/auth/callback`
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })
-    if (error) alert(error.message)
-  }
+  const login = async (provider: Provider) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: 'https://www.gift-huddle.com/auth/oauth',
+        ...( { flowType: 'pkce' } as { flowType: 'pkce' } )
+      }
+    });
+
+    if (error) {
+      console.error('OAuth login error:', error.message);
+    } else if (data?.url) {
+      window.location.href = data.url;
+    }
+  };
+
   return (
-    <div className="grid gap-3 w-full max-w-sm">
-      {providers.map(p => (
-        <button key={p.id} onClick={() => signInWith(p.id)} className="btn-accent">
-          {p.label}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {providers.map(({ id, label }) => (
+        <button key={id} onClick={() => login(id)}>
+          Continue with {label}
         </button>
       ))}
     </div>
-  )
+  );
 }
