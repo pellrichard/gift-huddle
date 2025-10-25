@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 export async function GET(request: Request) {
-  const cookieStore = await getCookies(); // ✅ awaited for older Next.js compatibility
+  const cookieStore = await getCookies();
+  const res = NextResponse.redirect(new URL('/account', request.url));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,23 +14,26 @@ export async function GET(request: Request) {
         get(name) {
           return cookieStore.get(name)?.value;
         },
-        set() {
-          // no-op in route handlers
+        set(name, value, options) {
+          res.cookies.set({ name, value, ...options });
         },
-        remove() {
-          // no-op in route handlers
+        remove(name, options) {
+          res.cookies.set({ name, value: '', ...options });
         }
       }
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
   if (!session) {
     return NextResponse.redirect(new URL('/login?error=session', request.url));
   }
 
   const { user } = session;
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -70,5 +74,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL('/account', request.url));
+  return res;
 }
