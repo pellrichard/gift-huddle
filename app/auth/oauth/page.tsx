@@ -11,31 +11,30 @@ export default function AuthCallback() {
     const code = query.get('code');
 
     if (!code) {
-      console.error('[OAuth] Missing code in query.');
+      console.error('[OAuth] Missing code');
       router.replace('/login?error=missing_code');
       return;
     }
 
-    console.log('[OAuth] Found code:', code);
-
     supabase.auth.exchangeCodeForSession(code).then(async ({ error }) => {
       if (error) {
-        console.error('[OAuth] exchangeCodeForSession failed:', error.message);
-        router.replace('/login?error=auth_exchange');
-      } else {
-        console.log('[OAuth] Exchange succeeded. Checking session...');
-        const { data: sessionData } = await supabase.auth.getSession();
+        console.error('[OAuth] exchange failed:', error.message);
+        router.replace('/login?error=exchange_fail');
+        return;
+      }
 
-        if (sessionData?.session) {
-          console.log('[OAuth] Session active. Redirecting to /account.');
-          router.replace('/account');
-        } else {
-          console.warn('[OAuth] Session missing after exchange. Redirecting to login.');
-          router.replace('/login?error=session_missing');
-        }
+      // Wait and manually confirm session is available
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
+
+      if (session) {
+        console.log('[OAuth] Session established:', session);
+        router.replace('/account');
+      } else {
+        console.warn('[OAuth] Session still missing. Stay on page.');
       }
     });
   }, [router]);
 
-  return <p>Finishing sign-in... please wait</p>;
+  return <p>Signing you in securely... please wait</p>;
 }
