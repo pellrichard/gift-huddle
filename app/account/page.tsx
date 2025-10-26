@@ -1,101 +1,64 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
-import type { Session } from '@supabase/supabase-js';
+
+'use client'
+
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/browser'
+import EditProfileModal from '@/components/EditProfileModal'
+import type { Profile } from '@/types'
 
 export default function AccountPage() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-    const syncProfile = async () => {
-      const { data: sessionData, error } = await supabase.auth.getSession();
-      if (error || !sessionData.session) {
-        console.warn('No session found');
-        return setLoading(false);
-      }
+    const fetchProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-      const session = sessionData.session;
-      setSession(session);
+      if (!user) return
 
-      const user = session.user;
-      const email = user.email!;
-      const fullName = user.user_metadata.full_name || user.user_metadata.name;
-      const avatarUrl = user.user_metadata.avatar_url || user.user_metadata.picture;
-      const provider = user.app_metadata.provider;
-
-      // Insert or update profile
-      const { data: profile, error: upsertError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email,
-          full_name: fullName,
-          avatar_url: avatarUrl,
-          provider,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
-        .select()
-        .single();
+        .select('*')
+        .eq('id', user.id)
+        .single()
 
-      if (upsertError) {
-        console.error('[Account] Profile upsert error:', upsertError);
-        return;
+      if (error) {
+        console.error('[Account] Failed to fetch profile', error)
+        return
       }
 
-      // Check if missing fields
-      if (!profile.date_of_birth) {
-        setShowEditModal(true);
-      }
+      setProfile(data)
+      if (!data.dob || !data.currency) setShowModal(true)
+    }
 
-      if (!profile.currency) {
-        try {
-          const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-          const region = locale.split('-')[1] || 'US';
-          const { data: fx } = await supabase
-            .from('fx_rates')
-            .select('currency')
-            .eq('country_code', region)
-            .maybeSingle();
+    fetchProfile()
+  }, [])
 
-          if (fx?.currency) {
-            await supabase
-              .from('profiles')
-              .update({ currency: fx.currency })
-              .eq('id', user.id);
-          }
-        } catch {
-          console.warn('Could not set default currency');
-        }
-      }
-
-      setLoading(false);
-    };
-
-    syncProfile();
-  }, [supabase]);
-
-  if (loading) {
-    return <main className="p-4 text-gray-500">Loading session...</main>;
-  }
+  const showProfileWarning = profile && (!profile.dob || !profile.currency)
 
   return (
-    <main className="p-4">
+    <div className="p-8">
       <h1 className="text-xl font-bold mb-4">Account</h1>
-      {showEditModal && (
-        <div className="p-4 bg-yellow-100 border rounded shadow">
-          ⚠️ Please complete your profile (Date of Birth missing)
-        </div>
+
+      {showProfileWarning && (
+        <p className="text-yellow-600 font-medium mb-4">
+          ⚠️ Please complete your profile (Date of Birth or Currency missing)
+        </p>
       )}
-      <pre className="bg-gray-100 text-sm p-4 rounded mt-4">
-        {JSON.stringify(session, null, 2)}
-      </pre>
-    </main>
-  );
+
+      {profile && (
+        <EditProfileModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          initialProfile={profile}
+          onSave={(updatedProfile: Profile) => {
+            setProfile(updatedProfile)
+            setShowModal(false)
+          }}
+        />
+      )}
+    </div>
+  )
 }
