@@ -8,11 +8,9 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const next = url.searchParams.get("next") || "/account";
 
-  // Prepare a Response we can attach Set-Cookie headers to
   const response = new NextResponse(null, { status: 302 });
   response.headers.set("Location", next);
 
-  // Build a cookie adapter (so Supabase can read+write auth cookies)
   const cookieAdapter = buildCookieAdapter(request.headers.get("cookie"), response);
 
   const supabase = createServerClient(
@@ -22,19 +20,14 @@ export async function GET(request: Request) {
   );
 
   const code = url.searchParams.get("code") || "";
-  if (!code) {
-    // No code? Just bounce.
-    return response;
-  }
+  if (!code) return response;
 
   try {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      // Still redirect, but back to login with an error hint
       response.headers.set("Location", `/login?error=${encodeURIComponent(error.message)}`);
     }
   } catch {
-    // Non-fatal: redirect back to login
     response.headers.set("Location", `/login?error=callback-failed`);
   }
 

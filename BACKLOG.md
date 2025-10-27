@@ -70,3 +70,10 @@
 
 - Typing: replace `v: any` in `setField` with generic `<K extends keyof ProfileData>(k: K, v: ProfileData[K])` to satisfy no-explicit-any.\n\n### 2025-10-14
 - Force-overwrite `app/auth/callback/route.ts` with a minimal generated-types-only implementation and explicit `upsert<ProfilesInsert>` generic to avoid `never` payload typing.
+
+### 2025-10-27
+- **Completed:** Server-side OAuth callback at `/auth/callback` (fixes header state w/o refresh). Login page now uses server route and shows branded provider buttons. Google flow forces chooser (`prompt=select_account consent`, `max_age=0`). Header/Footer switched to public PNG path; added logo render script.
+- **Fixed:** Header displaying Login after OAuth, Google auto-login skipping chooser, 404 for PNG (missing /public path).
+- **Outstanding:** Generate and commit `public/assets-bundle/png/gift-huddle_1024x320.png` via `node scripts/render-logo.js`; optional: remove unused `app/components/Header.tsx`.
+- **Next:** Wire Account page to real profile/events data; mount EventsSection; profile edit server action; add auth listener for live refresh (optional).
+- **Release:** Patch zip includes updated routes, login UI, assets, and script.
