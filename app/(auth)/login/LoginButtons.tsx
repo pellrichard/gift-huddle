@@ -1,18 +1,9 @@
 'use client';
 import React from "react";
-import { supabase } from '@/lib/supabase/browser';
-
-type Provider = "google" | "facebook" | "apple";
 
 export default function LoginButtons() {
-  const handleLogin = async (provider: Provider) => {
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: 'https://www.gift-huddle.com/auth/oauth',
-        ...( { flowType: 'pkce' } as { flowType: 'pkce' } )
-      }
-    });
+  const handleLogin = (provider: "google" | "facebook") => {
+    window.location.href = `/auth/signin?provider=${provider}`;
   };
 
   return (
