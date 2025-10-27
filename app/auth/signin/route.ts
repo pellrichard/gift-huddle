@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider as "google" | "facebook",
-    options: { redirectTo, queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined },
+    options: { redirectTo, queryParams: provider === 'google' ? { prompt: 'select_account consent', max_age: '0' } : undefined },
   });
 
   if (error || !data?.url) {
