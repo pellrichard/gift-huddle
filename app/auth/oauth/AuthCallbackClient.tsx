@@ -1,43 +1,43 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/browser';
+'use client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/browser'
 
 export default function AuthCallbackClient() {
-  const router = useRouter();
-  const [hydrated, setHydrated] = useState(false);
+  const router = useRouter()
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    setHydrated(true);
-  }, []);
+    setHydrated(true)
+  }, [])
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated) return
 
-    const query = new URLSearchParams(window.location.search);
-    const code = query.get('code');
-    const storedVerifier = localStorage.getItem('sb-code-verifier');
+    const query = new URLSearchParams(window.location.search)
+    const code = query.get('code')
+    const storedVerifier = localStorage.getItem('sb-code-verifier')
 
-    console.log('[PKCE] OAuth code from URL:', code);
-    console.log('[PKCE] LocalStorage code_verifier:', storedVerifier);
-    console.log('[PKCE] document.cookie:', document.cookie);
+    console.log('[PKCE] OAuth code from URL:', code)
+    console.log('[PKCE] LocalStorage code_verifier:', storedVerifier)
+    console.log('[PKCE] document.cookie:', document.cookie)
 
     if (!code) {
-      console.error('[PKCE] Missing OAuth code');
-      router.replace('/login?error=missing_code');
-      return;
+      console.error('[PKCE] Missing OAuth code')
+      router.replace('/login?error=missing_code')
+      return
     }
 
     supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
       if (error) {
-        console.error('[PKCE] exchangeCodeForSession error:', error.message);
-        router.replace('/login?error=auth');
+        console.error('[PKCE] exchangeCodeForSession error:', error.message)
+        router.replace('/login?error=auth')
       } else {
-        console.log('[PKCE] Session successfully exchanged:', data);
-        router.replace('/account');
+        console.log('[PKCE] Session successfully exchanged:', data)
+        router.replace('/account')
       }
-    });
-  }, [hydrated, router]);
+    })
+  }, [hydrated, router])
 
-  return <p>Verifying login via PKCE... (waiting for hydration)</p>;
+  return <p>Verifying login via PKCE... (waiting for hydration)</p>
 }

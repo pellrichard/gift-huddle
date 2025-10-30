@@ -1,11 +1,11 @@
-'use client';
-import { supabase } from '@/lib/supabase/browser';
+'use client'
+import { supabase } from '@/lib/supabase/browser'
 
-type Provider = 'google' | 'apple' | 'facebook';
+type Provider = 'google' | 'apple' | 'facebook'
 const providers: { id: Provider; label: string }[] = [
   { id: 'google', label: 'Google' },
-  { id: 'facebook', label: 'Facebook' }
-];
+  { id: 'facebook', label: 'Facebook' },
+]
 
 export default function AuthButtons() {
   const login = async (provider: Provider) => {
@@ -13,16 +13,16 @@ export default function AuthButtons() {
       provider,
       options: {
         redirectTo: 'https://www.gift-huddle.com/auth/oauth',
-        ...( { flowType: 'pkce' } as { flowType: 'pkce' } )
-      }
-    });
+        ...({ flowType: 'pkce' } as { flowType: 'pkce' }),
+      },
+    })
 
     if (error) {
-      console.error('OAuth login error:', error.message);
+      console.error('OAuth login error:', error.message)
     } else if (data?.url) {
-      window.location.href = data.url;
+      window.location.href = data.url
     }
-  };
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -32,5 +32,5 @@ export default function AuthButtons() {
         </button>
       ))}
     </div>
-  );
+  )
 }

@@ -7,12 +7,13 @@ This patch migrates the client-side Supabase instance to **`@supabase/ssr`**.
 - Replaces `createClientComponentClient` from `@supabase/auth-helpers-nextjs`
   with `createBrowserClient` from `@supabase/ssr`.
 - Provides two files to cover existing imports:
-  - `src/lib/supabase/client.ts`  (used by `@/lib/supabase/client`)
-  - `lib/supabase/browser.ts`      (if any code imports this path)
+  - `src/lib/supabase/client.ts` (used by `@/lib/supabase/client`)
+  - `lib/supabase/browser.ts` (if any code imports this path)
 
 ## Apply
 
 Copy these files into your repo at the same paths:
+
 - `src/lib/supabase/client.ts`
 - `lib/supabase/browser.ts`
 

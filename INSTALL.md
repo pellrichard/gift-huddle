@@ -1,10 +1,12 @@
 # Gift Huddle — Changes Only (apply to `main`)
 
 This bundle contains:
+
 - `patches/*.diff` — the exact diffs to fix your current ESLint/TS build failures.
 - `src/components/ui/SmartImage.tsx` — updated helper (requires `alt`) fixing the `jsx-a11y/alt-text` warning.
 
 ## Apply diffs directly on `main`
+
 ```bash
 git checkout main
 git pull
@@ -25,5 +27,6 @@ npm run build
 ```
 
 ### If any patch fails (context drift)
+
 - Open the failing `.diff` and manually apply the tiny edit (imports or one-liners).
 - Then stage/commit as above.

@@ -4,20 +4,35 @@
 
 /* Brand tokens */
 :root {
-  --gh-accent: #EC4899;
+  --gh-accent: #ec4899;
   --gh-accent-fg: #ffffff;
-  --gh-accent-soft: #FBCFE8;
-  --gh-accent-hover: #DB2777;
-  --gh-accent-ring: #FDA4AF;
+  --gh-accent-soft: #fbcfe8;
+  --gh-accent-hover: #db2777;
+  --gh-accent-ring: #fda4af;
 
   --gh-ink: #111827;
   --gh-bg: #ffffff;
-  --gh-muted: #6B7280;
+  --gh-muted: #6b7280;
 }
 
 /* Base typography */
-html, body { height: 100%; }
-body { background: var(--gh-bg); color: var(--gh-ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
+html,
+body {
+  height: 100%;
+}
+body {
+  background: var(--gh-bg);
+  color: var(--gh-ink);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Inter,
+    Arial,
+    sans-serif;
+}
 
 /* Utility examples */
 .btn-accent {
@@ -25,7 +40,16 @@ body { background: var(--gh-bg); color: var(--gh-ink); font-family: ui-sans-seri
   background: var(--gh-accent);
   color: var(--gh-accent-fg);
 }
-.btn-accent:hover { background: var(--gh-accent-hover); }
-.btn-accent:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--gh-accent-ring); }
-.link-accent { color: var(--gh-accent); }
-.link-accent:hover { color: var(--gh-accent-hover); }
+.btn-accent:hover {
+  background: var(--gh-accent-hover);
+}
+.btn-accent:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--gh-accent-ring);
+}
+.link-accent {
+  color: var(--gh-accent);
+}
+.link-accent:hover {
+  color: var(--gh-accent-hover);
+}

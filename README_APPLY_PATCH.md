@@ -1,6 +1,7 @@
 # Gift Huddle Login Fix – Patch
 
 This patch replaces **app/auth/callback/route.ts** so that:
+
 - Supabase SSR writes cookies via a **writable adapter** (no manual cookie plumbing).
 - The callback returns a **200 landing page** with an instant client-side navigate,
   avoiding Set-Cookie loss on 302 redirects.
@@ -8,7 +9,6 @@ This patch replaces **app/auth/callback/route.ts** so that:
 ## Apply
 
 1. Copy the file in this zip to your repo at the same path:
-
    - `app/auth/callback/route.ts`
 
 2. Commit and deploy on Vercel.

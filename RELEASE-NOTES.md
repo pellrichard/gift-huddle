@@ -1,6 +1,7 @@
 # Release Notes – 2025-10-02
 
 ## Completed
+
 - **Supabase Client**: Split into RSC/Actions/Route variants, typed with `Database`, no illegal cookie writes.
 - **Lint Fixes**: Removed `any`, replaced with safe type guards; added ESLint rules to forbid legacy helper imports.
 - **Auth Flow**:
@@ -13,6 +14,7 @@
   - Layout width aligned to 73rem.
 
 ## Outstanding
+
 - [ ] Verify `/account` doesn’t loop back to `/login` after successful OAuth.
 - [ ] Configure `NEXT_PUBLIC_AUTH_*` env vars in Vercel for all desired providers.
 - [ ] Confirm Supabase dashboard provider configs and Redirect URLs.
@@ -21,6 +23,7 @@
 ---
 
 ## Next Steps
+
 1. Deploy with correct env vars and provider configs.
 2. Validate login/logout flows in production (`/login`, `/account`, `/auth/callback`).
 3. Use `/api/debug/*` endpoints to confirm server sees cookies + sessions.

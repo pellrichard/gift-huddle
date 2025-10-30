@@ -5,4 +5,5 @@
 - Dashboard & Edit Profile Modal updated to accept and render labels, with fallback to plain codes.
 
 Files changed:
+
 - (none)

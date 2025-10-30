@@ -5,4 +5,3 @@
 - Onboarding form → `POST /onboarding/update` (UPSERT) with error surfacing.
 - Account gate + Onboarding edit bypass + Manage preferences link.
 - Error boundaries previously added (`app/error.tsx`, `app/global-error.tsx`).
-

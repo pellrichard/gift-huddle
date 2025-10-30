@@ -4,6 +4,7 @@ This bundle contains ready-to-replace files that clear our current ESLint/TS bui
 and most warnings reported by Vercel.
 
 ## What changed
+
 - Replaced `<img>` with `next/image` (Footer, Header, Recommendations, AccountPage).
 - Removed unused `ProfileSummary` import in `AccountPage`.
 - Fixed hooks dependency warnings in `EventsSection` (`useCallback`, include `fetchEvents`, `supabase.auth`, and `today`).
@@ -12,6 +13,7 @@ and most warnings reported by Vercel.
 - Added `SmartImage.tsx` (enforces `alt` prop).
 
 ## How to install (commit directly to `main`)
+
 1. Unzip into the repo root and overwrite the existing files:
    - `app/components/Footer.tsx`
    - `app/components/Header.tsx`
@@ -23,6 +25,7 @@ and most warnings reported by Vercel.
    - `src/components/ui/SmartImage.tsx`
 
 2. Commit and push:
+
    ```powershell
    git add -A
    git commit -m "Replace components with fixed versions (ESLint/TS cleanup)"
@@ -36,6 +39,7 @@ and most warnings reported by Vercel.
    ```
 
 ## Sanity checks
+
 - Search for any leftover `<img`:
   ```powershell
   Select-String -Path .\app\components\Footer.tsx, .\app\components\Header.tsx, .\app\components\Recommendations.tsx, .\src\components\account\AccountPage.tsx -Pattern "<img"
@@ -50,12 +54,16 @@ and most warnings reported by Vercel.
   ```
 
 ## Supabase client note
+
 `EventsSection.tsx` and `ProfileSummary.tsx` include a minimal `createClient` placeholder. If we already have a project-standard client (e.g., `@/lib/supabase/client` or similar), **switch to that import** and remove the local `createClient` lines. Example:
+
 ```ts
 // import { createClient } from "@supabase/supabase-js"; // remove
-import { supabase } from "@/lib/supabase/client"; // or our actual path
+import { supabase } from '@/lib/supabase/client' // or our actual path
 ```
+
 Then update calls from `createClient(...).from(...)` accordingly if needed.
 
 ## Rollback
+
 Backups recommended before overwrite. If needed, `git checkout -- <path>` to restore any specific file from HEAD.

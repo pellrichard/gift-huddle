@@ -1,6 +1,6 @@
 # Gift Huddle – Backlog
 
-This file tracks outstanding items and follow-ups that are not yet resolved. 
+This file tracks outstanding items and follow-ups that are not yet resolved.
 It complements the changelog in `README.md`.
 
 ## Outstanding Items
@@ -12,4 +12,5 @@ It complements the changelog in `README.md`.
 - Consider additional logo variants (monochrome, dark mode, high-contrast accessibility).
 
 ---
-*Maintained alongside `/documentation/README.md` v0.6.0 — unreleased section.*
+
+_Maintained alongside `/documentation/README.md` v0.6.0 — unreleased section._

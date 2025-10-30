@@ -6,25 +6,31 @@
 // Output:
 //   public/assets-bundle/png/gift-huddle_1024x320.png
 
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
+const fs = require('fs')
+const path = require('path')
+const sharp = require('sharp')
 
-const svgPath = path.resolve(__dirname, '..', 'assets-bundle', 'svg', 'Gift-Huddle.svg');
-const outDir = path.resolve(__dirname, '..', 'public', 'assets-bundle', 'png');
-const outPath = path.join(outDir, 'gift-huddle_1024x320.png');
+const svgPath = path.resolve(
+  __dirname,
+  '..',
+  'assets-bundle',
+  'svg',
+  'Gift-Huddle.svg'
+)
+const outDir = path.resolve(__dirname, '..', 'public', 'assets-bundle', 'png')
+const outPath = path.join(outDir, 'gift-huddle_1024x320.png')
 
-(async () => {
+;(async () => {
   try {
-    const svg = fs.readFileSync(svgPath);
-    fs.mkdirSync(outDir, { recursive: true });
+    const svg = fs.readFileSync(svgPath)
+    fs.mkdirSync(outDir, { recursive: true })
     await sharp(svg, { density: 300 })
       .resize(1024, 320, { fit: 'contain', withoutEnlargement: true })
       .png({ compressionLevel: 9 })
-      .toFile(outPath);
-    console.log('Wrote', outPath);
+      .toFile(outPath)
+    console.log('Wrote', outPath)
   } catch (err) {
-    console.error('Failed to render logo:', err);
-    process.exit(1);
+    console.error('Failed to render logo:', err)
+    process.exit(1)
   }
-})();
+})()

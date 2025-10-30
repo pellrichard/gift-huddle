@@ -3,9 +3,9 @@
 Next.js 15 makes `cookies()` async. We updated the Supabase server client factory:
 
 ```ts
-import { cookies } from "next/headers";
+import { cookies } from 'next/headers'
 export async function createClient() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies()
   // ...
 }
 ```

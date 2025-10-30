@@ -21,4 +21,3 @@
 - Integrate event creation button with Supabase insert query
 - Add proper error handling and edge case coverage in all async functions
 - QA and verify layout responsiveness on mobile
-

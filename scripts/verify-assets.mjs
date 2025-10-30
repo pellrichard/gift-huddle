@@ -1,7 +1,7 @@
 // scripts/verify-assets.mjs
-import { readFileSync, existsSync } from 'node:fs';
-import path from 'node:path';
-import process from 'node:process';
+import { readFileSync, existsSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
 
 const required = [
   '/public/favicon.ico',
@@ -11,18 +11,18 @@ const required = [
   '/app/layout.tsx',
   '/app/page.tsx',
   '/app/components/Header.tsx',
-];
+]
 
-const repo = process.cwd();
-let missing = [];
+const repo = process.cwd()
+let missing = []
 for (const p of required) {
-  const full = path.join(repo, p);
-  if (!existsSync(full)) missing.push(p);
+  const full = path.join(repo, p)
+  if (!existsSync(full)) missing.push(p)
 }
 
 if (missing.length) {
-  console.error('❌ Missing required files:\n' + missing.join('\n'));
-  process.exit(1);
+  console.error('❌ Missing required files:\n' + missing.join('\n'))
+  process.exit(1)
 } else {
-  console.log('✅ Asset verification passed.');
+  console.log('✅ Asset verification passed.')
 }

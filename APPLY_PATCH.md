@@ -17,6 +17,7 @@
 6. If the patch includes any `README_*` instructions (e.g. Supabase/Vercel settings), follow them now.
 
 ## Notes
+
 - We do **not** use branches during beta — patches are applied on the active branch.
 - If we change the way we work in chat, we will confirm whether it’s **project-wide**
   (then update `WORKING_RULES.md`) or **chat-only** (temporary).

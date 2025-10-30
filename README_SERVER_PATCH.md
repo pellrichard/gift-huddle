@@ -21,6 +21,7 @@ Then commit and run a build.
 ## Notes
 
 - Make sure `@supabase/ssr` is installed (it already should be, but if not):
+
   ```bash
   npm i @supabase/ssr
   ```

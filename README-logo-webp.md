@@ -3,10 +3,12 @@
 This patch replaces the header logo with a **trimmed, transparent WebP** version of the approved logo.
 
 ## Files
+
 - `public/images/brand/logo.webp` — high quality, trimmed, no background
 - `src/components/Header.tsx` — updated to use `/images/brand/logo.webp`
 
 ## Install
+
 Unzip into your repo root and commit:
 
 ```bash

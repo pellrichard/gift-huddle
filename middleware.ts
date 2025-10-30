@@ -1,8 +1,8 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  const res = NextResponse.next()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,29 +10,29 @@ export async function middleware(req: NextRequest) {
     {
       cookies: {
         get(name) {
-          return req.cookies.get(name)?.value;
+          return req.cookies.get(name)?.value
         },
         set() {
           // no-op in middleware
         },
         remove() {
           // no-op in middleware
-        }
-      }
+        },
+      },
     }
-  );
+  )
 
   const {
-    data: { session }
-  } = await supabase.auth.getSession();
+    data: { session },
+  } = await supabase.auth.getSession()
 
   if (!session && req.nextUrl.pathname.startsWith('/account')) {
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  return res;
+  return res
 }
 
 export const config = {
-  matcher: ['/account']
-};
+  matcher: ['/account'],
+}

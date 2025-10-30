@@ -1,6 +1,7 @@
 # End of Day Summary (2025-10-03)
 
 **What we delivered today**
+
 - Built the Edit Profile modal:
   - Checkbox list for notification channels.
   - Coloured chip selection for interests and shops, with unselected items reordered.
@@ -15,10 +16,12 @@
 - Provided Supabase SQL starter notes for `profiles`, `friends`, `event_types`, and `events` tables, including RLS policies.
 
 **Fixes & improvements**
+
 - Addressed ESLint issues: no-explicit-any, unused vars, etc.
 - Worked around Supabase’s `never` typing on `.insert` and `.upsert` without resorting to `any` or `@ts-expect-error`.
 
 **Next steps for tomorrow**
+
 - Generate Supabase types and use a fully typed client to remove temporary shims.
 - Wire Add Event modal to live `event_types` and `friends` data from Supabase.
 - Implement avatar upload to Supabase Storage and surface via signed/public URL.

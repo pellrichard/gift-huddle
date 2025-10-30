@@ -1,6 +1,7 @@
 # Production Diagnostics
 
 This patch adds:
+
 - `app/api/health` – checks for missing env vars.
 - `app/global-error.tsx` – shows the Next.js error digest on screen and allows retry.
 - `src/lib/utils/env.ts` – required env list + checker (works with `@` -> `./src` alias).

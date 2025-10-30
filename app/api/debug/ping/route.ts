@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs'
 
 export async function GET() {
-  if (process.env.NODE_ENV === 'production') { return new Response('Not available in production', { status: 404 }); }
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not available in production', { status: 404 })
+  }
 
   return NextResponse.json({
     ok: true,
@@ -11,5 +13,5 @@ export async function GET() {
     env: {
       node: process.version,
     },
-  });
+  })
 }

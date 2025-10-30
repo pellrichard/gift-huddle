@@ -28,7 +28,7 @@ export default [
       },
     },
     plugins: {
-      '@next/next': nextPlugin,          // ✅ object map, not array
+      '@next/next': nextPlugin, // ✅ object map, not array
     },
     rules: {
       ...nextPlugin.configs['core-web-vitals'].rules, // pull just the rules

@@ -7,14 +7,15 @@ we will update this file so future sessions are consistent.
 
 ---
 
-## Patch Delivery
+## Delivery
 
-- **Always deliver patch zips**, never the whole repo.
-- Patch zips **preserve folder paths** so you can unzip directly into repo root.
-- Filename is always **`gift-huddle-patch.zip`**.
-- **Every patch includes the latest `BACKLOG.md`** (even if unrelated).
+- **Gemini**: Edits files directly. No patches or zips are required.
+- **ChatGPT**: Delivers patch zips.
+  - Patch zips **preserve folder paths** so you can unzip directly into repo root.
+  - Filename is always **`gift-huddle-patch.zip`**.
+  - **Every patch includes the latest `BACKLOG.md`** (even if unrelated).
 
-### Apply a patch (copy & paste friendly)
+### Applying a patch from ChatGPT
 
 1. Download `gift-huddle-patch.zip`.
 2. Unzip **into the repo root** (it contains correct folder paths).
@@ -39,7 +40,7 @@ we will update this file so future sessions are consistent.
 
 - **⚠️ Outstanding** only contains active tasks (deduped).
 - **✅ Completed** is grouped by **date headers** (reverse chronological).
-- Every day has a *Completed* date header, even if it’s “- (no items yet)”.
+- Every day has a _Completed_ date header, even if it’s “- (no items yet)”.
 
 ---
 
@@ -53,7 +54,8 @@ we will update this file so future sessions are consistent.
 
 ## Collaboration Notes
 
-- User prefers **copy–paste patches** (zip) to drop into repo directly.
+- **Gemini**: Edits files directly.
+- **ChatGPT**: Delivers copy–paste patches (zip) to drop into repo directly.
 - No extra manifest/versioning needed — trust-based patches.
 - GitHub + Vercel logs provide build/commit history; `BACKLOG.md` focuses on tasks + notes.
 - ChatGPT may keep a **🤖 Context** section in `BACKLOG.md` to track these working rules.
@@ -63,8 +65,9 @@ we will update this file so future sessions are consistent.
 ## Changing How We Work
 
 If we propose a process change during a chat, we will **explicitly confirm** whether it is:
+
 - **Project-wide** (update this file), or
 - **Chat-only** (temporary; do not update this file).
 
-Once confirmed as project-wide, we will **update this file in the next patch** to keep
+Once confirmed as project-wide, we will **update this file** to keep
 consistency across future sessions.

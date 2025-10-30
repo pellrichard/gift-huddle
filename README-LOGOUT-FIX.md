@@ -4,6 +4,7 @@ This patch ensures logout reliably destroys Supabase cookies and the OAuth callb
 the new server client without legacy parameters.
 
 ## Changes
+
 - `app/logout/route.ts`:
   - Calls `supabase.auth.signOut()`.
   - Aggressively clears any `sb-*` cookies via `cookies().set(..., maxAge: 0)`.
@@ -15,6 +16,7 @@ the new server client without legacy parameters.
   - Validates `next` to prevent open redirects; defaults to `/account`.
 
 ## Deploy checklist
+
 - Rebuild & deploy, then test:
   1. Login → view /account.
   2. Logout → redirected to `/`, cookies cleared.

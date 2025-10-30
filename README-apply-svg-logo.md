@@ -3,10 +3,12 @@
 This bundle provides a clean SVG of the approved Gift Huddle logo and updates the header to use it.
 
 ## Files
-- `public/logo.svg`            — vector, transparent background
-- `src/components/Header.tsx`  — points the logo to `/logo.svg`
+
+- `public/logo.svg` — vector, transparent background
+- `src/components/Header.tsx` — points the logo to `/logo.svg`
 
 ## Install
+
 Unzip into your repo root and commit.
 
 ```bash

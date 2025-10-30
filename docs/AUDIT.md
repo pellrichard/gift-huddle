@@ -3,6 +3,7 @@
 _Date: 2025-10-21_
 
 ## Overview
+
 - **Repo root:** `/mnt/data/repo/gift-huddle-main`
 - **Files:** 304 total (text: 278, binary: 26)
 - **Approx. lines of code:** 17735
@@ -27,6 +28,7 @@ _Date: 2025-10-21_
 |.js|5|
 
 ### package.json
+
 - **name:** `gift-huddle`
 - **version:** `0.1.2`
 
@@ -271,6 +273,7 @@ window.svg
 ```
 
 ### TypeScript Config
+
 - `strict`: `True`
 - `skipLibCheck`: `True`
 - `target`: `ES2021`
@@ -280,22 +283,27 @@ window.svg
 ## Findings
 
 ### 1. [LOW] TypeScript 'any' usage
+
 - **File:** `supabase/functions/fx_updater/index.ts:54`
 - **Why:** May violate @typescript-eslint/no-explicit-any.
 - **Fix:** Replace with specific type or unknown.
 
 ### 2. [LOW] Empty block statement detected
+
 - **File:** `supabase/functions/fx_updater/index.ts:108`
 - **Why:** ESLint no-empty likely triggers here.
 - **Fix:** Add a comment or remove the block.
 
 ## Auth & Routing
+
 Detected auth-related routes/pages:
+
 - `app/auth/callback/route.ts`
 - `app/login/page.tsx`
 - `app/account/page.tsx`
 
 **Supabase-related files (heuristic):**
+
 - `README-PKCE.md`
 - `README-REMOVE-FLOWTYPE.md`
 - `README_CLIENT_PATCH.md`
@@ -326,22 +334,25 @@ Detected auth-related routes/pages:
 - `supabase/functions/fx_updater/index.ts`
 
 ## Assets (logos/favicons)
+
 - `app/favicon.ico`
 - `assets-bundle/ico/favicon.ico`
 - `assets-bundle/svg/Gift-Huddle.svg`
 
 ## TODO / FIXME Mentions (sample)
-|file|tag|
-|---|---|
-|AUDIT.md|TODO|
-|AUDIT.md|FIXME|
-|src/components/account/ProfileBanner.tsx|TODO|
+
+| file                                     | tag   |
+| ---------------------------------------- | ----- |
+| AUDIT.md                                 | TODO  |
+| AUDIT.md                                 | FIXME |
+| src/components/account/ProfileBanner.tsx | TODO  |
 
 ## Action Plan
-1) Remove control characters flagged above.
-2) Ensure ESLint with `next/core-web-vitals` rules is configured.
-3) Consolidate duplicate `next/navigation` imports per file.
-4) Remove or comment empty blocks to satisfy `no-empty`.
-5) Replace `any` with specific types where possible.
-6) Verify Supabase SSR cookie adapter & OAuth routes align with current Next.js 15 App Router.
-7) Run `npm run build` and address remaining TS/ESLint diagnostics by line.
+
+1. Remove control characters flagged above.
+2. Ensure ESLint with `next/core-web-vitals` rules is configured.
+3. Consolidate duplicate `next/navigation` imports per file.
+4. Remove or comment empty blocks to satisfy `no-empty`.
+5. Replace `any` with specific types where possible.
+6. Verify Supabase SSR cookie adapter & OAuth routes align with current Next.js 15 App Router.
+7. Run `npm run build` and address remaining TS/ESLint diagnostics by line.

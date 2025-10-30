@@ -4,16 +4,16 @@ This patch switches **middleware.ts** to use `@supabase/ssr`, giving it a
 **writable cookie adapter** so session refreshes write stable first‑party cookies.
 
 ## What it does
+
 - Replaces `createMiddlewareClient` from `@supabase/auth-helpers-nextjs`
   with `createServerClient` from `@supabase/ssr`.
 - Uses a request/response cookie adapter so cookies actually persist.
-- Includes a *light* guard: unauthenticated requests to `/account`
+- Includes a _light_ guard: unauthenticated requests to `/account`
   are redirected to `/login?next=/account`. (You can remove this section if you prefer.)
 
 ## Apply
 
 1. Copy the file in this zip to your repo at the same path:
-
    - `middleware.ts`
 
 2. Commit and deploy on Vercel.

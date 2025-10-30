@@ -9,7 +9,11 @@
             "paths": [
               {
                 "name": "@/lib/supabase/server",
-                "importNames": ["createServerSupabase", "createRouteHandlerSupabase", "createClient"],
+                "importNames": [
+                  "createServerSupabase",
+                  "createRouteHandlerSupabase",
+                  "createClient"
+                ],
                 "message": "Use the final API: createServerComponentClient, createServerActionClient, or createRouteHandlerClient."
               }
             ]

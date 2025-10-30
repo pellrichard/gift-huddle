@@ -1,17 +1,20 @@
 # Codemod update (v9)
 
 This update makes the codemod also strip arguments from:
+
 - `createRouteHandlerClient(...)`
 - `createServerComponentClient(...)`
 - `createServerActionClient(...)`
 
 ## Run via PowerShell (Windows 11)
+
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .	ools\codemod-supabase-helpers.ps1 -Root .
 ```
 
 ## Or run via Node (no ExecutionPolicy changes)
+
 ```bash
 node tools/codemod-supabase-helpers.js .
 ```

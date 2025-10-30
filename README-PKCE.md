@@ -1,5 +1,5 @@
-PKCE OAuth Flow Enabled
-=======================
+# PKCE OAuth Flow Enabled
+
 - Updated `/auth/signin` to request **PKCE** flow: `flowType: 'pkce'`.
 - PKCE guarantees the provider round-trip returns to your app with `?code=...` so our `/auth/callback` can exchange it for server cookies.
 - This aligns with `@supabase/ssr` and Next.js Route Handlers.

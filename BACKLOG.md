@@ -1,6 +1,7 @@
 ### 2025-10-04 – EOD Summary (Patch Auth Cookies & Branding)
 
 #### Completed
+
 - **OAuth login loop resolved**
   - Introduced `src/lib/auth/cookies.ts` compat adapter supporting both old and new Supabase SSR cookie APIs.
   - `/auth/signin` sets PKCE cookies before provider redirect.
@@ -16,6 +17,7 @@
   - Provider buttons now render crisp inline **SVG logos** for Google & Facebook.
 
 #### Backlog / Outstanding
+
 1. Homepage polish: replace minimal landing with full hero + marketing copy.
 2. Account page UX: show name/avatar, allow editing, show linked providers.
 3. Error handling: add user-facing messages for failed logins & provider errors.
@@ -24,6 +26,7 @@
 6. Email login (optional): fallback magic link/password option.
 
 #### Release Notes
+
 **Date:** 2025-10-04  
 **Version:** 0.1.x-patch-auth-cookies
 
@@ -33,6 +36,7 @@
 - Passed lint & build checks successfully.
 
 ### 2025-10-04
+
 - Audit patch: (2) confirmed no `flowType` in OAuth; (3) removed unused `@ts-expect-error`; (5) enforced CookieMethodsServer adapter (`getAll`/`setAll`); (7) ensured `/login` and `/` redirect authed users to `/account` and homepage CTA → `/login`.\n\n### 2025-10-05
 - EditProfileModal now invokes the `fx_updater` Supabase Edge Function on open **only in non-production** to refresh `fx_rates` during beta. Call is fire-and-forget and does not block the UI.
 
@@ -72,6 +76,7 @@
 - Force-overwrite `app/auth/callback/route.ts` with a minimal generated-types-only implementation and explicit `upsert<ProfilesInsert>` generic to avoid `never` payload typing.
 
 ### 2025-10-27
+
 - **Completed:** Server-side OAuth callback at `/auth/callback` (fixes header state w/o refresh). Login page now uses server route and shows branded provider buttons. Google flow forces chooser (`prompt=select_account consent`, `max_age=0`). Header/Footer switched to public PNG path; added logo render script.
 - **Fixed:** Header displaying Login after OAuth, Google auto-login skipping chooser, 404 for PNG (missing /public path).
 - **Outstanding:** Generate and commit `public/assets-bundle/png/gift-huddle_1024x320.png` via `node scripts/render-logo.js`; optional: remove unused `app/components/Header.tsx`.

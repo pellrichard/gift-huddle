@@ -6,6 +6,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'www.facebook.com' },
     ],
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

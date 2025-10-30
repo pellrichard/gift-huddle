@@ -1,47 +1,78 @@
 // Server Component
-import Link from "next/link";
-import Image from "next/image";
-import { createServerComponentClient } from "@/lib/supabase/server";
+import Link from 'next/link'
+import Image from 'next/image'
+import { createServerComponentClient } from '@/lib/supabase/server'
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs'
 
 export default async function HeaderBar() {
-  let userId: string | null = null;
+  let userId: string | null = null
 
   try {
-    const supabase = await createServerComponentClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    userId = user?.id ?? null;
+    const supabase = await createServerComponentClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    userId = user?.id ?? null
   } catch {
-    userId = null;
+    userId = null
   }
 
   return (
-    <header className="w-full border-b bg-white/80 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-        <Link href="/" className="inline-flex items-center gap-2" aria-label="Gift Huddle Home">
-          <Image src="/assets-bundle/png/gift-huddle_1024x320.png" width={140} height={40} alt="Gift Huddle" priority />
+    <header className='w-full border-b bg-white/80 backdrop-blur'>
+      <div className='mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4'>
+        <Link
+          href='/'
+          className='inline-flex items-center gap-2'
+          aria-label='Gift Huddle Home'
+        >
+          <Image
+            src='/assets-bundle/png/gift-huddle_1024x320.png'
+            width={140}
+            height={40}
+            alt='Gift Huddle'
+            priority
+          />
         </Link>
 
-        <nav className="text-sm flex items-center gap-5">
-          <Link href="/features" className="hover:underline">Features</Link>
-          <Link href="/how-it-works" className="hover:underline">How it works</Link>
-          <Link href="/contact" className="hover:underline">Contact</Link>
+        <nav className='text-sm flex items-center gap-5'>
+          <Link href='/features' className='hover:underline'>
+            Features
+          </Link>
+          <Link href='/how-it-works' className='hover:underline'>
+            How it works
+          </Link>
+          <Link href='/contact' className='hover:underline'>
+            Contact
+          </Link>
 
           {userId ? (
-            <div className="flex items-center gap-2">
-              <Link href="/account" className="rounded px-3 py-1 border hover:bg-gray-50">My account</Link>
-              <form action="/logout" method="post">
-                <button type="submit" className="rounded px-3 py-1 border hover:bg-gray-50">
+            <div className='flex items-center gap-2'>
+              <Link
+                href='/account'
+                className='rounded px-3 py-1 border hover:bg-gray-50'
+              >
+                My account
+              </Link>
+              <form action='/logout' method='post'>
+                <button
+                  type='submit'
+                  className='rounded px-3 py-1 border hover:bg-gray-50'
+                >
                   Log out
                 </button>
               </form>
             </div>
           ) : (
-            <Link href="/login" className="ml-2 rounded px-3 py-1 border hover:bg-gray-50">Log in</Link>
+            <Link
+              href='/login'
+              className='ml-2 rounded px-3 py-1 border hover:bg-gray-50'
+            >
+              Log in
+            </Link>
           )}
         </nav>
       </div>
     </header>
-  );
+  )
 }

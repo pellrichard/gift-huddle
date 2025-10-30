@@ -13,12 +13,12 @@ const config = {
           muted: '#6B7280',
           accentSoft: '#FBCFE8',
           accentHover: '#DB2777',
-          accentRing: '#FDA4AF'
-        }
-      }
-    }
+          accentRing: '#FDA4AF',
+        },
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 } satisfies Config
 
 export default config
