@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { Card, CardContent } from 'src/components/ui/card'
+import { Button } from 'src/components/ui/button'
 import { supabase } from '@/lib/supabase/browser'
 import type { User } from '@supabase/supabase-js'
 import { EditProfileModal } from './components/modals/EditProfileModal'
@@ -58,6 +59,7 @@ function useAccountPage() {
 
 function AccountPage() {
   const { user, profile, fetchUserData } = useAccountPage()
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const greeting = useMemo(() => {
     if (!user) return 'Welcome back!'
@@ -92,9 +94,18 @@ function AccountPage() {
               Here's a snapshot of your gifting world.
             </div>
           </div>
-          <EditProfileModal user={user} onSave={fetchUserData} />
+          <Button variant='secondary' onClick={() => setIsModalOpen(true)}>
+            Edit profile
+          </Button>
         </CardContent>
       </Card>
+
+      <EditProfileModal
+        user={user}
+        onSave={fetchUserData}
+        isOpen={isModalOpen}
+        setIsOpen={setIsModalOpen}
+      />
 
       <section className='mb-8'>
         <SectionHeader title='Upcoming events' />

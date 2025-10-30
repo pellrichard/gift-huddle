@@ -2,16 +2,16 @@
 import React from 'react'
 
 export default function LoginButtons() {
-  const handleLogin = (provider: 'google' | 'facebook') => {
-    window.location.href = `/auth/signin?provider=${provider}`
-  }
-
   return (
     <div style={{ display: 'flex', gap: '1rem' }}>
-      <button onClick={() => handleLogin('google')}>Login with Google</button>
-      <button onClick={() => handleLogin('facebook')}>
-        Login with Facebook
-      </button>
+      <form action='/auth/signin' method='GET'>
+        <input type='hidden' name='provider' value='google' />
+        <button type='submit'>Login with Google</button>
+      </form>
+      <form action='/auth/signin' method='GET'>
+        <input type='hidden' name='provider' value='facebook' />
+        <button type='submit'>Login with Facebook</button>
+      </form>
     </div>
   )
 }

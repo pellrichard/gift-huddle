@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { buildCookieAdapter } from '@/lib/auth/cookies'
+import { createServerClient, CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export const runtime = 'nodejs'
 
@@ -15,14 +15,26 @@ export async function GET(request: Request) {
 
   const redirectTo = `${url.origin}/auth/callback?next=/account`
 
-  // Prepare response now so we can attach PKCE cookies
-  const response = NextResponse.redirect(url, { status: 302 })
+  const cookieStore = cookies()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL as string,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
     {
-      cookies: buildCookieAdapter(request.headers.get('cookie'), response),
+      cookies: {
+        get(name: string) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return (cookieStore as any).get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(cookieStore as any).set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(cookieStore as any).set({ name, value: '', ...options })
+        },
+      },
     }
   )
 
@@ -32,18 +44,18 @@ export async function GET(request: Request) {
       redirectTo,
       queryParams:
         provider === 'google'
-          ? { prompt: 'select_account consent', max_age: '0' }
+          ? { prompt: 'select_account consent' }
           : undefined,
     },
   })
 
   if (error || !data?.url) {
+    console.error('OAuth init failed:', error?.message)
     return NextResponse.json(
       { error: error?.message || 'OAuth init failed' },
       { status: 500 }
     )
   }
 
-  response.headers.set('Location', data.url)
-  return response
+  return NextResponse.redirect(data.url, { status: 302 })
 }

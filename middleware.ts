@@ -4,30 +4,39 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value
-        },
-        set() {
-          // no-op in middleware
-        },
-        remove() {
-          // no-op in middleware
-        },
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      'Environment variables NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required!'
+    )
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name) {
+        return req.cookies.get(name)?.value
       },
-    }
-  )
+      set(name, value, options) {
+        req.cookies.set({ name, value, ...options })
+        res.cookies.set({ name, value, ...options })
+      },
+      remove(name, options) {
+        req.cookies.set({ name, value: '', ...options })
+        res.cookies.set({ name, value: '', ...options })
+      },
+    },
+  })
 
   const {
     data: { session },
   } = await supabase.auth.getSession()
 
   if (!session && req.nextUrl.pathname.startsWith('/account')) {
-    return NextResponse.redirect(new URL('/login', req.url))
+    const redirectUrl = new URL('/login', req.url)
+    redirectUrl.searchParams.set('redirect_to', req.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
   }
 
   return res

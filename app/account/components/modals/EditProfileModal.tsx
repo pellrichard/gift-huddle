@@ -16,10 +16,16 @@ interface Currency {
 interface EditProfileModalProps {
   user: User | null
   onSave: () => void
+  isOpen: boolean
+  setIsOpen: (isOpen: boolean) => void
 }
 
-export function EditProfileModal({ user, onSave }: EditProfileModalProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export function EditProfileModal({
+  user,
+  onSave,
+  isOpen,
+  setIsOpen,
+}: EditProfileModalProps) {
   const [nickname, setNickname] = useState('')
   const [fullName, setFullName] = useState('')
   const [dobDay, setDobDay] = useState('')
@@ -103,9 +109,6 @@ export function EditProfileModal({ user, onSave }: EditProfileModalProps) {
 
   return (
     <Modal open={isOpen} onOpenChange={setIsOpen}>
-      <Button variant='secondary' onClick={() => setIsOpen(true)}>
-        Edit profile
-      </Button>
       <div className='sm:max-w-[425px]'>
         <ModalHeader>
           <ModalTitle>Edit Profile</ModalTitle>
