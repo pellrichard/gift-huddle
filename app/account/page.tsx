@@ -94,7 +94,13 @@ function AccountPage() {
               Here's a snapshot of your gifting world.
             </div>
           </div>
-          <Button variant='secondary' onClick={() => setIsModalOpen(true)}>
+          <Button
+            variant='secondary'
+            onClick={() => {
+              console.log('Edit profile button clicked!')
+              setIsModalOpen(true)
+            }}
+          >
             Edit profile
           </Button>
         </CardContent>
